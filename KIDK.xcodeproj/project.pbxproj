@@ -8,6 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		21BA05E22EC5CE8D001BE4DA /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 21BA05E12EC5CE8D001BE4DA /* .gitignore */; };
+		21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA070F2EC5D369001BE4DA /* RxCocoa */; };
+		21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07112EC5D369001BE4DA /* RxSwift */; };
+		21BA07152EC5D375001BE4DA /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07142EC5D375001BE4DA /* SnapKit */; };
+		21BA07182EC5D394001BE4DA /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07172EC5D394001BE4DA /* Realm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -41,6 +45,10 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				21BA07152EC5D375001BE4DA /* SnapKit in Frameworks */,
+				21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */,
+				21BA07182EC5D394001BE4DA /* Realm in Frameworks */,
+				21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,6 +92,10 @@
 			);
 			name = KIDK;
 			packageProductDependencies = (
+				21BA070F2EC5D369001BE4DA /* RxCocoa */,
+				21BA07112EC5D369001BE4DA /* RxSwift */,
+				21BA07142EC5D375001BE4DA /* SnapKit */,
+				21BA07172EC5D394001BE4DA /* Realm */,
 			);
 			productName = KIDK;
 			productReference = 21BA05C92EC5CE6D001BE4DA /* KIDK.app */;
@@ -113,6 +125,11 @@
 			);
 			mainGroup = 21BA05C02EC5CE6D001BE4DA;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */,
+				21BA07132EC5D375001BE4DA /* XCRemoteSwiftPackageReference "SnapKit" */,
+				21BA07162EC5D394001BE4DA /* XCRemoteSwiftPackageReference "realm-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 21BA05CA2EC5CE6D001BE4DA /* Products */;
 			projectDirPath = "";
@@ -360,6 +377,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 6.9.1;
+			};
+		};
+		21BA07132EC5D375001BE4DA /* XCRemoteSwiftPackageReference "SnapKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SnapKit/SnapKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.7.1;
+			};
+		};
+		21BA07162EC5D394001BE4DA /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		21BA070F2EC5D369001BE4DA /* RxCocoa */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxCocoa;
+		};
+		21BA07112EC5D369001BE4DA /* RxSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */;
+			productName = RxSwift;
+		};
+		21BA07142EC5D375001BE4DA /* SnapKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21BA07132EC5D375001BE4DA /* XCRemoteSwiftPackageReference "SnapKit" */;
+			productName = SnapKit;
+		};
+		21BA07172EC5D394001BE4DA /* Realm */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21BA07162EC5D394001BE4DA /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = Realm;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 21BA05C12EC5CE6D001BE4DA /* Project object */;
 }
