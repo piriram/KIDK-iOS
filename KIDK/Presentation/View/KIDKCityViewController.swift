@@ -64,7 +64,15 @@ final class KIDKCityViewController: UIViewController {
         let view = UIView()
         view.backgroundColor = UIColor(hex: "#3C3C40")
         view.layer.cornerRadius = CornerRadius.medium
-        view.transform = CGAffineTransform(translationX: 0, y: 200)
+        view.alpha = 0
+        return view
+    }()
+    
+    private let missionSelectionSheet: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hex: "#2A2A2E")
+        view.layer.cornerRadius = CornerRadius.large
+        view.alpha = 0
         return view
     }()
     
@@ -115,6 +123,7 @@ final class KIDKCityViewController: UIViewController {
         super.viewDidLoad()
         setupUI()
         bind()
+        checkAndShowSchoolCard()
     }
     
     override func viewDidAppear(_ animated: Bool) {
@@ -133,6 +142,7 @@ final class KIDKCityViewController: UIViewController {
         mapContainerView.addSubview(exclamationImageView)
         view.addSubview(dimmedView)
         view.addSubview(schoolInfoCardView)
+        view.addSubview(missionSelectionSheet)
         
         schoolInfoCardView.addSubview(schoolIconImageView)
         schoolInfoCardView.addSubview(schoolTitleLabel)
@@ -183,6 +193,12 @@ final class KIDKCityViewController: UIViewController {
             make.height.equalTo(80)
         }
         
+        missionSelectionSheet.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.medium)
+            make.height.equalTo(320)
+        }
+        
         schoolIconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.medium)
             make.centerY.equalToSuperview()
@@ -223,20 +239,21 @@ final class KIDKCityViewController: UIViewController {
         let output = viewModel.transform(input: input)
     }
     
+    private func checkAndShowSchoolCard() {
+        let hasActiveMission = false
+        if !hasActiveMission {
+            UIView.animate(withDuration: 0.4, delay: 0.5, options: .curveEaseOut) {
+                self.schoolInfoCardView.alpha = 1
+            }
+        }
+    }
+    
     @objc private func schoolBuildingTapped() {
-        showSchoolCardAndWalk()
+        showExclamationAndWalk()
     }
     
     @objc private func schoolCardTapped() {
-        showHalfSheet()
-    }
-    
-    private func showSchoolCardAndWalk() {
-        UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
-            self.schoolInfoCardView.transform = .identity
-        } completion: { _ in
-            self.showExclamationAndWalk()
-        }
+        showExclamationAndWalk()
     }
     
     private func showExclamationAndWalk() {
@@ -282,6 +299,7 @@ final class KIDKCityViewController: UIViewController {
     private func characterEntersSchool() {
         UIView.animate(withDuration: 0.5) {
             self.characterImageView.alpha = 0
+            self.schoolInfoCardView.alpha = 0
         } completion: { _ in
             self.showDimmedOverlay()
         }
@@ -290,10 +308,36 @@ final class KIDKCityViewController: UIViewController {
     private func showDimmedOverlay() {
         UIView.animate(withDuration: 0.3) {
             self.dimmedView.alpha = 1
+        } completion: { _ in
+            self.showHalfSheet()
         }
     }
     
     private func showHalfSheet() {
-        print("Show half sheet screen")
+        UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
+            self.missionSelectionSheet.alpha = 1
+        }
+    }
+    
+    private func hideHalfSheet() {
+        UIView.animate(withDuration: 0.3) {
+            self.missionSelectionSheet.alpha = 0
+            self.dimmedView.alpha = 0
+        } completion: { _ in
+            UIView.animate(withDuration: 0.3) {
+                self.schoolInfoCardView.alpha = 1
+            }
+            self.resetCharacterPosition()
+        }
+    }
+    
+    private func resetCharacterPosition() {
+        self.characterImageView.alpha = 1
+        self.characterImageView.snp.remakeConstraints { make in
+            make.leading.equalToSuperview().offset(80)
+            make.top.equalToSuperview().offset(200)
+            make.width.height.equalTo(80)
+        }
+        self.view.layoutIfNeeded()
     }
 }
