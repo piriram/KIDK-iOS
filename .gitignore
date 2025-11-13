@@ -1,0 +1,121 @@
+# Xcode
+## Build generated
+build/
+DerivedData/
+*.xcarchive
+
+## Various settings
+*.pbxuser
+!default.pbxuser
+*.mode1v3
+!default.mode1v3
+*.mode2v3
+!default.mode2v3
+*.perspectivev3
+!default.perspectivev3
+xcuserdata/
+
+## Compatibility with Xcode 8 and earlier
+*.xcscmblueprint
+*.xccheckout
+
+## Compatibility with Xcode 3 and earlier
+*.moved-aside
+*.xcuserstate
+
+## Xcode Patch
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+**/xcshareddata/WorkspaceSettings.xcsettings
+
+# Swift Package Manager
+.swiftpm/
+.build/
+Packages/
+Package.pins
+Package.resolved
+*.xcodeproj
+
+# CocoaPods
+Pods/
+*.podspec
+Podfile.lock
+
+# Carthage
+Carthage/Build/
+
+# Accio dependency management
+Dependencies/
+.accio/
+
+# fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/**/*.png
+fastlane/test_output
+
+# Code Injection
+iOSInjectionProject/
+
+# OS Files
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Thumbnails
+Thumbs.db
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# API Keys & Secrets
+Config/Secrets.plist
+Config/API-Keys.plist
+*.env
+.env
+
+# Realm
+*.realm
+*.realm.lock
+*.realm.management
+
+# SQLite
+*.sqlite
+*.sqlite3
+*.db
+
+# Temporary files
+*.swp
+*~.nib
+*.tmp
+*.bak
+
+# Testing
+*.gcda
+*.gcno
+
+# IDE
+.vscode/
+.idea/
+
+# Firebase
+GoogleService-Info.plist
+
+# Backup files
+*.backup
