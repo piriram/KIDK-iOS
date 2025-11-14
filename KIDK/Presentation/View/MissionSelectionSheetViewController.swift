@@ -63,25 +63,21 @@ final class MissionSelectionSheetViewController: UIViewController {
         return card
     }()
     
-    private let previousButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("이전으로", for: .normal)
-        button.titleLabel?.font = .kidkSubtitle
-        button.setTitleColor(.kidkTextWhite, for: .normal)
-        button.backgroundColor = UIColor(hex: "#2C2C2E")
-        button.layer.cornerRadius = CornerRadius.medium
-        return button
-    }()
-    
-    private let customMissionButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("직접 미션 설정하기", for: .normal)
-        button.titleLabel?.font = .kidkSubtitle
-        button.setTitleColor(.kidkTextWhite, for: .normal)
-        button.backgroundColor = .kidkPink
-        button.layer.cornerRadius = CornerRadius.medium
-        return button
-    }()
+    private let previousButton = KIDKButton(
+        title: "이전으로",
+        backgroundColor: UIColor(hex: "#2C2C2E"),
+        titleColor: .kidkTextWhite,
+        fontSize: 16,
+        fontWeight: .semibold
+    )
+
+    private let customMissionButton = KIDKButton(
+        title: "직접 미션 설정하기",
+        backgroundColor: .kidkPink,
+        titleColor: .kidkTextWhite,
+        fontSize: 16,
+        fontWeight: .semibold
+    )
     
     override func viewDidLoad() {
         super.viewDidLoad()

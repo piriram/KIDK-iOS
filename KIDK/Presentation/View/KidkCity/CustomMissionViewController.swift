@@ -203,26 +203,21 @@ final class CustomMissionViewController: UIViewController {
         return label
     }()
     
-    private let previousButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("이전으로", for: .normal)
-        button.titleLabel?.font = .kidkSubtitle
-        button.setTitleColor(.kidkTextWhite, for: .normal)
-        button.backgroundColor = UIColor(hex: "#2C2C2E")
-        button.layer.cornerRadius = CornerRadius.medium
-        return button
-    }()
-    
-    private let nextButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("다음", for: .normal)
-        button.titleLabel?.font = .kidkSubtitle
-        button.setTitleColor(.kidkTextWhite, for: .normal)
-        button.backgroundColor = .kidkPink
-        button.layer.cornerRadius = CornerRadius.medium
-        return button
-    }()
-    
+    private let previousButton = KIDKButton(
+        title: "이전으로",
+        backgroundColor: UIColor(hex: "#2C2C2E"),
+        titleColor: .kidkTextWhite,
+        fontSize: 16,
+        fontWeight: .semibold
+    )
+
+    private let nextButton = KIDKButton(
+        title: "다음",
+        backgroundColor: .kidkPink,
+        titleColor: .kidkTextWhite,
+        fontSize: 16,
+        fontWeight: .semibold
+    )
     private var currentAmount = 500
     
     override func viewDidLoad() {
