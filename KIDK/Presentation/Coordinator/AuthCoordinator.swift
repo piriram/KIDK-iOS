@@ -12,24 +12,18 @@ protocol AuthCoordinatorDelegate: AnyObject {
     func authCoordinatorDidFinish(_ coordinator: AuthCoordinator, user: User)
 }
 
-final class AuthCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
+final class AuthCoordinator: BaseCoordinator {
     
     weak var delegate: AuthCoordinatorDelegate?
     
     private let authRepository: AuthRepositoryProtocol
-    private let disposeBag = DisposeBag()
     
-    init(
-        navigationController: UINavigationController,
-        authRepository: AuthRepositoryProtocol
-    ) {
-        self.navigationController = navigationController
+    init(navigationController: UINavigationController, authRepository: AuthRepositoryProtocol) {
         self.authRepository = authRepository
+        super.init(navigationController: navigationController)
     }
     
-    func start() {
+    override func start() {
         showUserTypeSelection()
     }
     
@@ -41,6 +35,7 @@ final class AuthCoordinator: Coordinator {
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] user in
                 guard let self = self else { return }
+                self.debugSuccess("User created successfully")
                 self.delegate?.authCoordinatorDidFinish(self, user: user)
             })
             .disposed(by: disposeBag)

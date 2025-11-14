@@ -7,18 +7,16 @@
 
 import UIKit
 
-final class AccountCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
+final class AccountCoordinator: BaseCoordinator {
     
     private let user: User
     
     init(navigationController: UINavigationController, user: User) {
-        self.navigationController = navigationController
         self.user = user
+        super.init(navigationController: navigationController)
     }
     
-    func start() {
+    override func start() {
         let viewModel = AccountViewModel(user: user)
         let viewController = AccountViewController(viewModel: viewModel)
         navigationController.setViewControllers([viewController], animated: false)

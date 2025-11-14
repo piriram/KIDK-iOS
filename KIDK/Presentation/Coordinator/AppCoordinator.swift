@@ -8,25 +8,20 @@
 import UIKit
 import RxSwift
 
-final class AppCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
+final class AppCoordinator: BaseCoordinator {
     
     private let window: UIWindow
     private let authRepository: AuthRepositoryProtocol
-    private let disposeBag = DisposeBag()
     
-    init(
-        window: UIWindow,
-        authRepository: AuthRepositoryProtocol = AuthRepository()
-    ) {
+    init(window: UIWindow, authRepository: AuthRepositoryProtocol = AuthRepository()) {
         self.window = window
         self.authRepository = authRepository
-        self.navigationController = UINavigationController()
-        self.navigationController.setNavigationBarHidden(true, animated: false)
+        let navController = UINavigationController()
+        navController.setNavigationBarHidden(true, animated: false)
+        super.init(navigationController: navController)
     }
     
-    func start() {
+    override func start() {
         window.rootViewController = navigationController
         window.makeKeyAndVisible()
         
@@ -45,7 +40,8 @@ final class AppCoordinator: Coordinator {
                     } else {
                         self?.showUserTypeSelection()
                     }
-                }, onError: { [weak self] _ in
+                }, onError: { [weak self] error in
+                    self?.debugError("Failed to get current user", error: error)
                     self?.showUserTypeSelection()
                 })
                 .disposed(by: disposeBag)
