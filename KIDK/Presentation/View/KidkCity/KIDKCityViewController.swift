@@ -68,14 +68,6 @@ final class KIDKCityViewController: UIViewController {
         return view
     }()
     
-    private let missionSelectionSheet: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2A2A2E")
-        view.layer.cornerRadius = CornerRadius.large
-        view.alpha = 0
-        return view
-    }()
-    
     private let schoolIconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(named: "kidk_icon_pencil")
@@ -109,6 +101,7 @@ final class KIDKCityViewController: UIViewController {
     
     private var isWalking = false
     private var walkTimer: Timer?
+    private var sheetViewController: MissionSelectionSheetViewController?
     
     init(viewModel: KIDKCityViewModel) {
         self.viewModel = viewModel
@@ -142,7 +135,6 @@ final class KIDKCityViewController: UIViewController {
         mapContainerView.addSubview(exclamationImageView)
         view.addSubview(dimmedView)
         view.addSubview(schoolInfoCardView)
-        view.addSubview(missionSelectionSheet)
         
         schoolInfoCardView.addSubview(schoolIconImageView)
         schoolInfoCardView.addSubview(schoolTitleLabel)
@@ -193,12 +185,6 @@ final class KIDKCityViewController: UIViewController {
             make.height.equalTo(80)
         }
         
-        missionSelectionSheet.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.medium)
-            make.height.equalTo(320)
-        }
-        
         schoolIconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.medium)
             make.centerY.equalToSuperview()
@@ -241,6 +227,7 @@ final class KIDKCityViewController: UIViewController {
     
     private func checkAndShowSchoolCard() {
         let hasActiveMission = false
+        
         if !hasActiveMission {
             UIView.animate(withDuration: 0.4, delay: 0.5, options: .curveEaseOut) {
                 self.schoolInfoCardView.alpha = 1
@@ -314,20 +301,46 @@ final class KIDKCityViewController: UIViewController {
     }
     
     private func showHalfSheet() {
-        UIView.animate(withDuration: 0.4, delay: 0, options: .curveEaseOut) {
-            self.missionSelectionSheet.alpha = 1
+        let sheetVC = MissionSelectionSheetViewController()
+        
+        if let sheet = sheetVC.sheetPresentationController {
+            sheet.detents = [.medium()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 20
         }
+        
+        sheetVC.missionSelected
+            .subscribe(onNext: { missionType in
+                print("Mission selected: \(missionType)")
+            })
+            .disposed(by: disposeBag)
+        
+        sheetVC.customMissionTapped
+            .subscribe(onNext: {
+                print("Custom mission tapped")
+            })
+            .disposed(by: disposeBag)
+        
+        sheetVC.previousMissionTapped
+            .subscribe(onNext: { [weak self] in
+                self?.hideHalfSheet()
+            })
+            .disposed(by: disposeBag)
+        
+        sheetViewController = sheetVC
+        present(sheetVC, animated: true)
     }
     
     private func hideHalfSheet() {
-        UIView.animate(withDuration: 0.3) {
-            self.missionSelectionSheet.alpha = 0
-            self.dimmedView.alpha = 0
-        } completion: { _ in
+        sheetViewController?.dismiss(animated: true) { [weak self] in
             UIView.animate(withDuration: 0.3) {
-                self.schoolInfoCardView.alpha = 1
+                self?.dimmedView.alpha = 0
+            } completion: { _ in
+                UIView.animate(withDuration: 0.3) {
+                    self?.schoolInfoCardView.alpha = 1
+                }
+                self?.resetCharacterPosition()
             }
-            self.resetCharacterPosition()
         }
     }
     
