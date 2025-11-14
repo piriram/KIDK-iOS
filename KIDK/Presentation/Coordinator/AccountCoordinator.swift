@@ -19,8 +19,8 @@ final class AccountCoordinator: Coordinator {
     }
     
     func start() {
-        let viewController = UIViewController()
-        viewController.view.backgroundColor = .kidkBackground
+        let viewModel = AccountViewModel(user: user)
+        let viewController = AccountViewController(viewModel: viewModel)
         navigationController.setViewControllers([viewController], animated: false)
     }
 }
