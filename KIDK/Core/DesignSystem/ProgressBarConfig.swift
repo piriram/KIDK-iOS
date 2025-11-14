@@ -1,11 +1,9 @@
-//TODO: 바운시말고 다양한 애니메이션을 enum으로 관리하면서 해보기. enum은 어디서든 쓸 수 있또록
 //
 //  ProgressBarConfig.swift
 //  KIDK
 //
 //  Created by 잠만보김쥬디 on 11/15/25.
 //
-
 import UIKit
 
 enum ProgressBarConfig {
@@ -25,6 +23,13 @@ enum ProgressBarConfig {
     
     static let othersColor: UIColor = .kidkGray
     
+    static let animationStyle: ProgressBarAnimationStyle = .easeOut
     static let animationDuration: TimeInterval = 1.0
     static let animationDelay: TimeInterval = 0.0
+    
+    static let springDamping: CGFloat = 0.8
+    static let springInitialVelocity: CGFloat = 0.5
+    
+    static let bounceDamping: CGFloat = 0.6
+    static let bounceInitialVelocity: CGFloat = 1.0
 }

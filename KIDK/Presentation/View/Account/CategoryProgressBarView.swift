@@ -4,7 +4,6 @@
 //
 //  Created by 잠만보김쥬디 on 11/15/25.
 //
-
 import UIKit
 import SnapKit
 
@@ -124,13 +123,9 @@ class CategoryProgressBarView: UIView {
     }
     
     private func animateBars(with categories: [CategorySpending]) {
-        UIView.animate(
-            withDuration: ProgressBarConfig.animationDuration,
-            delay: ProgressBarConfig.animationDelay,
-            usingSpringWithDamping: 0.8,
-            initialSpringVelocity: 0.5,
-            options: .curveEaseInOut
-        ) { [weak self] in
+        let style = ProgressBarConfig.animationStyle
+        
+        style.animate { [weak self] in
             self?.updateBarWidths(with: categories, animated: true)
         }
     }
