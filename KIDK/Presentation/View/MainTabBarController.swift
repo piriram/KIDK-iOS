@@ -15,6 +15,7 @@ final class MainTabBarController: UITabBarController {
     }
     
     private func setupTabBar() {
+        view.backgroundColor = .kidkDarkBackground
         tabBar.backgroundColor = .kidkDarkBackground
         tabBar.tintColor = .kidkPink
         tabBar.unselectedItemTintColor = .kidkGray

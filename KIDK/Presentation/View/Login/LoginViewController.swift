@@ -62,6 +62,7 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "이메일을 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
+        textField.text = "judy@love.net"
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
@@ -74,12 +75,6 @@ final class LoginViewController: BaseViewController {
         textField.leftViewMode = .always
         textField.rightView = paddingView
         textField.rightViewMode = .always
-        
-        textField.attributedPlaceholder = NSAttributedString(
-            string: "이메일을 입력하세요",
-            attributes: [.foregroundColor: UIColor.kidkGray]
-        )
-        
         return textField
     }()
     
@@ -99,6 +94,7 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "비밀번호를 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
+        textField.text = "judylove"
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
@@ -111,11 +107,6 @@ final class LoginViewController: BaseViewController {
         textField.leftViewMode = .always
         textField.rightView = paddingView
         textField.rightViewMode = .always
-        
-        textField.attributedPlaceholder = NSAttributedString(
-            string: "비밀번호를 입력하세요",
-            attributes: [.foregroundColor: UIColor.kidkGray]
-        )
         
         return textField
     }()

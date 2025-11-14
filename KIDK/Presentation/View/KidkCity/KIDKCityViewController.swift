@@ -101,11 +101,11 @@ final class KIDKCityViewController: BaseViewController {
     private let homeButton: IconContainerView = {
         let button = IconContainerView(
             "kidk_icon_home",
-            backgroundColor: .white,
-            size: 44,
-            cornerRadius: 14,
-            iconSize: 24,
-            alpha: 0.2
+            backgroundColor: .cardBackground,
+            size: 48,
+            cornerRadius: 16,
+            iconSize: 30,
+            alpha: 0.9
         )
         button.isUserInteractionEnabled = true
         return button
@@ -126,6 +126,8 @@ final class KIDKCityViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        self.edgesForExtendedLayout = .all
+        self.extendedLayoutIncludesOpaqueBars = true
         setupUI()
         bind()
         checkAndShowSchoolCard()
@@ -235,7 +237,7 @@ final class KIDKCityViewController: BaseViewController {
         homeButton.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.md)
             make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.md)
-            make.width.height.equalTo(44)
+            make.width.height.equalTo(48)
         }
         
         let schoolTapGesture = UITapGestureRecognizer(target: self, action: #selector(schoolBuildingTapped))

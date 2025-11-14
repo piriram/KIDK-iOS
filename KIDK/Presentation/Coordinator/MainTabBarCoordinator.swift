@@ -47,7 +47,7 @@ final class MainTabBarCoordinator: BaseCoordinator {
         
         tabBarController.viewControllers = [accountNav, missionNav, settingsNav]
         
-        navigationController.setViewControllers([tabBarController], animated: true)
+        navigationController.setViewControllers([tabBarController], animated: false)
         
         debugSuccess("Main tab bar initialized with 3 tabs")
     }
