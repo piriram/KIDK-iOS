@@ -12,8 +12,8 @@ final class MissionCardView: UIView {
     
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.medium
+        view.backgroundColor = .cardBackground
+        view.layer.cornerRadius = CornerRadius.large
         return view
     }()
     
@@ -24,9 +24,9 @@ final class MissionCardView: UIView {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = Strings.Mission.setGoalInKIDKCity
-        label.font = .kidkSubtitle
-        label.textColor = .kidkTextWhite
+        label.applyTextStyle(text: Strings.Mission.setGoalInKIDKCity,
+                             size: .s20,weight: .bold,
+                             color: .kidkTextWhite)
         return label
     }()
 
@@ -34,7 +34,7 @@ final class MissionCardView: UIView {
         let label = UILabel()
         label.text = Strings.Mission.setGoalWithFriends
         label.font = .kidkBody
-        label.textColor = .kidkGray
+        label.textColor = .kidkTextWhite.withAlphaComponent(0.8)
         label.numberOfLines = 0
         return label
     }()
@@ -44,15 +44,15 @@ final class MissionCardView: UIView {
         button.setTitle(Strings.Mission.whatMissionQuestion, for: .normal)
         button.titleLabel?.font = .kidkBody
         button.setTitleColor(.kidkPink, for: .normal)
-        button.backgroundColor = UIColor(hex: "#1C1C1E")
-        button.layer.cornerRadius = CornerRadius.small
+        button.backgroundColor = .kidkDarkBackground
+        button.layer.cornerRadius = CornerRadius.medium
         return button
     }()
     
     private let collapseButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "chevron.up"), for: .normal)
-        button.tintColor = .kidkGray
+        button.tintColor = .chevronGray
         return button
     }()
     
