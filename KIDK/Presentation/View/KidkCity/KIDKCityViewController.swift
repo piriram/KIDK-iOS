@@ -98,6 +98,19 @@ final class KIDKCityViewController: BaseViewController {
         return imageView
     }()
     
+    private let homeButton: IconContainerView = {
+        let button = IconContainerView(
+            "kidk_icon_home",
+            backgroundColor: .white,
+            size: 44,
+            cornerRadius: 14,
+            iconSize: 24,
+            alpha: 0.2
+        )
+        button.isUserInteractionEnabled = true
+        return button
+    }()
+    
     private var isWalking = false
     private var walkTimer: Timer?
     private var sheetViewController: UIViewController?
@@ -123,6 +136,18 @@ final class KIDKCityViewController: BaseViewController {
         viewDidAppearSubject.onNext(())
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        navigationController?.setNavigationBarHidden(true, animated: animated)
+        tabBarController?.tabBar.isHidden = true
+    }
+    
+    override func viewWillDisappear(_ animated: Bool) {
+        super.viewWillDisappear(animated)
+        navigationController?.setNavigationBarHidden(false, animated: animated)
+        tabBarController?.tabBar.isHidden = false
+    }
+    
     private func setupUI() {
         view.backgroundColor = .kidkDarkBackground
         
@@ -134,6 +159,7 @@ final class KIDKCityViewController: BaseViewController {
         mapContainerView.addSubview(exclamationImageView)
         view.addSubview(dimmedView)
         view.addSubview(schoolInfoCardView)
+        view.addSubview(homeButton)
         
         schoolInfoCardView.addSubview(schoolIconImageView)
         schoolInfoCardView.addSubview(schoolTitleLabel)
@@ -206,11 +232,20 @@ final class KIDKCityViewController: BaseViewController {
             make.width.height.equalTo(20)
         }
         
+        homeButton.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Spacing.md)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.md)
+            make.width.height.equalTo(44)
+        }
+        
         let schoolTapGesture = UITapGestureRecognizer(target: self, action: #selector(schoolBuildingTapped))
         schoolBuildingImageView.addGestureRecognizer(schoolTapGesture)
         
         let cardTapGesture = UITapGestureRecognizer(target: self, action: #selector(schoolCardTapped))
         schoolInfoCardView.addGestureRecognizer(cardTapGesture)
+        
+        let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
+        homeButton.addGestureRecognizer(homeTapGesture)
     }
     
     private func bind() {
@@ -240,6 +275,10 @@ final class KIDKCityViewController: BaseViewController {
     
     @objc private func schoolCardTapped() {
         showExclamationAndWalk()
+    }
+    
+    @objc private func homeButtonTapped() {
+        navigationController?.popViewController(animated: true)
     }
     
     private func showExclamationAndWalk() {
@@ -386,4 +425,3 @@ final class KIDKCityViewController: BaseViewController {
         self.view.layoutIfNeeded()
     }
 }
-

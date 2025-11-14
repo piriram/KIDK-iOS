@@ -59,8 +59,7 @@ class BaseViewController: UIViewController {
     }
     
     private func setupBaseUI() {
-        view.backgroundColor = UIColor(hex: "#1C1C1E")
-        
+        view.backgroundColor = .kidkDarkBackground
         view.addSubview(loadingOverlay)
         loadingOverlay.addSubview(loadingIndicator)
         
