@@ -50,14 +50,14 @@ final class AuthCoordinator: BaseCoordinator {
     }
     
     private func showUserTypeSelection() {
-        let viewModel = UserTypeSelectionViewModel(authRepository: authRepository)
-        let viewController = UserTypeSelectionViewController(viewModel: viewModel)
+        let viewModel = SignupViewModel(authRepository: authRepository)
+        let viewController = SignupViewController(viewModel: viewModel)
         
-        viewModel.userCreated
+        viewModel.signupSuccess
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] user in
                 guard let self = self else { return }
-                self.debugSuccess("User created successfully")
+                self.debugSuccess("User signup successful")
                 self.delegate?.authCoordinatorDidFinish(self, user: user)
             })
             .disposed(by: disposeBag)

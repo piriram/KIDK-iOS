@@ -8,7 +8,13 @@
 import UIKit
 import RxSwift
 
+protocol MainTabBarCoordinatorDelegate: AnyObject {
+    func mainTabBarCoordinatorDidLogout(_ coordinator: MainTabBarCoordinator)
+}
+
 final class MainTabBarCoordinator: BaseCoordinator {
+    
+    weak var delegate: MainTabBarCoordinatorDelegate?
     
     private let user: User
     
@@ -35,6 +41,7 @@ final class MainTabBarCoordinator: BaseCoordinator {
         let settingsNav = UINavigationController()
         settingsNav.setNavigationBarHidden(true, animated: false)
         let settingsCoordinator = SettingsCoordinator(navigationController: settingsNav, user: user)
+        settingsCoordinator.delegate = self
         addChildCoordinator(settingsCoordinator)
         settingsCoordinator.start()
         
@@ -43,5 +50,12 @@ final class MainTabBarCoordinator: BaseCoordinator {
         navigationController.setViewControllers([tabBarController], animated: true)
         
         debugSuccess("Main tab bar initialized with 3 tabs")
+    }
+}
+
+extension MainTabBarCoordinator: SettingsCoordinatorDelegate {
+    func settingsCoordinatorDidLogout(_ coordinator: SettingsCoordinator) {
+        debugLog("Logout triggered from settings")
+        delegate?.mainTabBarCoordinatorDidLogout(self)
     }
 }
