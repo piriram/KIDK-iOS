@@ -11,6 +11,7 @@ extension UIColor {
     static let kidkPinkLight = UIColor(hex: "#FFC4DE")
     static let kidkPink = UIColor(hex: "#F54F95")
     static let kidkGreen = UIColor(hex: "#16E8AD")
+    static let kidkBlue = UIColor(hex: "#0095FF")
     static let kidkGray = UIColor(hex: "#97979A")
     static let kidkBlack = UIColor(hex: "#1B1B1C")
     static let kidkDarkBackground = UIColor(hex: "#242426")

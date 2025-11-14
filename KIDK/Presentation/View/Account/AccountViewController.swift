@@ -26,19 +26,15 @@ final class AccountViewController: BaseViewController {
         let view = UIView()
         return view
     }()
-    
-    private let profileImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_profile_avatar")
-        imageView.contentMode = .scaleAspectFill
-        imageView.layer.cornerRadius = 20
-        imageView.clipsToBounds = true
-        return imageView
-    }()
+    private let profileImageView = ProfileImageView(
+        assetName: "kidk_profile_one", size: 40,
+        bgColor: .white, iconRatio: 0.7)
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "김시아", size: .s24, weight: .bold, color: .kidkTextWhite,lineHeight: 140)
+        label.applyTextStyle(text: "김시아",
+                             size: .s24, weight: .bold,
+                             color: .kidkTextWhite,lineHeight: 140)
         return label
     }()
     
@@ -376,23 +372,16 @@ final class AccountViewController: BaseViewController {
         arrowImageView.tintColor = .kidkGray
         arrowImageView.contentMode = .scaleAspectFit
         
-        let progressView = UIView()
-        
-        let progressBar1 = UIView()
-        progressBar1.backgroundColor = .kidkPink
-        progressBar1.layer.cornerRadius = 4
-        
-        let progressBar2 = UIView()
-        progressBar2.backgroundColor = .kidkGreen
-        progressBar2.layer.cornerRadius = 4
-        
-        let progressBar3 = UIView()
-        progressBar3.backgroundColor = UIColor(hex: "#00A8FF")
-        progressBar3.layer.cornerRadius = 4
+        let progressBar = CategoryProgressBarView()
+        let categories = [
+            CategorySpending(category: "음식", amount: 12000, totalAmount: 20000, color: .clear),
+            CategorySpending(category: "쇼핑", amount: 5000, totalAmount: 20000, color: .clear),
+            CategorySpending(category: "교통", amount: 3000, totalAmount: 20000, color: .clear)
+        ]
         
         let category1View = createCategoryView(icon: "kidk_category_food", title: "음식", amount: "12,000원", color: .kidkPink)
         let category2View = createCategoryView(icon: "kidk_category_shopping", title: "쇼핑", amount: "5,000원", color: .kidkGreen)
-        let category3View = createCategoryView(icon: "kidk_category_transport", title: "교통", amount: "3,000원", color: UIColor(hex: "#0095FF"))
+        let category3View = createCategoryView(icon: "kidk_category_transport", title: "교통", amount: "3,000원", color: .kidkBlue)
         
         titleStackView.addArrangedSubview(monthLabel)
         titleStackView.addArrangedSubview(spendingLabel)
@@ -403,10 +392,7 @@ final class AccountViewController: BaseViewController {
         headerView.addSubview(totalAmountView)
         headerView.addSubview(arrowImageView)
         
-        contentView.addSubview(progressView)
-        progressView.addSubview(progressBar1)
-        progressView.addSubview(progressBar2)
-        progressView.addSubview(progressBar3)
+        contentView.addSubview(progressBar)
         
         contentView.addSubview(category1View)
         contentView.addSubview(category2View)
@@ -438,30 +424,15 @@ final class AccountViewController: BaseViewController {
             make.width.height.equalTo(20)
         }
         
-        progressView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(8)
-        }
-        
-        progressBar1.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(0.6)
-        }
-        
-        progressBar2.snp.makeConstraints { make in
-            make.leading.equalTo(progressBar1.snp.trailing)
-            make.top.bottom.equalToSuperview()
-            make.width.equalToSuperview().multipliedBy(0.25)
-        }
-        
-        progressBar3.snp.makeConstraints { make in
-            make.leading.equalTo(progressBar2.snp.trailing)
-            make.top.bottom.trailing.equalToSuperview()
-        }
+        progressBar.snp.makeConstraints { make in
+               make.top.equalTo(headerView.snp.bottom).offset(Spacing.md)
+               make.leading.trailing.equalToSuperview()
+               make.height.equalTo(ProgressBarConfig.barHeight)
+           }
+           
         
         category1View.snp.makeConstraints { make in
-            make.top.equalTo(progressView.snp.bottom).offset(Spacing.md)
+            make.top.equalTo(progressBar.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview()
         }
         
@@ -476,6 +447,7 @@ final class AccountViewController: BaseViewController {
         }
         
         card.configure(with: contentView, showCloseButton: false)
+        progressBar.configure(with: categories, animated: true)
         return card
     }
     
