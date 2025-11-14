@@ -101,7 +101,7 @@ final class KIDKCityViewController: UIViewController {
     
     private var isWalking = false
     private var walkTimer: Timer?
-    private var sheetViewController: MissionSelectionSheetViewController?
+    private var sheetViewController: UIViewController?
     
     init(viewModel: KIDKCityViewModel) {
         self.viewModel = viewModel
@@ -316,8 +316,8 @@ final class KIDKCityViewController: UIViewController {
             .disposed(by: disposeBag)
         
         sheetVC.customMissionTapped
-            .subscribe(onNext: {
-                print("Custom mission tapped")
+            .subscribe(onNext: { [weak self] in
+                self?.showCustomMissionSheet()
             })
             .disposed(by: disposeBag)
         
@@ -329,6 +329,37 @@ final class KIDKCityViewController: UIViewController {
         
         sheetViewController = sheetVC
         present(sheetVC, animated: true)
+    }
+    
+    private func showCustomMissionSheet() {
+        sheetViewController?.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            
+            let customMissionVC = CustomMissionViewController()
+            
+            if let sheet = customMissionVC.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 20
+            }
+            
+            customMissionVC.missionCreated
+                .subscribe(onNext: {
+                    print("Mission created")
+                })
+                .disposed(by: self.disposeBag)
+            
+            customMissionVC.previousTapped
+                .subscribe(onNext: { [weak self] in
+                    customMissionVC.dismiss(animated: true) {
+                        self?.showHalfSheet()
+                    }
+                })
+                .disposed(by: self.disposeBag)
+            
+            self.sheetViewController = customMissionVC
+            self.present(customMissionVC, animated: true)
+        }
     }
     
     private func hideHalfSheet() {
