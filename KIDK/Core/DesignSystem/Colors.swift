@@ -15,9 +15,9 @@ extension UIColor {
     static let kidkBlack = UIColor(hex: "#1B1B1C")
     static let kidkDarkBackground = UIColor(hex: "#242426")
     
-    static let kidkBackground = UIColor.white
     static let kidkTextPrimary = UIColor(hex: "#1B1B1C")
     static let kidkTextSecondary = UIColor(hex: "#3C3C40")
+    static let cardBackground = UIColor(hex: "#303036")
     static let kidkTextWhite = UIColor.white
     
     convenience init(hex: String) {

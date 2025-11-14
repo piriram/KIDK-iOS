@@ -9,24 +9,27 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-final class AccountViewModel {
+final class AccountViewModel: BaseViewModel {
     
     struct Input {
         
     }
     
     struct Output {
-        
+        let isLoading: Driver<Bool>
     }
     
     private let user: User
-    private let disposeBag = DisposeBag()
     
     init(user: User) {
         self.user = user
+        super.init()
+        debugLog("AccountViewModel initialized with user: \(user.name)")
     }
     
     func transform(input: Input) -> Output {
-        return Output()
+        return Output(
+            isLoading: isLoading.asDriver()
+        )
     }
 }

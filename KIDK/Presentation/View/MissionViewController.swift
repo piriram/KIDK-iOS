@@ -37,7 +37,7 @@ final class MissionViewController: UIViewController {
         button.backgroundColor = .kidkPink
         button.layer.cornerRadius = CornerRadius.medium
         button.contentHorizontalAlignment = .left
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: Spacing.medium, bottom: 0, right: Spacing.medium)
+        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: Spacing.md, bottom: 0, right: Spacing.md)
         return button
     }()
     
@@ -120,31 +120,31 @@ final class MissionViewController: UIViewController {
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.medium)
-            make.bottom.equalToSuperview().offset(-Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.md)
+            make.bottom.equalToSuperview().offset(-Spacing.md)
         }
         
         menuButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalTo(titleLabel)
             make.width.height.equalTo(24)
         }
         
         goToKIDKCityButton.snp.makeConstraints { make in
-            make.top.equalTo(navigationBar.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(navigationBar.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(56)
         }
         
         arrowImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(20)
         }
         
         sectionHeaderView.snp.makeConstraints { make in
-            make.top.equalTo(goToKIDKCityButton.snp.bottom).offset(Spacing.large)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(goToKIDKCityButton.snp.bottom).offset(Spacing.xl)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(24)
         }
         
@@ -158,8 +158,8 @@ final class MissionViewController: UIViewController {
         }
         
         missionCardView.snp.makeConstraints { make in
-            make.top.equalTo(sectionHeaderView.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(sectionHeaderView.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
     }
     

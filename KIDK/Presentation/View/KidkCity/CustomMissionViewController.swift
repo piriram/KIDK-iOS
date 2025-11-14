@@ -206,17 +206,13 @@ final class CustomMissionViewController: UIViewController {
     private let previousButton = KIDKButton(
         title: "이전으로",
         backgroundColor: UIColor(hex: "#2C2C2E"),
-        titleColor: .kidkTextWhite,
-        fontSize: 16,
-        fontWeight: .semibold
+        titleColor: .kidkTextWhite
     )
 
     private let nextButton = KIDKButton(
         title: "다음",
         backgroundColor: .kidkPink,
-        titleColor: .kidkTextWhite,
-        fontSize: 16,
-        fontWeight: .semibold
+        titleColor: .kidkTextWhite
     )
     private var currentAmount = 500
     
@@ -264,7 +260,7 @@ final class CustomMissionViewController: UIViewController {
         
         scrollView.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(previousButton.snp.top).offset(-Spacing.medium)
+            make.bottom.equalTo(previousButton.snp.top).offset(-Spacing.md)
         }
         
         contentView.snp.makeConstraints { make in
@@ -274,24 +270,24 @@ final class CustomMissionViewController: UIViewController {
         
         titleLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(40)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
+            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
         }
         
         schoolImageView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.large)
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xl)
             make.centerX.equalToSuperview()
             make.width.equalTo(200)
             make.height.equalTo(120)
         }
         
         participantsLabel.snp.makeConstraints { make in
-            make.top.equalTo(schoolImageView.snp.bottom).offset(Spacing.large)
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.top.equalTo(schoolImageView.snp.bottom).offset(Spacing.xl)
+            make.leading.equalToSuperview().offset(Spacing.xl)
         }
         
         friendsStackView.snp.makeConstraints { make in
-            make.top.equalTo(participantsLabel.snp.bottom).offset(Spacing.medium)
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.top.equalTo(participantsLabel.snp.bottom).offset(Spacing.md)
+            make.leading.equalToSuperview().offset(Spacing.xl)
             make.height.equalTo(60)
         }
         
@@ -312,58 +308,58 @@ final class CustomMissionViewController: UIViewController {
         }
         
         dailyMissionLabel.snp.makeConstraints { make in
-            make.top.equalTo(friendsStackView.snp.bottom).offset(Spacing.large)
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.top.equalTo(friendsStackView.snp.bottom).offset(Spacing.xl)
+            make.leading.equalToSuperview().offset(Spacing.xl)
         }
         
         missionCardView.snp.makeConstraints { make in
-            make.top.equalTo(dailyMissionLabel.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
+            make.top.equalTo(dailyMissionLabel.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
             make.height.equalTo(60)
         }
         
         missionIconImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(32)
         }
         
         missionDescriptionLabel.snp.makeConstraints { make in
-            make.leading.equalTo(missionIconImageView.snp.trailing).offset(Spacing.medium)
+            make.leading.equalTo(missionIconImageView.snp.trailing).offset(Spacing.md)
             make.centerY.equalToSuperview()
         }
         
         goalSettingLabel.snp.makeConstraints { make in
-            make.top.equalTo(missionCardView.snp.bottom).offset(Spacing.large)
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.top.equalTo(missionCardView.snp.bottom).offset(Spacing.xl)
+            make.leading.equalToSuperview().offset(Spacing.xl)
         }
         
         goalInputContainer.snp.makeConstraints { make in
-            make.top.equalTo(goalSettingLabel.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
+            make.top.equalTo(goalSettingLabel.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
             make.height.equalTo(50)
         }
         
         goalTextField.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.md)
             make.centerY.equalToSuperview()
         }
         
         dateLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
         }
         
         amountSettingLabel.snp.makeConstraints { make in
-            make.top.equalTo(goalInputContainer.snp.bottom).offset(Spacing.large)
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.top.equalTo(goalInputContainer.snp.bottom).offset(Spacing.xl)
+            make.leading.equalToSuperview().offset(Spacing.xl)
         }
         
         amountContainer.snp.makeConstraints { make in
-            make.top.equalTo(amountSettingLabel.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
+            make.top.equalTo(amountSettingLabel.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
             make.height.equalTo(80)
-            make.bottom.equalToSuperview().offset(-Spacing.large)
+            make.bottom.equalToSuperview().offset(-Spacing.xl)
         }
         
         amountLabel.snp.makeConstraints { make in
@@ -371,32 +367,32 @@ final class CustomMissionViewController: UIViewController {
         }
         
         decreaseButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.leading.equalToSuperview().offset(Spacing.xl)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(32)
         }
         
         increaseButton.snp.makeConstraints { make in
-            make.trailing.equalTo(currencyLabel.snp.leading).offset(-Spacing.medium)
+            make.trailing.equalTo(currencyLabel.snp.leading).offset(-Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(32)
         }
         
         currencyLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.large)
+            make.trailing.equalToSuperview().offset(-Spacing.xl)
             make.centerY.equalToSuperview()
         }
         
         previousButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.large)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.xl)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
             make.height.equalTo(56)
             make.width.equalTo(120)
         }
         
         nextButton.snp.makeConstraints { make in
-            make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.small)
-            make.trailing.equalToSuperview().offset(-Spacing.large)
+            make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.xs)
+            make.trailing.equalToSuperview().offset(-Spacing.xl)
             make.centerY.equalTo(previousButton)
             make.height.equalTo(56)
         }

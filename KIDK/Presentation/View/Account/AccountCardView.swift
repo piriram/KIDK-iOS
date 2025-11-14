@@ -1,3 +1,4 @@
+//TODO: XMARK 에셋으로 바꾸기
 //
 //  AccountCardView.swift
 //  KIDK
@@ -17,8 +18,8 @@ class AccountCardView: UIView {
     
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.medium
+        view.backgroundColor = .cardBackground
+        view.layer.cornerRadius = 16
         return view
     }()
     
@@ -59,11 +60,11 @@ class AccountCardView: UIView {
         }
         
         contentStackView.snp.makeConstraints { make in
-            make.top.leading.trailing.bottom.equalToSuperview().inset(Spacing.medium)
+            make.top.leading.trailing.bottom.equalToSuperview().inset(20)
         }
         
         closeButton.snp.makeConstraints { make in
-            make.top.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.trailing.equalToSuperview().inset(20)
             make.width.height.equalTo(24)
         }
         

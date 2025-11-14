@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-final class MissionViewModel {
+final class MissionViewModel: BaseViewModel {
     
     struct Input {
         let goToKIDKCityTapped: Observable<Void>
@@ -18,15 +18,17 @@ final class MissionViewModel {
     
     struct Output {
         let hasActiveMission: Driver<Bool>
+        let isLoading: Driver<Bool>
     }
     
     let navigateToKIDKCity: PublishSubject<Void> = PublishSubject()
     
     private let user: User
-    private let disposeBag = DisposeBag()
     
     init(user: User) {
         self.user = user
+        super.init()
+        debugLog("MissionViewModel initialized")
     }
     
     func transform(input: Input) -> Output {
@@ -34,12 +36,14 @@ final class MissionViewModel {
         
         input.goToKIDKCityTapped
             .subscribe(onNext: { [weak self] in
+                self?.debugLog("Navigate to KIDK City")
                 self?.navigateToKIDKCity.onNext(())
             })
             .disposed(by: disposeBag)
         
         return Output(
-            hasActiveMission: hasActiveMission.asDriver()
+            hasActiveMission: hasActiveMission.asDriver(),
+            isLoading: isLoading.asDriver()
         )
     }
 }

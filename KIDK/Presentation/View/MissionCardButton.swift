@@ -84,7 +84,7 @@ final class MissionCardButton: UIControl {
         }
         
         iconBackgroundView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(50)
         }
@@ -95,18 +95,18 @@ final class MissionCardButton: UIControl {
         }
         
         badgeLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconBackgroundView.snp.trailing).offset(Spacing.medium)
-            make.top.equalToSuperview().offset(Spacing.small)
+            make.leading.equalTo(iconBackgroundView.snp.trailing).offset(Spacing.md)
+            make.top.equalToSuperview().offset(Spacing.xs)
         }
         
         titleLabel.snp.makeConstraints { make in
             make.leading.equalTo(badgeLabel)
             make.top.equalTo(badgeLabel.snp.bottom).offset(4)
-            make.trailing.equalTo(arrowImageView.snp.leading).offset(-Spacing.small)
+            make.trailing.equalTo(arrowImageView.snp.leading).offset(-Spacing.xs)
         }
         
         arrowImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(16)
         }

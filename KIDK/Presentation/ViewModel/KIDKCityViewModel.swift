@@ -9,7 +9,7 @@ import Foundation
 import RxSwift
 import RxCocoa
 
-final class KIDKCityViewModel {
+final class KIDKCityViewModel: BaseViewModel {
     
     struct Input {
         let viewDidAppear: Observable<Void>
@@ -19,15 +19,17 @@ final class KIDKCityViewModel {
     struct Output {
         let shouldStartAutoWalk: Driver<Bool>
         let locations: Driver<[KIDKCityLocation]>
+        let isLoading: Driver<Bool>
     }
     
     let navigateToLocation: PublishSubject<KIDKCityLocationType> = PublishSubject()
     
     private let user: User
-    private let disposeBag = DisposeBag()
     
     init(user: User) {
         self.user = user
+        super.init()
+        debugLog("KIDKCityViewModel initialized")
     }
     
     func transform(input: Input) -> Output {
@@ -42,13 +44,15 @@ final class KIDKCityViewModel {
         
         input.locationTapped
             .subscribe(onNext: { [weak self] locationType in
+                self?.debugLog("Location tapped: \(locationType)")
                 self?.navigateToLocation.onNext(locationType)
             })
             .disposed(by: disposeBag)
         
         return Output(
             shouldStartAutoWalk: shouldStartAutoWalk.asDriver(),
-            locations: locations.asDriver()
+            locations: locations.asDriver(),
+            isLoading: isLoading.asDriver()
         )
     }
     
