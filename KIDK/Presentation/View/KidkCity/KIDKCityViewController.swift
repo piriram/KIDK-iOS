@@ -332,32 +332,36 @@ final class KIDKCityViewController: UIViewController {
     }
     
     private func showCustomMissionSheet() {
-        let customMissionVC = CustomMissionViewController()
+        guard let currentSheet = sheetViewController else { return }
         
-        if let sheet = customMissionVC.sheetPresentationController {
-            sheet.detents = [.large()]
-            sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 20
+        currentSheet.dismiss(animated: true) { [weak self] in
+            guard let self = self else { return }
+            
+            let customMissionVC = CustomMissionViewController()
+            
+            if let sheet = customMissionVC.sheetPresentationController {
+                sheet.detents = [.large()]
+                sheet.prefersGrabberVisible = true
+                sheet.preferredCornerRadius = 20
+            }
+            
+            customMissionVC.missionCreated
+                .subscribe(onNext: {
+                    print("Mission created")
+                })
+                .disposed(by: self.disposeBag)
+            
+            customMissionVC.previousTapped
+                .subscribe(onNext: { [weak self] in
+                    customMissionVC.dismiss(animated: true) {
+                        self?.showHalfSheet()
+                    }
+                })
+                .disposed(by: self.disposeBag)
+            
+            self.sheetViewController = customMissionVC
+            self.present(customMissionVC, animated: true)
         }
-        
-        customMissionVC.missionCreated
-            .subscribe(onNext: {
-                print("Mission created")
-            })
-            .disposed(by: self.disposeBag)
-        
-        customMissionVC.previousTapped
-            .subscribe(onNext: { [weak self] in
-                customMissionVC.dismiss(animated: true) {
-                    self?.showHalfSheet()
-                }
-            })
-            .disposed(by: self.disposeBag)
-        
-        // Dismiss current sheet instantly to avoid detent animation glitches, then present immediately.
-        sheetViewController?.dismiss(animated: false)
-        sheetViewController = customMissionVC
-        present(customMissionVC, animated: true)
     }
     
     private func hideHalfSheet() {
