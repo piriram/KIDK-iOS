@@ -49,6 +49,7 @@ final class AccountViewController: BaseViewController {
     private lazy var spendingAccountCard = createSpendingAccountCard()
     private lazy var savingsAccountCard = createSavingsAccountCard()
     private lazy var monthlyReportCard = createMonthlyReportCard()
+    private lazy var monthlyProgressBar = CategoryProgressBarView()
     
     init(viewModel: AccountViewModel) {
         self.viewModel = viewModel
@@ -338,6 +339,17 @@ final class AccountViewController: BaseViewController {
         return card
     }
     
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        
+        let categories = [
+            CategorySpending(category: "음식", amount: 12000, totalAmount: 20000, color: .clear),
+            CategorySpending(category: "쇼핑", amount: 5000, totalAmount: 20000, color: .clear),
+            CategorySpending(category: "교통", amount: 3000, totalAmount: 20000, color: .clear)
+        ]
+        monthlyProgressBar.configure(with: categories, animated: true)
+    }
+    
     private func createMonthlyReportCard() -> AccountCardView {
         let card = AccountCardView()
         
@@ -372,7 +384,7 @@ final class AccountViewController: BaseViewController {
         arrowImageView.tintColor = .kidkGray
         arrowImageView.contentMode = .scaleAspectFit
         
-        let progressBar = CategoryProgressBarView()
+        
         let categories = [
             CategorySpending(category: "음식", amount: 12000, totalAmount: 20000, color: .clear),
             CategorySpending(category: "쇼핑", amount: 5000, totalAmount: 20000, color: .clear),
@@ -392,7 +404,7 @@ final class AccountViewController: BaseViewController {
         headerView.addSubview(totalAmountView)
         headerView.addSubview(arrowImageView)
         
-        contentView.addSubview(progressBar)
+        contentView.addSubview(monthlyProgressBar)
         
         contentView.addSubview(category1View)
         contentView.addSubview(category2View)
@@ -424,15 +436,15 @@ final class AccountViewController: BaseViewController {
             make.width.height.equalTo(20)
         }
         
-        progressBar.snp.makeConstraints { make in
-               make.top.equalTo(headerView.snp.bottom).offset(Spacing.md)
-               make.leading.trailing.equalToSuperview()
-               make.height.equalTo(ProgressBarConfig.barHeight)
-           }
-           
+        monthlyProgressBar.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(ProgressBarConfig.barHeight)
+        }
+        
         
         category1View.snp.makeConstraints { make in
-            make.top.equalTo(progressBar.snp.bottom).offset(Spacing.md)
+            make.top.equalTo(monthlyProgressBar.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview()
         }
         
@@ -447,7 +459,6 @@ final class AccountViewController: BaseViewController {
         }
         
         card.configure(with: contentView, showCloseButton: false)
-        progressBar.configure(with: categories, animated: true)
         return card
     }
     

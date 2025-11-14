@@ -1,3 +1,4 @@
+//TODO: 바운시말고 다양한 애니메이션을 enum으로 관리하면서 해보기. enum은 어디서든 쓸 수 있또록
 //
 //  ProgressBarConfig.swift
 //  KIDK
@@ -24,6 +25,6 @@ enum ProgressBarConfig {
     
     static let othersColor: UIColor = .kidkGray
     
-    static let animationDuration: TimeInterval = 10.0
+    static let animationDuration: TimeInterval = 1.0
     static let animationDelay: TimeInterval = 0.0
 }
