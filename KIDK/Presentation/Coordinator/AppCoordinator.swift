@@ -29,23 +29,36 @@ final class AppCoordinator: BaseCoordinator {
     }
     
     private func checkAuthenticationStatus() {
-        if authRepository.isFirstLaunch() {
-            showUserTypeSelection()
-        } else {
+        if authRepository.isAutoLoginEnabled() {
             authRepository.getCurrentUser()
                 .observe(on: MainScheduler.instance)
                 .subscribe(onNext: { [weak self] user in
                     if let user = user {
+                        self?.debugLog("Auto-login with user: \(user.name)")
                         self?.showMainFlow(user: user)
                     } else {
-                        self?.showUserTypeSelection()
+                        self?.debugLog("No saved user, showing login")
+                        self?.showLogin()
                     }
                 }, onError: { [weak self] error in
                     self?.debugError("Failed to get current user", error: error)
-                    self?.showUserTypeSelection()
+                    self?.showLogin()
                 })
                 .disposed(by: disposeBag)
+        } else {
+            debugLog("Auto-login disabled, showing login")
+            showLogin()
         }
+    }
+
+    private func showLogin() {
+        let authCoordinator = AuthCoordinator(
+            navigationController: navigationController,
+            authRepository: authRepository
+        )
+        authCoordinator.delegate = self
+        addChildCoordinator(authCoordinator)
+        authCoordinator.start()
     }
     
     private func showUserTypeSelection() {

@@ -15,12 +15,14 @@ final class UserDefaultsManager {
     
     private init() {}
     
-    enum Keys: String {
+    enum Keys: String, CaseIterable {
         case mockFirebaseUID
         case userType
         case isFirstLaunch
         case autoLoginToken
         case lastLoginDate
+        case isAutoLoginEnabled
+        case savedEmail
     }
     
     func saveMockFirebaseUID(_ uid: String) {
@@ -63,11 +65,25 @@ final class UserDefaultsManager {
         return defaults.object(forKey: Keys.lastLoginDate.rawValue) as? Date
     }
     
+    func saveIsAutoLoginEnabled(_ isEnabled: Bool) {
+        defaults.set(isEnabled, forKey: Keys.isAutoLoginEnabled.rawValue)
+    }
+    
+    func loadIsAutoLoginEnabled() -> Bool {
+        return defaults.bool(forKey: Keys.isAutoLoginEnabled.rawValue)
+    }
+    
+    func saveEmail(_ email: String) {
+        defaults.set(email, forKey: Keys.savedEmail.rawValue)
+    }
+    
+    func loadEmail() -> String? {
+        return defaults.string(forKey: Keys.savedEmail.rawValue)
+    }
+    
     func clearAll() {
         Keys.allCases.forEach { key in
             defaults.removeObject(forKey: key.rawValue)
         }
     }
 }
-
-extension UserDefaultsManager.Keys: CaseIterable {}

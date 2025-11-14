@@ -15,4 +15,8 @@ protocol AuthRepositoryProtocol {
     func clearSession() -> Observable<Void>
     func isFirstLaunch() -> Bool
     func setFirstLaunchComplete()
+    func isAutoLoginEnabled() -> Bool
+    func saveAutoLoginPreference(_ isEnabled: Bool)
+    func saveLoginCredentials(email: String)
+    func getLastLoginEmail() -> String?
 }
