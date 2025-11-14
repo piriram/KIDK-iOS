@@ -3,10 +3,9 @@ import RxSwift
 import RxCocoa
 import SnapKit
 
-final class KIDKCityViewController: UIViewController {
+final class KIDKCityViewController: BaseViewController {
     
     private let viewModel: KIDKCityViewModel
-    private let disposeBag = DisposeBag()
     private let viewDidAppearSubject = PublishSubject<Void>()
     
     private let mapBackgroundImageView: UIImageView = {
