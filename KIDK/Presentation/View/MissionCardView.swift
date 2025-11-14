@@ -98,11 +98,11 @@ final class MissionCardView: UIView {
         
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
-            make.bottom.equalTo(whatMissionButton.snp.bottom).offset(Spacing.medium)
+            make.bottom.equalTo(whatMissionButton.snp.bottom).offset(Spacing.md)
         }
         
         headerView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(24)
         }
         
@@ -116,13 +116,13 @@ final class MissionCardView: UIView {
         }
         
         subtitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(Spacing.small)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(headerView.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
         
         progressContainerView.snp.makeConstraints { make in
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.large)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.xl)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
         
         progressCircleView.snp.makeConstraints { make in
@@ -137,7 +137,7 @@ final class MissionCardView: UIView {
         }
         
         whatMissionButton.snp.makeConstraints { make in
-            make.top.equalTo(progressCircleView.snp.bottom).offset(Spacing.large)
+            make.top.equalTo(progressCircleView.snp.bottom).offset(Spacing.xl)
             make.centerX.equalToSuperview()
             make.height.equalTo(40)
             make.width.equalTo(200)

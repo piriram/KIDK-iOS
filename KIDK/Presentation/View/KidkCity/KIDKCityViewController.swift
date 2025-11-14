@@ -125,7 +125,7 @@ final class KIDKCityViewController: UIViewController {
     }
     
     private func setupUI() {
-        view.backgroundColor = .kidkBackground
+        view.backgroundColor = .kidkDarkBackground
         
         view.addSubview(mapBackgroundImageView)
         view.addSubview(mapContainerView)
@@ -180,20 +180,20 @@ final class KIDKCityViewController: UIViewController {
         }
         
         schoolInfoCardView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.medium)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
             make.height.equalTo(80)
         }
         
         schoolIconImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(50)
         }
         
         schoolTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(schoolIconImageView.snp.trailing).offset(Spacing.medium)
-            make.top.equalToSuperview().offset(Spacing.medium)
+            make.leading.equalTo(schoolIconImageView.snp.trailing).offset(Spacing.md)
+            make.top.equalToSuperview().offset(Spacing.md)
         }
         
         schoolSubtitleLabel.snp.makeConstraints { make in
@@ -202,7 +202,7 @@ final class KIDKCityViewController: UIViewController {
         }
         
         arrowImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(20)
         }

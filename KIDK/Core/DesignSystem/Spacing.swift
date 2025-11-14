@@ -8,9 +8,13 @@
 import UIKit
 
 enum Spacing {
-    static let extraSmall: CGFloat = 4
-    static let small: CGFloat = 8
-    static let medium: CGFloat = 16
-    static let large: CGFloat = 24
-    static let extraLarge: CGFloat = 32
+    // 8pt grid system
+    static let xxs: CGFloat = 8
+    static let xs: CGFloat = 12
+    static let sm: CGFloat = 16
+    static let md: CGFloat = 20
+    static let lg: CGFloat = 24
+    static let xl: CGFloat = 32
+    static let xxl: CGFloat = 40
+    static let xxxl: CGFloat = 48
 }

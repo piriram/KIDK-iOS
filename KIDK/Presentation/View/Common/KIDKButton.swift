@@ -18,14 +18,13 @@ final class KIDKButton: UIButton {
         title: String,
         backgroundColor: UIColor = .kidkPink,
         titleColor: UIColor = .kidkTextWhite,
-        fontSize: CGFloat = 16,
-        fontWeight: UIFont.Weight = .semibold
+        font: UIFont = .systemFont(ofSize: 18)
     ) {
         super.init(frame: .zero)
         
         setTitle(title, for: .normal)
         setTitleColor(titleColor, for: .normal)
-        titleLabel?.font = .systemFont(ofSize: fontSize, weight: fontWeight)
+        titleLabel?.font = font
         self.backgroundColor = backgroundColor
         layer.cornerRadius = CornerRadius.small
         
