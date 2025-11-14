@@ -10,9 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class MissionSelectionSheetViewController: UIViewController {
-    
-    private let disposeBag = DisposeBag()
+final class MissionSelectionSheetViewController: BaseViewController {
     
     let missionSelected = PublishSubject<MissionType>()
     let customMissionTapped = PublishSubject<Void>()
@@ -68,7 +66,7 @@ final class MissionSelectionSheetViewController: UIViewController {
         backgroundColor: UIColor(hex: "#2C2C2E"),
         titleColor: .kidkTextWhite
     )
-
+    
     private let customMissionButton = KIDKButton(
         title: "직접 미션 설정하기",
         backgroundColor: .kidkPink,

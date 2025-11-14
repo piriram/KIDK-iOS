@@ -10,10 +10,9 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class AccountViewController: UIViewController {
+final class AccountViewController: BaseViewController {
     
     private let viewModel: AccountViewModel
-    private let disposeBag = DisposeBag()
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
