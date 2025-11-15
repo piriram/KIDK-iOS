@@ -160,10 +160,3 @@ final class MissionSelectionSheetViewController: BaseViewController {
             .disposed(by: disposeBag)
     }
 }
-
-enum MissionType {
-    case video
-    case study
-    case quiz
-    case custom
-}
