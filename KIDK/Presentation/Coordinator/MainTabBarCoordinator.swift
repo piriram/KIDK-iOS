@@ -46,6 +46,7 @@ final class MainTabBarCoordinator: BaseCoordinator {
         settingsCoordinator.start()
         
         tabBarController.viewControllers = [accountNav, missionNav, settingsNav]
+        tabBarController.configureTabBarItems() 
         
         navigationController.setViewControllers([tabBarController], animated: false)
         

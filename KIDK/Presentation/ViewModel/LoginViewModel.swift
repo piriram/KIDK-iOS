@@ -103,7 +103,8 @@ final class LoginViewModel: BaseViewModel {
     private func mockLogin(email: String, password: String) -> Observable<User> {
         return Observable.create { [weak self] observer in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                let userType: UserType = email.contains("child") ? .child : .parent
+                let userType: UserType = .child
+//                let userType: UserType = email.contains("child") ? .child : .parent
                 let firebaseUID = "mock_\(UUID().uuidString)"
                 let user = User(
                     id: UUID().uuidString,
