@@ -11,8 +11,8 @@
 		21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA070F2EC5D369001BE4DA /* RxCocoa */; };
 		21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07112EC5D369001BE4DA /* RxSwift */; };
 		21BA07152EC5D375001BE4DA /* SnapKit in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07142EC5D375001BE4DA /* SnapKit */; };
-		21BA07182EC5D394001BE4DA /* Realm in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07172EC5D394001BE4DA /* Realm */; };
 		21BA082D2EC76A50001BE4DA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA082C2EC76A50001BE4DA /* IQKeyboardManagerSwift */; };
+		21BD66C52EC8DD3C00E15B12 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BD66C42EC8DD3C00E15B12 /* RealmSwift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -49,7 +49,7 @@
 				21BA082D2EC76A50001BE4DA /* IQKeyboardManagerSwift in Frameworks */,
 				21BA07152EC5D375001BE4DA /* SnapKit in Frameworks */,
 				21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */,
-				21BA07182EC5D394001BE4DA /* Realm in Frameworks */,
+				21BD66C52EC8DD3C00E15B12 /* RealmSwift in Frameworks */,
 				21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -97,8 +97,8 @@
 				21BA070F2EC5D369001BE4DA /* RxCocoa */,
 				21BA07112EC5D369001BE4DA /* RxSwift */,
 				21BA07142EC5D375001BE4DA /* SnapKit */,
-				21BA07172EC5D394001BE4DA /* Realm */,
 				21BA082C2EC76A50001BE4DA /* IQKeyboardManagerSwift */,
+				21BD66C42EC8DD3C00E15B12 /* RealmSwift */,
 			);
 			productName = KIDK;
 			productReference = 21BA05C92EC5CE6D001BE4DA /* KIDK.app */;
@@ -132,8 +132,8 @@
 			packageReferences = (
 				21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */,
 				21BA07132EC5D375001BE4DA /* XCRemoteSwiftPackageReference "SnapKit" */,
-				21BA07162EC5D394001BE4DA /* XCRemoteSwiftPackageReference "realm-swift" */,
 				21BA082B2EC76A50001BE4DA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
+				21BD66C32EC8DD3C00E15B12 /* XCRemoteSwiftPackageReference "realm-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 21BA05CA2EC5CE6D001BE4DA /* Products */;
@@ -408,20 +408,20 @@
 				minimumVersion = 5.7.1;
 			};
 		};
-		21BA07162EC5D394001BE4DA /* XCRemoteSwiftPackageReference "realm-swift" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/realm/realm-swift";
-			requirement = {
-				branch = master;
-				kind = branch;
-			};
-		};
 		21BA082B2EC76A50001BE4DA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/hackiftekhar/IQKeyboardManager.git";
 			requirement = {
 				kind = upToNextMajorVersion;
 				minimumVersion = 8.0.1;
+			};
+		};
+		21BD66C32EC8DD3C00E15B12 /* XCRemoteSwiftPackageReference "realm-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/realm/realm-swift";
+			requirement = {
+				branch = master;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
@@ -442,15 +442,15 @@
 			package = 21BA07132EC5D375001BE4DA /* XCRemoteSwiftPackageReference "SnapKit" */;
 			productName = SnapKit;
 		};
-		21BA07172EC5D394001BE4DA /* Realm */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 21BA07162EC5D394001BE4DA /* XCRemoteSwiftPackageReference "realm-swift" */;
-			productName = Realm;
-		};
 		21BA082C2EC76A50001BE4DA /* IQKeyboardManagerSwift */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 21BA082B2EC76A50001BE4DA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */;
 			productName = IQKeyboardManagerSwift;
+		};
+		21BD66C42EC8DD3C00E15B12 /* RealmSwift */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 21BD66C32EC8DD3C00E15B12 /* XCRemoteSwiftPackageReference "realm-swift" */;
+			productName = RealmSwift;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

@@ -21,7 +21,7 @@ final class MissionCardButton: UIControl {
     
     private let iconBackgroundView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#3C3C40")
+        view.backgroundColor = .kidkTextSecondary
         view.layer.cornerRadius = 8
         return view
     }()

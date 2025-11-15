@@ -7,6 +7,7 @@
 
 import Foundation
 import RxSwift
+import RealmSwift
 
 class BaseRepository {
     
@@ -14,6 +15,11 @@ class BaseRepository {
     
     init() {
         logLifecycle("init")
+        #if DEBUG
+        if let realmURL = try? Realm().configuration.fileURL {
+            print("📂 Realm file path: \(realmURL.absoluteString)")
+        }
+        #endif
     }
     
     deinit {

@@ -1,8 +1,8 @@
 //
-//  CustomMissionViewController.swift
+//  MissionCreationViewController.swift
 //  KIDK
 //
-//  Created by 잠만보김쥬디 on 11/14/25.
+//  Created by 잠만보김쥬디 on 11/16/25.
 //
 
 import UIKit
@@ -10,10 +10,17 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class CustomMissionViewController: BaseViewController {
+final class MissionCreationViewController: BaseViewController {
     
-    let missionCreated = PublishSubject<Void>()
+    let missionCreated = PublishSubject<Mission>()
     let previousTapped = PublishSubject<Void>()
+    
+    private let viewModel: MissionCreationViewModel
+    
+    private let goalTitleRelay = BehaviorRelay<String>(value: "")
+    private let targetDateRelay = BehaviorRelay<Date?>(value: nil)
+    private let rewardAmountRelay = BehaviorRelay<Int>(value: 500)
+    private let participantIdsRelay = BehaviorRelay<[String]>(value: [])
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -147,12 +154,12 @@ final class CustomMissionViewController: BaseViewController {
         return textField
     }()
     
-    private let dateLabel: UILabel = {
-        let label = UILabel()
-        label.text = "12/30"
-        label.font = .kidkBody
-        label.textColor = .kidkGray
-        return label
+    private let dateButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("12/30", for: .normal)
+        button.setTitleColor(.kidkGray, for: .normal)
+        button.titleLabel?.font = .kidkBody
+        return button
     }()
     
     private let amountSettingLabel: UILabel = {
@@ -212,12 +219,21 @@ final class CustomMissionViewController: BaseViewController {
         backgroundColor: .kidkPink,
         titleColor: .kidkTextWhite
     )
-    private var currentAmount = 500
+    
+    init(viewModel: MissionCreationViewModel) {
+        self.viewModel = viewModel
+        super.init(nibName: nil, bundle: nil)
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
-        bind()
+        bindViewModel()
+        bindUIActions()
     }
     
     private func setupUI() {
@@ -244,7 +260,7 @@ final class CustomMissionViewController: BaseViewController {
         contentView.addSubview(goalSettingLabel)
         contentView.addSubview(goalInputContainer)
         goalInputContainer.addSubview(goalTextField)
-        goalInputContainer.addSubview(dateLabel)
+        goalInputContainer.addSubview(dateButton)
         
         contentView.addSubview(amountSettingLabel)
         contentView.addSubview(amountContainer)
@@ -340,10 +356,11 @@ final class CustomMissionViewController: BaseViewController {
         
         goalTextField.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.md)
+            make.trailing.equalTo(dateButton.snp.leading).offset(-Spacing.xs)
             make.centerY.equalToSuperview()
         }
         
-        dateLabel.snp.makeConstraints { make in
+        dateButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
         }
@@ -396,7 +413,48 @@ final class CustomMissionViewController: BaseViewController {
         }
     }
     
-    private func bind() {
+    private func bindViewModel() {
+        let input = MissionCreationViewModel.Input(
+            goalTitle: goalTitleRelay.asObservable(),
+            targetDate: targetDateRelay.asObservable(),
+            rewardAmount: rewardAmountRelay.asObservable(),
+            participantIds: participantIdsRelay.asObservable(),
+            createTapped: nextButton.rx.tap.asObservable()
+        )
+        
+        let output = viewModel.transform(input: input)
+        
+        output.isCreateEnabled
+            .drive(nextButton.rx.isEnabled)
+            .disposed(by: disposeBag)
+        
+        output.missionCreated
+            .emit(to: missionCreated)
+            .disposed(by: disposeBag)
+        
+        output.createError
+            .emit(onNext: { [weak self] error in
+                self?.showError(message: error.localizedDescription)
+            })
+            .disposed(by: disposeBag)
+        
+        viewModel.isLoading
+            .asDriver()
+            .drive(onNext: { [weak self] isLoading in
+                if isLoading {
+                    self?.showLoading()
+                } else {
+                    self?.hideLoading()
+                }
+            })
+            .disposed(by: disposeBag)
+    }
+    
+    private func bindUIActions() {
+        goalTextField.rx.text.orEmpty
+            .bind(to: goalTitleRelay)
+            .disposed(by: disposeBag)
+        
         decreaseButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.decreaseAmount()
@@ -413,18 +471,79 @@ final class CustomMissionViewController: BaseViewController {
             .bind(to: previousTapped)
             .disposed(by: disposeBag)
         
-        nextButton.rx.tap
-            .bind(to: missionCreated)
+        dateButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.showDatePicker()
+            })
             .disposed(by: disposeBag)
     }
     
     private func decreaseAmount() {
-        currentAmount = max(0, currentAmount - 100)
-        amountLabel.text = "\(currentAmount)"
+        let currentAmount = rewardAmountRelay.value
+        let newAmount = max(0, currentAmount - 100)
+        rewardAmountRelay.accept(newAmount)
+        amountLabel.text = "\(newAmount)"
     }
     
     private func increaseAmount() {
-        currentAmount += 100
-        amountLabel.text = "\(currentAmount)"
+        let currentAmount = rewardAmountRelay.value
+        let newAmount = currentAmount + 100
+        rewardAmountRelay.accept(newAmount)
+        amountLabel.text = "\(newAmount)"
+    }
+    
+    private func showDatePicker() {
+        let alert = UIAlertController(title: "목표 날짜 선택", message: nil, preferredStyle: .actionSheet)
+        
+        let datePicker = UIDatePicker()
+        datePicker.datePickerMode = .date
+        datePicker.preferredDatePickerStyle = .wheels
+        datePicker.minimumDate = Date()
+        
+        if let currentDate = targetDateRelay.value {
+            datePicker.date = currentDate
+        }
+        
+        let containerView = UIView()
+        containerView.addSubview(datePicker)
+        datePicker.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(200)
+        }
+        
+        alert.view.addSubview(containerView)
+        containerView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(50)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.equalTo(200)
+        }
+        
+        let selectAction = UIAlertAction(title: "선택", style: .default) { [weak self] _ in
+            let selectedDate = datePicker.date
+            self?.targetDateRelay.accept(selectedDate)
+            
+            let formatter = DateFormatter()
+            formatter.dateFormat = "MM/dd"
+            self?.dateButton.setTitle(formatter.string(from: selectedDate), for: .normal)
+        }
+        
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+        
+        alert.addAction(selectAction)
+        alert.addAction(cancelAction)
+        
+        let height: CGFloat = 350
+        let heightConstraint = NSLayoutConstraint(
+            item: alert.view!,
+            attribute: .height,
+            relatedBy: .equal,
+            toItem: nil,
+            attribute: .notAnAttribute,
+            multiplier: 1,
+            constant: height
+        )
+        alert.view.addConstraint(heightConstraint)
+        
+        present(alert, animated: true)
     }
 }
