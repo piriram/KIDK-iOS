@@ -338,9 +338,10 @@ final class KIDKCityViewController: BaseViewController {
         let sheetVC = MissionSelectionSheetViewController()
         
         if let sheet = sheetVC.sheetPresentationController {
-            sheet.detents = [.medium()]
-            sheet.prefersGrabberVisible = true
-            sheet.preferredCornerRadius = 20
+            let customDetent = UISheetPresentationController.Detent.custom { context in
+                return context.maximumDetentValue * 0.6
+            }
+            sheet.detents = [customDetent]
         }
         
         sheetVC.missionSelected
@@ -351,7 +352,6 @@ final class KIDKCityViewController: BaseViewController {
         
         sheetVC.missionSelected
             .subscribe(onNext: { [weak self] missionType in
-                print("🔥 Mission selected: \(missionType)")  // 이 로그가 찍히나요?
                 self?.showMissionCreationSheet(missionType: missionType)
             })
             .disposed(by: disposeBag)

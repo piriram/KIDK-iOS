@@ -111,14 +111,14 @@ final class MissionViewController: BaseViewController {
         view.addSubview(missionCardView)
         
         navigationBar.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.xl)
-            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.lg)
+            make.leading.trailing.equalToSuperview()
             make.height.equalTo(30)
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.md)
-            make.bottom.equalToSuperview().offset(-Spacing.md)
+            make.leading.equalToSuperview().offset(Spacing.lg)
+            make.top.equalToSuperview()
         }
         
         menuButton.snp.makeConstraints { make in
@@ -128,7 +128,7 @@ final class MissionViewController: BaseViewController {
         }
         
         goToKIDKCityButton.snp.makeConstraints { make in
-            make.top.equalTo(navigationBar.snp.bottom).offset(0)
+            make.top.equalTo(navigationBar.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(64)
         }
