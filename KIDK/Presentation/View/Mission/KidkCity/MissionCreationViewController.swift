@@ -213,7 +213,7 @@ final class MissionCreationViewController: BaseViewController {
         backgroundColor: UIColor(hex: "#2C2C2E"),
         titleColor: .kidkTextWhite
     )
-
+    
     private let nextButton = KIDKButton(
         title: "다음",
         backgroundColor: .kidkPink,

@@ -16,6 +16,7 @@ final class MissionCardButton: UIControl {
         let view = UIView()
         view.backgroundColor = UIColor(hex: "#2C2C2E")
         view.layer.cornerRadius = CornerRadius.medium
+        view.isUserInteractionEnabled = false
         return view
     }()
     
@@ -110,6 +111,9 @@ final class MissionCardButton: UIControl {
             make.centerY.equalToSuperview()
             make.width.height.equalTo(16)
         }
+        
+        //        containerView.isUserInteractionEnabled = false
+        //        iconBackgroundView.isUserInteractionEnabled = false
     }
     
     override var isHighlighted: Bool {

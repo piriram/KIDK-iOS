@@ -344,14 +344,15 @@ final class KIDKCityViewController: BaseViewController {
         }
         
         sheetVC.missionSelected
-            .subscribe(onNext: { missionType in
-                print("Mission selected: \(missionType)")
+            .subscribe(onNext: { [weak self] missionType in
+                self?.showMissionCreationSheet(missionType: missionType)
             })
             .disposed(by: disposeBag)
         
-        sheetVC.customMissionTapped
-            .subscribe(onNext: { [weak self] in
-                self?.showCustomMissionSheet()
+        sheetVC.missionSelected
+            .subscribe(onNext: { [weak self] missionType in
+                print("🔥 Mission selected: \(missionType)")  // 이 로그가 찍히나요?
+                self?.showMissionCreationSheet(missionType: missionType)
             })
             .disposed(by: disposeBag)
         
@@ -365,14 +366,23 @@ final class KIDKCityViewController: BaseViewController {
         present(sheetVC, animated: true)
     }
     
-    private func showCustomMissionSheet() {
+    private func showMissionCreationSheet(missionType: MissionType) {
         guard let currentSheet = sheetViewController else { return }
+        
+        // 중복 호출 방지
+        sheetViewController = nil
         
         currentSheet.dismiss(animated: true) { [weak self] in
             guard let self = self else { return }
             
+            // 이미 다른 VC가 present되어 있는지 확인
+            guard self.presentedViewController == nil else {
+                print("⚠️ Already presenting something")
+                return
+            }
+            
             let repository = MissionRepository(currentUserId: "user123")
-            let viewModel = MissionCreationViewModel(missionRepository: repository)
+            let viewModel = MissionCreationViewModel(missionRepository: repository, missionType: missionType)
             let viewController = MissionCreationViewController(viewModel: viewModel)
             
             if let sheet = viewController.sheetPresentationController {
@@ -382,8 +392,11 @@ final class KIDKCityViewController: BaseViewController {
             }
             
             viewController.missionCreated
-                .subscribe(onNext: { _ in
-                    print("Mission created")
+                .subscribe(onNext: { [weak self] mission in
+                    print("Mission created: \(mission.title)")
+                    viewController.dismiss(animated: true) {
+                        self?.showHalfSheet()
+                    }
                 })
                 .disposed(by: self.disposeBag)
             
