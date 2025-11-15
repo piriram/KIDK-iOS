@@ -60,6 +60,17 @@ class BaseViewController: UIViewController {
     
     private func setupBaseUI() {
         view.backgroundColor = .kidkDarkBackground
+        
+        let appearance = UINavigationBarAppearance()
+        appearance.configureWithOpaqueBackground()
+        appearance.backgroundColor = .kidkDarkBackground
+        appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
+        appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
+        
+        navigationController?.navigationBar.standardAppearance = appearance
+        navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.tintColor = .white
+        
         view.addSubview(loadingOverlay)
         loadingOverlay.addSubview(loadingIndicator)
         
