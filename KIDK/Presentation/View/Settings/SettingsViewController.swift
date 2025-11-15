@@ -26,10 +26,9 @@ final class SettingsViewController: BaseViewController {
         let label = UILabel()
         label.applyTextStyle(
             text: "설정",
-            size: .s28,
+            size: .s24,
             weight: .bold,
-            color: .kidkTextWhite,
-            lineHeight: 140
+            color: .kidkTextWhite
         )
         return label
     }()
@@ -66,7 +65,7 @@ final class SettingsViewController: BaseViewController {
         }
         
         logoutButton.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.lg)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.lg)
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
             make.height.equalTo(56)
         }
