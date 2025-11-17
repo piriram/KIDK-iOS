@@ -29,6 +29,19 @@ final class KIDKCityViewController: BaseViewController {
         return view
     }()
 
+    private let homeButton: IconContainerView = {
+        let button = IconContainerView(
+            "kidk_icon_home",
+            backgroundColor: .cardBackground,
+            size: 48,
+            cornerRadius: 16,
+            iconSize: 30,
+            alpha: 0.9
+        )
+        button.isUserInteractionEnabled = true
+        return button
+    }()
+
     // MARK: - Initialization
     init(viewModel: KIDKCityViewModel) {
         self.viewModel = viewModel
@@ -62,10 +75,20 @@ final class KIDKCityViewController: BaseViewController {
     // MARK: - Setup
     private func setupUI() {
         view.addSubview(skView)
+        view.addSubview(homeButton)
 
         skView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
         }
+
+        homeButton.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Spacing.md)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.md)
+            make.width.height.equalTo(48)
+        }
+
+        let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
+        homeButton.addGestureRecognizer(homeTapGesture)
     }
 
     private func setupScene() {
@@ -103,5 +126,14 @@ extension KIDKCityViewController: KIDKCitySceneDelegate {
     func didTapLockedBuilding(_ type: BuildingType, requiredLevel: Int) {
         let message = "\(type.displayName)은(는) 레벨 \(requiredLevel)에 해금됩니다!"
         showAlert(title: "잠금됨", message: message)
+    }
+}
+
+// MARK: - Actions
+extension KIDKCityViewController {
+
+    @objc private func homeButtonTapped() {
+        debugLog("Home button tapped")
+        navigationController?.popViewController(animated: true)
     }
 }
