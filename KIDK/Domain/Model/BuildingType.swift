@@ -40,6 +40,19 @@ enum BuildingType: String, CaseIterable {
         }
     }
 
+    var imageName: String {
+        switch self {
+        case .home:
+            return "kidk_city_home"
+        case .mart:
+            return "kidk_city_mart"
+        case .school:
+            return "kidk_city_school"
+        case .special:
+            return "kidk_city_home" // 특별 건물 이미지 없으면 home 사용
+        }
+    }
+
     /// 씬 내 위치 (0.0 ~ 1.0 비율)
     func position(sceneSize: CGSize) -> CGPoint {
         switch self {

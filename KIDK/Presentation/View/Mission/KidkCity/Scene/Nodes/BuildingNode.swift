@@ -25,8 +25,8 @@ final class BuildingNode: SKSpriteNode {
         self.buildingType = buildingType
         self.isUnlocked = isUnlocked
 
-        let texture = SKTexture(imageNamed: "building_placeholder")
-        super.init(texture: texture, color: .clear, size: CGSize(width: 80, height: 80))
+        let texture = SKTexture(imageNamed: buildingType.imageName)
+        super.init(texture: texture, color: .clear, size: CGSize(width: 200, height: 200))
 
         self.name = buildingType.rawValue
         self.isUserInteractionEnabled = true
@@ -41,11 +41,12 @@ final class BuildingNode: SKSpriteNode {
     // MARK: - Appearance
     private func updateAppearance() {
         if isUnlocked {
-            self.color = .kidkGreen
-            self.colorBlendFactor = 0.5
+            self.alpha = 1.0
+            self.colorBlendFactor = 0.0
         } else {
-            self.color = .kidkGray
-            self.colorBlendFactor = 0.7
+            self.alpha = 0.5
+            self.color = .gray
+            self.colorBlendFactor = 0.6
         }
     }
 

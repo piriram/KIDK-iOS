@@ -36,9 +36,11 @@ final class KIDKCityScene: SKScene {
     private func setupBackground() {
         backgroundColor = .kidkDarkBackground
 
-        // 간단한 배경 설정
-        let background = SKSpriteNode(color: .kidkDarkBackground, size: size)
+        // 배경 이미지 설정
+        let backgroundTexture = SKTexture(imageNamed: "kidk_city_map_background")
+        let background = SKSpriteNode(texture: backgroundTexture)
         background.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        background.size = size
         background.zPosition = ZPosition.background.rawValue
         addChild(background)
     }

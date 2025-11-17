@@ -14,13 +14,17 @@ final class CharacterNode: SKSpriteNode {
 
     // MARK: - Constants
     private let movementSpeed: CGFloat = 200 // points per second
+    private let walkTextures: [SKTexture] = [
+        SKTexture(imageNamed: "kidk_character_side_walk_1"),
+        SKTexture(imageNamed: "kidk_character_side_walk_2")
+    ]
 
     // MARK: - Initialization
     init() {
-        let texture = SKTexture(imageNamed: "character_placeholder")
-        super.init(texture: texture, color: .kidkPink, size: CGSize(width: 50, height: 50))
+        let texture = SKTexture(imageNamed: "kidk_character_side_walk_1")
+        super.init(texture: texture, color: .clear, size: CGSize(width: 80, height: 80))
 
-        self.colorBlendFactor = 1.0
+        self.colorBlendFactor = 0.0
         self.name = "character"
     }
 
@@ -45,28 +49,27 @@ final class CharacterNode: SKSpriteNode {
 
         // 방향에 따라 좌우 반전
         if dx < 0 {
-            xScale = -1 // 왼쪽으로 이동
+            xScale = -abs(xScale) // 왼쪽으로 이동
         } else {
-            xScale = 1 // 오른쪽으로 이동
+            xScale = abs(xScale) // 오른쪽으로 이동
         }
 
-        // 걷기 애니메이션 (위아래 흔들림)
-        let walkUp = SKAction.moveBy(x: 0, y: 5, duration: 0.15)
-        let walkDown = SKAction.moveBy(x: 0, y: -5, duration: 0.15)
-        let walkCycle = SKAction.sequence([walkUp, walkDown])
-        let walkAnimation = SKAction.repeatForever(walkCycle)
+        // 걷기 애니메이션 (텍스처 교체)
+        let textureAnimation = SKAction.animate(with: walkTextures, timePerFrame: 0.2)
+        let walkAnimation = SKAction.repeatForever(textureAnimation)
 
         // 이동 액션
         let moveAction = SKAction.move(to: targetPosition, duration: duration)
         moveAction.timingMode = .easeInEaseOut
 
-        // 그룹으로 동시 실행
+        // 걷기 애니메이션 시작
         let walkKey = "walkAnimation"
         run(walkAnimation, withKey: walkKey)
 
         run(moveAction) { [weak self] in
             guard let self = self else { return }
             self.removeAction(forKey: walkKey)
+            self.texture = self.walkTextures[0] // 기본 포즈로 복원
             self.isMoving = false
             completion()
         }
