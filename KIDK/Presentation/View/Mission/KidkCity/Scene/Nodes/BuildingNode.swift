@@ -26,10 +26,15 @@ final class BuildingNode: SKSpriteNode {
         self.isUnlocked = isUnlocked
 
         let texture = SKTexture(imageNamed: buildingType.imageName)
-        super.init(texture: texture, color: .clear, size: CGSize(width: 200, height: 200))
+        super.init(texture: texture, color: .clear, size: texture.size())
 
         self.name = buildingType.rawValue
-        self.isUserInteractionEnabled = true
+        self.isUserInteractionEnabled = false // Scene에서 터치 처리
+
+        // 적절한 크기로 조정 (원본 비율 유지)
+        let targetHeight: CGFloat = 180
+        let aspectRatio = texture.size().width / texture.size().height
+        self.size = CGSize(width: targetHeight * aspectRatio, height: targetHeight)
 
         updateAppearance()
     }

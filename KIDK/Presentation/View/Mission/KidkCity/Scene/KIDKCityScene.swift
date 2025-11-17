@@ -27,9 +27,17 @@ final class KIDKCityScene: SKScene {
     // MARK: - Lifecycle
     override func didMove(to view: SKView) {
         super.didMove(to: view)
+        isUserInteractionEnabled = true
         setupBackground()
         setupBuildings()
         setupCharacter()
+        debugLog("Scene setup complete")
+    }
+
+    private func debugLog(_ message: String) {
+        #if DEBUG
+        print("🎮 [KIDKCityScene] \(message)")
+        #endif
     }
 
     // MARK: - Setup
@@ -76,32 +84,48 @@ final class KIDKCityScene: SKScene {
     override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
+        debugLog("Touch at: \(location)")
+
         let touchedNodes = nodes(at: location)
+        debugLog("Touched nodes count: \(touchedNodes.count)")
 
         for node in touchedNodes {
+            debugLog("Node: \(node.name ?? "unnamed"), type: \(type(of: node))")
             if let buildingNode = node as? BuildingNode {
+                debugLog("Building tapped: \(buildingNode.buildingType.displayName)")
                 handleBuildingTap(buildingNode)
                 return
             }
         }
+
+        debugLog("No building node found at touch location")
     }
 
     private func handleBuildingTap(_ building: BuildingNode) {
+        debugLog("handleBuildingTap called for: \(building.buildingType.displayName)")
+
         // 이미 이동 중이면 무시
-        guard !characterNode.isMoving else { return }
+        guard !characterNode.isMoving else {
+            debugLog("Character is already moving, ignoring tap")
+            return
+        }
 
         // 잠금 체크
         if !building.isUnlocked {
+            debugLog("Building is locked")
             building.showLockedAnimation()
             sceneDelegate?.didTapLockedBuilding(building.buildingType, requiredLevel: building.buildingType.requiredLevel)
             return
         }
 
+        debugLog("Building is unlocked, starting highlight")
         // 해금된 건물: 하이라이트 → 이동 → 진입
         building.highlight { [weak self] in
             guard let self = self else { return }
+            self.debugLog("Highlight complete, starting move")
 
             self.characterNode.move(to: building.position) { [weak self] in
+                self?.debugLog("Move complete, entering building")
                 self?.sceneDelegate?.didRequestBuildingEntry(building.buildingType)
             }
         }

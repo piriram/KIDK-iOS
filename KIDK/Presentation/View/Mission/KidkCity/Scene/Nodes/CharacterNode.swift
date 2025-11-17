@@ -22,10 +22,15 @@ final class CharacterNode: SKSpriteNode {
     // MARK: - Initialization
     init() {
         let texture = SKTexture(imageNamed: "kidk_character_side_walk_1")
-        super.init(texture: texture, color: .clear, size: CGSize(width: 80, height: 80))
+        super.init(texture: texture, color: .clear, size: texture.size())
 
         self.colorBlendFactor = 0.0
         self.name = "character"
+
+        // 적절한 크기로 조정 (원본 비율 유지)
+        let targetHeight: CGFloat = 100
+        let aspectRatio = texture.size().width / texture.size().height
+        self.size = CGSize(width: targetHeight * aspectRatio, height: targetHeight)
     }
 
     required init?(coder aDecoder: NSCoder) {
