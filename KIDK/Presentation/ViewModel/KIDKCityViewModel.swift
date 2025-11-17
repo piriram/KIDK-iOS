@@ -2,7 +2,7 @@
 //  KIDKCityViewModel.swift
 //  KIDK
 //
-//  Created by 잠만보김쥬디 on 11/13/25.
+//  Created by Claude on 11/17/25.
 //
 
 import Foundation
@@ -10,66 +10,47 @@ import RxSwift
 import RxCocoa
 
 final class KIDKCityViewModel: BaseViewModel {
-    
+
     struct Input {
-        let viewDidAppear: Observable<Void>
-        let locationTapped: Observable<KIDKCityLocationType>
+        let viewDidLoad: Observable<Void>
     }
-    
+
     struct Output {
-        let shouldStartAutoWalk: Driver<Bool>
-        let locations: Driver<[KIDKCityLocation]>
-        let isLoading: Driver<Bool>
+        let unlockedBuildings: Driver<Set<BuildingType>>
+        let characterLevel: Driver<Int>
     }
-    
-    let navigateToLocation: PublishSubject<KIDKCityLocationType> = PublishSubject()
-    
-    private let user: User
-    
-    init(user: User) {
-        self.user = user
+
+    // MARK: - Properties
+    private let unlockedBuildingsRelay = BehaviorRelay<Set<BuildingType>>(value: [])
+    private let characterLevelRelay = BehaviorRelay<Int>(value: 10)
+
+    // MARK: - Initialization
+    override init() {
         super.init()
         debugLog("KIDKCityViewModel initialized")
+        loadMockData()
     }
-    
+
+    // MARK: - Transform
     func transform(input: Input) -> Output {
-        let shouldStartAutoWalk = BehaviorRelay<Bool>(value: true)
-        let locations = BehaviorRelay<[KIDKCityLocation]>(value: createLocations())
-        
-        input.viewDidAppear
-            .take(1)
-            .map { true }
-            .bind(to: shouldStartAutoWalk)
-            .disposed(by: disposeBag)
-        
-        input.locationTapped
-            .subscribe(onNext: { [weak self] locationType in
-                self?.debugLog("Location tapped: \(locationType)")
-                self?.navigateToLocation.onNext(locationType)
+        input.viewDidLoad
+            .subscribe(onNext: { [weak self] in
+                self?.debugLog("View did load")
             })
             .disposed(by: disposeBag)
-        
+
         return Output(
-            shouldStartAutoWalk: shouldStartAutoWalk.asDriver(),
-            locations: locations.asDriver(),
-            isLoading: isLoading.asDriver()
+            unlockedBuildings: unlockedBuildingsRelay.asDriver(),
+            characterLevel: characterLevelRelay.asDriver()
         )
     }
-    
-    private func createLocations() -> [KIDKCityLocation] {
-        return [
-            KIDKCityLocation(
-                type: .school,
-                position: CGPoint(x: 0.5, y: 0.3),
-                isUnlocked: true,
-                requiredLevel: 20
-            ),
-            KIDKCityLocation(
-                type: .mart,
-                position: CGPoint(x: 0.7, y: 0.7),
-                isUnlocked: false,
-                requiredLevel: 10
-            )
-        ]
+
+    // MARK: - Private Methods
+    private func loadMockData() {
+        // Mock 데이터: 레벨 10, home과 mart 해금
+        characterLevelRelay.accept(10)
+        unlockedBuildingsRelay.accept([.home, .mart])
+
+        debugLog("Mock data loaded: Level \(characterLevelRelay.value), Unlocked: \(unlockedBuildingsRelay.value)")
     }
 }
