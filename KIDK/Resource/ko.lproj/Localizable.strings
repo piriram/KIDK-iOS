@@ -1,0 +1,45 @@
+/* 
+  Localizable.strings
+  KIDK
+
+  Created by 잠만보김쥬디 on 11/14/25.
+  
+*/
+
+// Auth
+"auth.select_user_type" = "사용자 유형 선택";
+"auth.select_user_type_subtitle" = "KIDK 사용 방법을 선택해주세요";
+"auth.child_button" = "어린이";
+"auth.parent_button" = "부모님";
+
+// Mission
+"mission.title" = "미션";
+"mission.go_to_kidk_city" = "키득시티로 놀러가기";
+"mission.ongoing_saving_missions" = "진행 중인 저축 미션";
+"mission.set_goal_in_kidk_city" = "키득시티에서 목표를 설정해요";
+"mission.set_goal_with_friends" = "친구들과 목표를 설정하고 함께 달성해요";
+"mission.what_mission_question" = "어떤 미션을 하게 될까요?";
+
+// TabBar
+"tab_bar.account" = "내 계좌";
+"tab_bar.mission" = "미션";
+"tab_bar.settings" = "앱 설정";
+
+// Common
+"common.ok" = "확인";
+"common.cancel" = "취소";
+"common.error" = "오류";
+"common.loading" = "로딩 중...";
+
+// Error
+"error.user_creation_failed" = "사용자 생성 실패";
+"error.unknown" = "알 수 없는 오류가 발생했습니다";
+
+// Mission Selection
+"mission_selection.title" = "어떤 미션을 해볼까요?";
+"mission_selection.recommended_badge" = "추천";
+"mission_selection.video_mission" = "영상 시청 후 퀴즈 풀기";
+"mission_selection.study_mission" = "1시간씩 수학 공부를 하기";
+"mission_selection.quiz_mission" = "30개씩 영어 단어를 외우기";
+"mission_selection.previous" = "이전으로";
+"mission_selection.custom_mission" = "직접 미션 설정하기";
