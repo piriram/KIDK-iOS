@@ -199,8 +199,8 @@ final class AccountViewController: BaseViewController {
             .disposed(by: disposeBag)
         
         spendingAccountCard?.cardTapped
-            .subscribe(onNext: {
-                print("Spending account tapped")
+            .subscribe(onNext: { [weak self] in
+                self?.navigateToWallet()
             })
             .disposed(by: disposeBag)
         
@@ -219,7 +219,7 @@ final class AccountViewController: BaseViewController {
     
     private func removeCard(_ card: AccountCardView?) {
         guard let card = card else { return }
-        
+
         UIView.animate(withDuration: 0.3, animations: {
             card.alpha = 0
             card.transform = CGAffineTransform(scaleX: 0.8, y: 0.8)
@@ -227,5 +227,11 @@ final class AccountViewController: BaseViewController {
             self.cardsStackView.removeArrangedSubview(card)
             card.removeFromSuperview()
         }
+    }
+
+    private func navigateToWallet() {
+        let walletViewModel = WalletViewModel()
+        let walletVC = WalletViewController(viewModel: walletViewModel)
+        navigationController?.pushViewController(walletVC, animated: true)
     }
 }
