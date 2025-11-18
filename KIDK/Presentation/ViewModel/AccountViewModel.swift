@@ -19,7 +19,7 @@ final class AccountViewModel: BaseViewModel {
         let isLoading: Driver<Bool>
     }
     
-    private let user: User
+    let user: User
     
     init(user: User) {
         self.user = user
