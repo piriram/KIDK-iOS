@@ -107,7 +107,7 @@ final class KIDKCityViewController: BaseViewController {
     
     private var isWalking = false
     private var walkTimer: Timer?
-    private var sheetViewController: UIViewController?
+    private weak var currentSheetViewController: UIViewController?
     
     init(viewModel: KIDKCityViewModel) {
         self.viewModel = viewModel
@@ -330,11 +330,16 @@ final class KIDKCityViewController: BaseViewController {
         UIView.animate(withDuration: 0.3) {
             self.dimmedView.alpha = 1
         } completion: { _ in
-            self.showHalfSheet()
+            self.showMissionSelectionSheet()
         }
     }
     
-    private func showHalfSheet() {
+    private func showMissionSelectionSheet() {
+        guard currentSheetViewController == nil else {
+            debugWarning("Sheet already presented")
+            return
+        }
+        
         let sheetVC = MissionSelectionSheetViewController()
         
         if let sheet = sheetVC.sheetPresentationController {
@@ -342,79 +347,79 @@ final class KIDKCityViewController: BaseViewController {
                 return context.maximumDetentValue * 0.6
             }
             sheet.detents = [customDetent]
+            sheet.prefersGrabberVisible = false
         }
         
         sheetVC.missionSelected
             .subscribe(onNext: { [weak self] missionType in
-                self?.showMissionCreationSheet(missionType: missionType)
+                self?.handleMissionTypeSelected(missionType)
             })
             .disposed(by: disposeBag)
         
-        sheetVC.missionSelected
-            .subscribe(onNext: { [weak self] missionType in
-                self?.showMissionCreationSheet(missionType: missionType)
+        sheetVC.customMissionTapped
+            .subscribe(onNext: { [weak self] in
+                self?.handleCustomMissionTapped()
             })
             .disposed(by: disposeBag)
         
         sheetVC.previousMissionTapped
             .subscribe(onNext: { [weak self] in
-                self?.hideHalfSheet()
+                self?.dismissCurrentSheet()
             })
             .disposed(by: disposeBag)
         
-        sheetViewController = sheetVC
+        currentSheetViewController = sheetVC
         present(sheetVC, animated: true)
     }
     
-    private func showMissionCreationSheet(missionType: MissionType) {
-        guard let currentSheet = sheetViewController else { return }
-        
-        // 중복 호출 방지
-        sheetViewController = nil
-        
-        currentSheet.dismiss(animated: true) { [weak self] in
-            guard let self = self else { return }
-            
-            // 이미 다른 VC가 present되어 있는지 확인
-            guard self.presentedViewController == nil else {
-                print("⚠️ Already presenting something")
-                return
-            }
-            
-            let repository = MissionRepository(currentUserId: "user123")
-            let viewModel = MissionCreationViewModel(missionRepository: repository, missionType: missionType)
-            let viewController = MissionCreationViewController(viewModel: viewModel)
-            
-            if let sheet = viewController.sheetPresentationController {
-                sheet.detents = [.large()]
-                sheet.prefersGrabberVisible = true
-                sheet.preferredCornerRadius = 20
-            }
-            
-            viewController.missionCreated
-                .subscribe(onNext: { [weak self] mission in
-                    print("Mission created: \(mission.title)")
-                    viewController.dismiss(animated: true) {
-                        self?.showHalfSheet()
-                    }
-                })
-                .disposed(by: self.disposeBag)
-            
-            viewController.previousTapped
-                .subscribe(onNext: { [weak self] in
-                    viewController.dismiss(animated: true) {
-                        self?.showHalfSheet()
-                    }
-                })
-                .disposed(by: self.disposeBag)
-            
-            self.sheetViewController = viewController
-            self.present(viewController, animated: true)
-        }
+    private func handleMissionTypeSelected(_ missionType: MissionType) {
+        showMissionCreationSheet(missionType: missionType)
     }
     
-    private func hideHalfSheet() {
-        sheetViewController?.dismiss(animated: true) { [weak self] in
+    private func handleCustomMissionTapped() {
+        showMissionCreationSheet(missionType: .custom)
+    }
+    
+    private func showMissionCreationSheet(missionType: MissionType) {
+        guard let selectionSheet = currentSheetViewController else {
+            debugWarning("No selection sheet found")
+            return
+        }
+        
+        guard selectionSheet.presentedViewController == nil else {
+            debugWarning("Another view controller is already presented on selection sheet")
+            return
+        }
+        
+        let repository = MissionRepository(currentUserId: "user123")
+        let viewModel = MissionCreationViewModel(missionRepository: repository, missionType: missionType)
+        let creationVC = MissionCreationViewController(viewModel: viewModel)
+        
+        if let sheet = creationVC.sheetPresentationController {
+            sheet.detents = [.large()]
+            sheet.prefersGrabberVisible = true
+            sheet.preferredCornerRadius = 20
+        }
+        
+        creationVC.missionCreated
+            .subscribe(onNext: { [weak self] mission in
+                self?.debugSuccess("Mission created: \(mission.title)")
+                creationVC.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        creationVC.previousTapped
+            .subscribe(onNext: {
+                creationVC.dismiss(animated: true)
+            })
+            .disposed(by: disposeBag)
+        
+        selectionSheet.present(creationVC, animated: true)
+    }
+    
+    private func dismissCurrentSheet() {
+        currentSheetViewController?.dismiss(animated: true) { [weak self] in
+            self?.currentSheetViewController = nil
             UIView.animate(withDuration: 0.3) {
                 self?.dimmedView.alpha = 0
             } completion: { _ in
