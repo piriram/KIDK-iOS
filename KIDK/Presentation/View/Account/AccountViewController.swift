@@ -230,9 +230,7 @@ final class AccountViewController: BaseViewController {
     }
 
     private func navigateToWallet() {
-        let walletViewModel = WalletViewModel()
-        let walletVC = WalletViewController(viewModel: walletViewModel)
-        navigationController?.pushViewController(walletVC, animated: true)
+        showAlert(title: "준비중", message: "내 지갑 화면은 곧 추가될 예정입니다.")
     }
 
     private func navigateToSavings() {
