@@ -205,8 +205,8 @@ final class AccountViewController: BaseViewController {
             .disposed(by: disposeBag)
         
         savingsAccountCard?.cardTapped
-            .subscribe(onNext: {
-                print("Savings account tapped")
+            .subscribe(onNext: { [weak self] in
+                self?.navigateToSavings()
             })
             .disposed(by: disposeBag)
         
@@ -233,5 +233,12 @@ final class AccountViewController: BaseViewController {
         let walletViewModel = WalletViewModel()
         let walletVC = WalletViewController(viewModel: walletViewModel)
         navigationController?.pushViewController(walletVC, animated: true)
+    }
+
+    private func navigateToSavings() {
+        let savingsRepository = SavingsRepository()
+        let savingsViewModel = SavingsViewModel(savingsRepository: savingsRepository)
+        let savingsVC = SavingsViewController(viewModel: savingsViewModel)
+        navigationController?.pushViewController(savingsVC, animated: true)
     }
 }
