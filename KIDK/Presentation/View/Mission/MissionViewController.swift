@@ -241,6 +241,12 @@ extension MissionViewController: UITableViewDataSource {
             })
             .disposed(by: cell.disposeBag)
 
+        cell.verifyButtonTapped
+            .subscribe(onNext: { [weak self] in
+                self?.showVerificationScreen(for: mission)
+            })
+            .disposed(by: cell.disposeBag)
+
         return cell
     }
 }
@@ -255,5 +261,15 @@ extension MissionViewController: UITableViewDelegate {
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
         return isCollapsed ? 80 : 500
+    }
+
+    // MARK: - Navigation
+
+    private func showVerificationScreen(for mission: Mission) {
+        let viewModel = MissionVerificationViewModel(mission: mission)
+        let verificationVC = MissionVerificationViewController(viewModel: viewModel)
+        let navController = UINavigationController(rootViewController: verificationVC)
+        navController.modalPresentationStyle = .fullScreen
+        present(navController, animated: true)
     }
 }
