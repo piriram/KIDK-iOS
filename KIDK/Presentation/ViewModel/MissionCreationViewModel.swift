@@ -57,6 +57,8 @@ final class MissionCreationViewModel: BaseViewModel {
                 let request = MissionCreationRequest(
                     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                     missionType: self.missionType,
+                    targetAmount: nil,
+                    currentAmount: 0,
                     rewardAmount: rewardAmount,
                     targetDate: targetDate,
                     participantIds: participantIds,
