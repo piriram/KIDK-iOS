@@ -262,10 +262,10 @@ final class ParentChildInfoViewController: BaseViewController {
 
     private func loadMockData() {
         // Mock Statistics
-        let stats = [
-            ("완료한 미션", "28", .kidkGreen),
-            ("진행 중", "3", .kidkPink),
-            ("총 보상", "56,000원", .kidkYellow)
+        let stats: [(String, String, UIColor)] = [
+            ("완료한 미션", "28", UIColor.kidkGreen),
+            ("진행 중", "3", UIColor.kidkPink),
+            ("총 보상", "56,000원", UIColor.kidkYellow)
         ]
 
         for (title, value, color) in stats {
@@ -274,10 +274,10 @@ final class ParentChildInfoViewController: BaseViewController {
         }
 
         // Mock Ongoing Missions
-        let missions = [
-            ("방 정리하기", "50%", .kidkPink),
-            ("책 30페이지 읽기", "75%", .kidkPink),
-            ("설거지 돕기", "30%", .kidkPink)
+        let missions: [(String, String, UIColor)] = [
+            ("방 정리하기", "50%", UIColor.kidkPink),
+            ("책 30페이지 읽기", "75%", UIColor.kidkPink),
+            ("설거지 돕기", "30%", UIColor.kidkPink)
         ]
 
         for (title, progress, color) in missions {

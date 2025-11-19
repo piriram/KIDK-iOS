@@ -215,12 +215,12 @@ final class ParentChildWalletViewController: BaseViewController {
         }
 
         // Mock Transactions
-        let transactions = [
-            ("용돈 받음", "+10,000원", "오늘", .kidkGreen),
-            ("문구점", "-3,500원", "어제", .systemRed),
-            ("저축", "-5,000원", "2일 전", .systemRed),
-            ("미션 보상", "+2,000원", "3일 전", .kidkGreen),
-            ("아이스크림", "-2,500원", "4일 전", .systemRed)
+        let transactions: [(String, String, String, UIColor)] = [
+            ("용돈 받음", "+10,000원", "오늘", UIColor.kidkGreen),
+            ("문구점", "-3,500원", "어제", UIColor.systemRed),
+            ("저축", "-5,000원", "2일 전", UIColor.systemRed),
+            ("미션 보상", "+2,000원", "3일 전", UIColor.kidkGreen),
+            ("아이스크림", "-2,500원", "4일 전", UIColor.systemRed)
         ]
 
         for (title, amount, date, color) in transactions {
