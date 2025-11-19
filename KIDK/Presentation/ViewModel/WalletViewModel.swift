@@ -27,9 +27,9 @@ final class WalletViewModel: BaseViewModel {
 
     // MARK: - Initialization
     init(
-        accountRepository: AccountRepositoryProtocol,
-        transactionRepository: TransactionRepositoryProtocol,
-        savingsRepository: SavingsRepositoryProtocol
+        accountRepository: AccountRepositoryProtocol = AccountRepository.shared,
+        transactionRepository: TransactionRepositoryProtocol = TransactionRepository.shared,
+        savingsRepository: SavingsRepositoryProtocol = SavingsRepository.shared
     ) {
         self.accountRepository = accountRepository
         self.transactionRepository = transactionRepository
@@ -57,6 +57,16 @@ final class WalletViewModel: BaseViewModel {
 
         // Load initial data
         loadData()
+
+        // Subscribe to transaction creation notifications
+        NotificationCenter.default.rx
+            .notification(.transactionCreated)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                self?.debugSuccess("Transaction notification received - refreshing data")
+                self?.loadData()
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Methods

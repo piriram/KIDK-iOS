@@ -10,6 +10,12 @@ import RxSwift
 
 final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
 
+    static let shared = AccountRepository()
+
+    private init() {
+        super.init()
+    }
+
     private var mockAccounts: [Account] = [
         Account(
             id: "1",

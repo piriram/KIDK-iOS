@@ -10,6 +10,12 @@ import RxSwift
 
 final class SavingsRepository: BaseRepository, SavingsRepositoryProtocol {
 
+    static let shared = SavingsRepository()
+
+    private override init() {
+        super.init()
+    }
+
     func fetchSavingsGoals() -> Single<[SavingsGoal]> {
         return Single.create { single in
             DispatchQueue.global().asyncAfter(deadline: .now() + 0.5) {

@@ -147,10 +147,9 @@ final class WalletViewController: BaseViewController {
             return
         }
 
-        let repository = TransactionRepository()
         let transactionViewModel = TransactionInputViewModel(
             transactionType: type,
-            transactionRepository: repository
+            transactionRepository: TransactionRepository.shared
         )
         let transactionVC = TransactionInputViewController(
             viewModel: transactionViewModel,
