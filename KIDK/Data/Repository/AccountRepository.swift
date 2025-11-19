@@ -12,7 +12,7 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
 
     static let shared = AccountRepository()
 
-    private init() {
+    private override init() {
         super.init()
     }
 

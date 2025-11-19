@@ -12,7 +12,7 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
 
     static let shared = TransactionRepository()
 
-    private init() {
+    private override init() {
         super.init()
     }
 
