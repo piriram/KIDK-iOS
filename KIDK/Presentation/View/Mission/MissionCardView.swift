@@ -294,13 +294,15 @@ final class MissionCardView: UIView {
         showEmptyState()
     }
     
-    func configure(with mission: Mission?) {
+    func configure(with mission: Mission?, isCollapsed: Bool) {
         guard let mission = mission else {
             showEmptyState()
+            updateCollapseState(isCollapsed: isCollapsed)
             return
         }
-        
+
         showActiveMission(mission: mission)
+        updateCollapseState(isCollapsed: isCollapsed)
     }
     
     private func showEmptyState() {
@@ -361,11 +363,44 @@ final class MissionCardView: UIView {
         }
     }
     
+    var collapseButtonTapped: Observable<Void> {
+        collapseButton.rx.tap.asObservable()
+    }
+
     var verifyButtonTapped: Observable<Void> {
         verifyButton.rx.tap.asObservable()
     }
-    
+
     var whatMissionButtonTapped: Observable<Void> {
         whatMissionButton.rx.tap.asObservable()
+    }
+
+    private func updateCollapseState(isCollapsed: Bool) {
+        let chevronImage = isCollapsed ? "chevron.down" : "chevron.up"
+        collapseButton.setImage(UIImage(systemName: chevronImage), for: .normal)
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
+            guard let self = self else { return }
+
+            if isCollapsed {
+                self.participantsStackView.alpha = 0
+                self.participantsLabel.alpha = 0
+                self.circularProgressView.alpha = 0
+                self.deadlineLabel.alpha = 0
+                self.missionSectionView.alpha = 0
+                self.emptyProgressCircleView.alpha = 0
+                self.emptySubtitleLabel.alpha = 0
+                self.whatMissionButton.alpha = 0
+            } else {
+                self.participantsStackView.alpha = 1
+                self.participantsLabel.alpha = 1
+                self.circularProgressView.alpha = 1
+                self.deadlineLabel.alpha = 1
+                self.missionSectionView.alpha = 1
+                self.emptyProgressCircleView.alpha = 1
+                self.emptySubtitleLabel.alpha = 1
+                self.whatMissionButton.alpha = 1
+            }
+        })
     }
 }
