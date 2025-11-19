@@ -125,17 +125,42 @@ final class WalletViewController: BaseViewController {
         switch sender.tag {
         case 0:
             actionType = .deposit
+            showTransactionInput(type: .deposit)
         case 1:
             actionType = .withdraw
+            showTransactionInput(type: .withdrawal)
         case 2:
             actionType = .transfer
+            showAlert(title: actionType.title, message: "\(actionType.title) 기능은 준비중입니다.")
         case 3:
             actionType = .scanReceipt
+            showAlert(title: actionType.title, message: "\(actionType.title) 기능은 준비중입니다.")
         default:
             return
         }
+    }
 
-        showAlert(title: actionType.title, message: "\(actionType.title) 기능은 준비중입니다.")
+    private func showTransactionInput(type: TransactionType) {
+        let accounts = viewModel.accounts.value
+        guard !accounts.isEmpty else {
+            showAlert(title: "오류", message: "사용 가능한 계좌가 없습니다.")
+            return
+        }
+
+        let repository = TransactionRepository()
+        let transactionViewModel = TransactionInputViewModel(
+            transactionType: type,
+            transactionRepository: repository
+        )
+        let transactionVC = TransactionInputViewController(
+            viewModel: transactionViewModel,
+            transactionType: type,
+            accounts: accounts
+        )
+
+        let navController = UINavigationController(rootViewController: transactionVC)
+        navController.modalPresentationStyle = .fullScreen
+        present(navController, animated: true)
     }
 }
 
