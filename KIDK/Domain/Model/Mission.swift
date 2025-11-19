@@ -34,12 +34,50 @@ struct Mission {
     let title: String
     let description: String?
     let targetAmount: Int?
+    let currentAmount: Int
     let rewardAmount: Int
     let targetDate: Date?
     let status: MissionStatus
     let createdAt: Date
     let completedAt: Date?
     let participants: [MissionParticipant]
+
+    /// 진행률 계산 (0~100)
+    var progressPercentage: Int {
+        guard let target = targetAmount, target > 0 else { return 0 }
+        let progress = (Double(currentAmount) / Double(target)) * 100.0
+        return min(Int(progress), 100)
+    }
+
+    /// 남은 금액
+    var remainingAmount: Int {
+        guard let target = targetAmount else { return 0 }
+        return max(target - currentAmount, 0)
+    }
+
+    /// 포맷된 목표 날짜 (예: "6월 7일까지")
+    var formattedTargetDate: String? {
+        guard let targetDate = targetDate else { return nil }
+        let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "ko_KR")
+        formatter.dateFormat = "M월 d일"
+        return formatter.string(from: targetDate) + "까지"
+    }
+
+    /// 포맷된 목표 금액
+    var formattedTargetAmount: String? {
+        guard let amount = targetAmount else { return nil }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return (formatter.string(from: NSNumber(value: amount)) ?? "0") + "원"
+    }
+
+    /// 포맷된 현재 금액
+    var formattedCurrentAmount: String {
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        return (formatter.string(from: NSNumber(value: currentAmount)) ?? "0") + "원"
+    }
 }
 
 struct MissionParticipant {
@@ -53,6 +91,8 @@ struct MissionParticipant {
 struct MissionCreationRequest {
     let title: String
     let missionType: MissionType
+    let targetAmount: Int?
+    let currentAmount: Int?
     let rewardAmount: Int
     let targetDate: Date?
     let participantIds: [String]

@@ -316,24 +316,31 @@ final class MissionCardView: UIView {
     }
     
     private func showActiveMission(mission: Mission) {
-        titleLabel.text = "여름방학 놀이공원 가기"
+        titleLabel.text = mission.title
         emptyStateView.isHidden = true
         participantsStackView.isHidden = false
         participantsLabel.isHidden = false
         circularProgressView.isHidden = false
         deadlineLabel.isHidden = false
         missionSectionView.isHidden = false
-        
+
         setupParticipants(mission.participants)
-        
+
+        // Configure progress view with real data
         let schoolImage = UIImage(named: "kidk_city_school")
         circularProgressView.configure(
-            currentAmount: 12000,
-            targetAmount: 50000,
+            currentAmount: mission.currentAmount,
+            targetAmount: mission.targetAmount ?? 0,
             image: schoolImage
         )
-        
-        deadlineLabel.text = "6월 7일까지 50만 모으기"
+
+        // Configure deadline label with real data
+        if let formattedDate = mission.formattedTargetDate,
+           let formattedTarget = mission.formattedTargetAmount {
+            deadlineLabel.text = "\(formattedDate) \(formattedTarget) 모으기"
+        } else {
+            deadlineLabel.text = "목표 달성까지 화이팅!"
+        }
     }
     
     private func setupParticipants(_ participants: [MissionParticipant]) {
