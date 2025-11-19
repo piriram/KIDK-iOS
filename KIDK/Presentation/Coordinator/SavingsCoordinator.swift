@@ -11,7 +11,7 @@ import RxSwift
 final class SavingsCoordinator: BaseCoordinator {
 
     override func start() {
-        let savingsRepository = SavingsRepository()
+        let savingsRepository = SavingsRepository.shared
         let viewModel = SavingsViewModel(savingsRepository: savingsRepository)
         let viewController = SavingsViewController(viewModel: viewModel)
 
