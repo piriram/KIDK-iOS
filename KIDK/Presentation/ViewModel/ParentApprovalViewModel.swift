@@ -93,17 +93,26 @@ final class ParentApprovalViewModel: BaseViewModel {
             .flatMap { [weak self] verifications -> Observable<[VerificationWithMission]> in
                 guard let self = self else { return .empty() }
 
+                // Handle empty case
+                guard !verifications.isEmpty else {
+                    return .just([])
+                }
+
                 // Fetch mission details for each verification
                 let observables = verifications.map { verification in
                     self.missionRepository.fetchMission(by: verification.missionId)
                         .asObservable()
                         .map { mission -> VerificationWithMission in
-                            let missionTitle = mission?.title ?? "알 수 없는 미션"
+                            let missionTitle = mission?.title ?? self.getMockMissionTitle(for: verification.missionId)
                             return VerificationWithMission(
                                 verification: verification,
                                 missionTitle: missionTitle
                             )
                         }
+                        .catchAndReturn(VerificationWithMission(
+                            verification: verification,
+                            missionTitle: self.getMockMissionTitle(for: verification.missionId)
+                        ))
                 }
 
                 return Observable.zip(observables)
@@ -111,6 +120,18 @@ final class ParentApprovalViewModel: BaseViewModel {
             .do(onNext: { [weak self] verifications in
                 self?.debugLog("Loaded \(verifications.count) pending verifications")
             })
+    }
+
+    private func getMockMissionTitle(for missionId: String) -> String {
+        let mockTitles: [String: String] = [
+            "mission_1": "방 정리하기",
+            "mission_2": "책 30페이지 읽기",
+            "mission_3": "설거지 돕기",
+            "mission_4": "영어 단어 20개 외우기",
+            "mission_5": "줄넘기 100개 하기",
+            "mission_6": "수학 숙제 완료하기"
+        ]
+        return mockTitles[missionId] ?? "알 수 없는 미션"
     }
 
     private func subscribeToNotifications() {
