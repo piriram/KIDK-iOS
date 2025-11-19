@@ -67,13 +67,19 @@ final class MissionViewModel: BaseViewModel {
             .subscribe(onSuccess: { [weak self] missions in
                 guard let self = self else { return }
                 self.debugLog("Fetched \(missions.count) missions")
-                self.missionsRelay.accept(missions)
 
-                // Initialize collapse states (all expanded by default)
-                let initialStates = Array(repeating: false, count: missions.count)
-                self.collapseStatesRelay.accept(initialStates)
+                // If no missions exist, create sample missions for testing
+                if missions.isEmpty {
+                    self.createSampleMissions()
+                } else {
+                    self.missionsRelay.accept(missions)
 
-                self.isLoading.accept(false)
+                    // Initialize collapse states (all expanded by default)
+                    let initialStates = Array(repeating: false, count: missions.count)
+                    self.collapseStatesRelay.accept(initialStates)
+
+                    self.isLoading.accept(false)
+                }
             }, onFailure: { [weak self] error in
                 guard let self = self else { return }
                 self.debugError("Failed to fetch missions", error: error)
@@ -81,6 +87,60 @@ final class MissionViewModel: BaseViewModel {
                 self.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
+    }
+
+    private func createSampleMissions() {
+        debugLog("Creating sample missions for testing")
+
+        // Create first sample mission
+        let mission1 = MissionCreationRequest(
+            title: "여름방학 놀이공원 가기",
+            missionType: .savings,
+            rewardAmount: 5000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()),
+            participantIds: [],
+            description: "친구들과 함께 놀이공원 가기 위해 저축하기"
+        )
+
+        // Create second sample mission
+        let mission2 = MissionCreationRequest(
+            title: "새 자전거 사기",
+            missionType: .savings,
+            rewardAmount: 3000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 60, to: Date()),
+            participantIds: [],
+            description: "멋진 자전거를 사기 위한 저축 미션"
+        )
+
+        // Create third sample mission
+        let mission3 = MissionCreationRequest(
+            title: "게임기 구매",
+            missionType: .savings,
+            rewardAmount: 10000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 90, to: Date()),
+            participantIds: [],
+            description: "원하는 게임기를 사기 위한 저축"
+        )
+
+        let missions = [mission1, mission2, mission3]
+        var createdCount = 0
+
+        for request in missions {
+            missionRepository.createMission(request)
+                .subscribe(onSuccess: { [weak self] _ in
+                    createdCount += 1
+                    self?.debugSuccess("Sample mission created (\(createdCount)/\(missions.count))")
+
+                    if createdCount == missions.count {
+                        // All missions created, fetch again
+                        self?.fetchMissions()
+                    }
+                }, onFailure: { [weak self] error in
+                    self?.debugError("Failed to create sample mission", error: error)
+                    self?.isLoading.accept(false)
+                })
+                .disposed(by: disposeBag)
+        }
     }
 
     private func toggleCollapseState(at index: Int) {
