@@ -71,7 +71,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
     }
 
     func getPendingVerifications() -> Single<[MissionVerification]> {
-        return Single.create { [weak self] (single: @escaping (SingleEvent<[MissionVerification]>) -> Disposable in
+        return Single.create { [weak self] (single: @escaping (SingleEvent<[MissionVerification]>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -1))))
                 return Disposables.create()
