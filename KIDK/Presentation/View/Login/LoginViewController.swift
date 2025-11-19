@@ -45,7 +45,18 @@ final class LoginViewController: BaseViewController {
         )
         return label
     }()
-    
+
+    private let userTypeSegmentedControl: UISegmentedControl = {
+        let items = ["아이", "부모"]
+        let control = UISegmentedControl(items: items)
+        control.selectedSegmentIndex = 0
+        control.backgroundColor = .cardBackground
+        control.selectedSegmentTintColor = .kidkPink
+        control.setTitleTextAttributes([.foregroundColor: UIColor.kidkTextWhite], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
+
     private let emailLabel: UILabel = {
         let label = UILabel()
         label.applyTextStyle(
@@ -171,6 +182,7 @@ final class LoginViewController: BaseViewController {
         
         contentView.addSubview(titleLabel)
         contentView.addSubview(subtitleLabel)
+        contentView.addSubview(userTypeSegmentedControl)
         contentView.addSubview(emailLabel)
         contentView.addSubview(emailTextField)
         contentView.addSubview(passwordLabel)
@@ -199,9 +211,15 @@ final class LoginViewController: BaseViewController {
             make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xxs)
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
         }
-        
+
+        userTypeSegmentedControl.snp.makeConstraints { make in
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.lg)
+            make.leading.trailing.equalToSuperview().inset(Spacing.lg)
+            make.height.equalTo(36)
+        }
+
         emailLabel.snp.makeConstraints { make in
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.xxxl)
+            make.top.equalTo(userTypeSegmentedControl.snp.bottom).offset(Spacing.xl)
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
         }
         
@@ -254,6 +272,13 @@ final class LoginViewController: BaseViewController {
     }
     
     private func bind() {
+        let userTypeSelected = userTypeSegmentedControl.rx.selectedSegmentIndex
+            .map { index -> UserType in
+                return index == 0 ? .child : .parent
+            }
+            .asObservable()
+            .startWith(.child)
+
         let input = LoginViewModel.Input(
             emailText: emailTextField.rx.text.orEmpty.asObservable(),
             passwordText: passwordTextField.rx.text.orEmpty.asObservable(),
@@ -261,6 +286,7 @@ final class LoginViewController: BaseViewController {
                 self?.autoLoginCheckbox.isSelected.toggle()
                 return self?.autoLoginCheckbox.isSelected ?? false
             }.asObservable(),
+            userTypeSelected: userTypeSelected,
             loginButtonTapped: loginButton.rx.tap.asObservable(),
             signupButtonTapped: signupButton.rx.tap.asObservable()
         )
