@@ -20,6 +20,9 @@ extension Notification.Name {
     /// 미션 인증이 승인되었을 때 발송되는 알림
     static let verificationApproved = Notification.Name("verificationApproved")
 
+    /// 미션 인증이 거절되었을 때 발송되는 알림
+    static let verificationRejected = Notification.Name("verificationRejected")
+
     /// 미션 진행률이 업데이트되었을 때 발송되는 알림
     static let missionProgressUpdated = Notification.Name("missionProgressUpdated")
 }

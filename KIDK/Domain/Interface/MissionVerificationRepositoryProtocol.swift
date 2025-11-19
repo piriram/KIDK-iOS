@@ -18,7 +18,9 @@ protocol MissionVerificationRepositoryProtocol {
     /// 대기 중인 인증 조회
     func getPendingVerifications() -> Single<[MissionVerification]>
 
-    // Phase 2: 승인/거절
-    // func approveVerification(id: String) -> Single<MissionVerification>
-    // func rejectVerification(id: String, reason: String) -> Single<MissionVerification>
+    /// 인증 승인 (부모)
+    func approveVerification(id: String) -> Single<MissionVerification>
+
+    /// 인증 거절 (부모)
+    func rejectVerification(id: String, reason: String) -> Single<MissionVerification>
 }

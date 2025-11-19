@@ -84,6 +84,107 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
         }
     }
 
+    func approveVerification(id: String) -> Single<MissionVerification> {
+        return Single.create { [weak self] (single: @escaping (SingleEvent<MissionVerification>) -> Void) -> Disposable in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            guard let index = self.mockVerifications.firstIndex(where: { $0.id == id }) else {
+                single(.failure(RepositoryError.notFound))
+                return Disposables.create()
+            }
+
+            let oldVerification = self.mockVerifications[index]
+
+            guard oldVerification.status == .pending else {
+                self.debugError("Verification is not pending: \(id)")
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -2, userInfo: [NSLocalizedDescriptionKey: "이미 처리된 인증입니다"]))))
+                return Disposables.create()
+            }
+
+            let approvedVerification = MissionVerification(
+                id: oldVerification.id,
+                missionId: oldVerification.missionId,
+                childId: oldVerification.childId,
+                type: oldVerification.type,
+                content: oldVerification.content,
+                memo: oldVerification.memo,
+                submittedDate: oldVerification.submittedDate,
+                reviewedBy: "parent_user",
+                reviewedDate: Date(),
+                status: .approved,
+                rejectReason: nil
+            )
+
+            self.mockVerifications[index] = approvedVerification
+
+            self.debugSuccess("Approved verification: \(id)")
+
+            // Post notification for approval
+            NotificationCenter.default.post(
+                name: .verificationApproved,
+                object: approvedVerification
+            )
+
+            // Update mission progress
+            self.updateMissionProgress(missionId: approvedVerification.missionId)
+
+            single(.success(approvedVerification))
+            return Disposables.create()
+        }
+    }
+
+    func rejectVerification(id: String, reason: String) -> Single<MissionVerification> {
+        return Single.create { [weak self] (single: @escaping (SingleEvent<MissionVerification>) -> Void) -> Disposable in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            guard let index = self.mockVerifications.firstIndex(where: { $0.id == id }) else {
+                single(.failure(RepositoryError.notFound))
+                return Disposables.create()
+            }
+
+            let oldVerification = self.mockVerifications[index]
+
+            guard oldVerification.status == .pending else {
+                self.debugError("Verification is not pending: \(id)")
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -2, userInfo: [NSLocalizedDescriptionKey: "이미 처리된 인증입니다"]))))
+                return Disposables.create()
+            }
+
+            let rejectedVerification = MissionVerification(
+                id: oldVerification.id,
+                missionId: oldVerification.missionId,
+                childId: oldVerification.childId,
+                type: oldVerification.type,
+                content: oldVerification.content,
+                memo: oldVerification.memo,
+                submittedDate: oldVerification.submittedDate,
+                reviewedBy: "parent_user",
+                reviewedDate: Date(),
+                status: .rejected,
+                rejectReason: reason
+            )
+
+            self.mockVerifications[index] = rejectedVerification
+
+            self.debugSuccess("Rejected verification: \(id) with reason: \(reason)")
+
+            // Post notification for rejection
+            NotificationCenter.default.post(
+                name: .verificationRejected,
+                object: rejectedVerification
+            )
+
+            single(.success(rejectedVerification))
+            return Disposables.create()
+        }
+    }
+
     // MARK: - Private Helper Methods
 
     private func autoApproveVerification(_ verificationId: String) {
