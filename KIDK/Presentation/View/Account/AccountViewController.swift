@@ -230,7 +230,14 @@ final class AccountViewController: BaseViewController {
     }
 
     private func navigateToWallet() {
-        let walletViewModel = WalletViewModel()
+        let accountRepository = AccountRepository()
+        let transactionRepository = TransactionRepository()
+        let savingsRepository = SavingsRepository()
+        let walletViewModel = WalletViewModel(
+            accountRepository: accountRepository,
+            transactionRepository: transactionRepository,
+            savingsRepository: savingsRepository
+        )
         let walletVC = WalletViewController(viewModel: walletViewModel)
         navigationController?.pushViewController(walletVC, animated: true)
     }

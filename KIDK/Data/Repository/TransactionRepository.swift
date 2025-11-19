@@ -24,6 +24,13 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
             name: "내 저축 통장",
             balance: 50000,
             isPrimary: false
+        ),
+        Account(
+            id: "3",
+            type: .goal,
+            name: "놀이공원 가기",
+            balance: 30000,
+            isPrimary: false
         )
     ]
 
