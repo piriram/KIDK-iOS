@@ -81,8 +81,9 @@ enum RepositoryError: Error {
     case notFound
     case unauthorized
     case serverError
+    case insufficientBalance
     case unknown(Error)
-    
+
     var localizedDescription: String {
         switch self {
         case .networkError(let error):
@@ -95,6 +96,8 @@ enum RepositoryError: Error {
             return "Unauthorized access"
         case .serverError:
             return "Server error occurred"
+        case .insufficientBalance:
+            return "Insufficient balance"
         case .unknown(let error):
             return "Unknown error: \(error.localizedDescription)"
         }

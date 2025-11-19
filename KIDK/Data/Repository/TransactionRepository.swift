@@ -37,7 +37,7 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
         description: String,
         memo: String?
     ) -> Single<Transaction> {
-        return Single.create { [weak self] single in
+        return Single.create { [weak self] (single: @escaping (SingleEvent<Transaction>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -1))))
                 return Disposables.create()
@@ -91,7 +91,7 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
     }
 
     func fetchTransactions(for accountId: String) -> Single<[Transaction]> {
-        return Single.create { [weak self] single in
+        return Single.create { [weak self] (single: @escaping (SingleEvent<[Transaction]>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -1))))
                 return Disposables.create()
@@ -103,7 +103,7 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
     }
 
     func updateAccountBalance(accountId: String, newBalance: Int) -> Single<Account> {
-        return Single.create { [weak self] single in
+        return Single.create { [weak self] (single: @escaping (SingleEvent<Account>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -1))))
                 return Disposables.create()
@@ -128,7 +128,7 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
     }
 
     func getAccount(id: String) -> Single<Account?> {
-        return Single.create { [weak self] single in
+        return Single.create { [weak self] (single: @escaping (SingleEvent<Account?>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -1))))
                 return Disposables.create()
@@ -143,10 +143,4 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
     func getAllAccounts() -> [Account] {
         return mockAccounts
     }
-}
-
-enum RepositoryError: Error {
-    case notFound
-    case insufficientBalance
-    case unknown(Error)
 }
