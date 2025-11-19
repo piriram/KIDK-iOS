@@ -12,6 +12,7 @@ import RxCocoa
 
 final class CategorySelectorView: UIView {
 
+    private let disposeBag = DisposeBag()
     private let categoryRelay = BehaviorRelay<TransactionCategory?>(value: nil)
     private var categoryButtons: [UIButton] = []
 
@@ -113,7 +114,7 @@ final class CategorySelectorView: UIView {
             .subscribe(onNext: { [weak self] in
                 self?.selectCategory(category, button: button)
             })
-            .disposed(by: rx.disposeBag)
+            .disposed(by: disposeBag)
 
         return button
     }
