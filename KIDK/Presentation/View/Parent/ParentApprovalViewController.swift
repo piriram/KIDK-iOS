@@ -130,8 +130,12 @@ final class ParentApprovalViewController: BaseViewController {
             })
             .asObservable()
 
+        let viewWillAppear = rx.sentMessage(#selector(UIViewController.viewWillAppear(_:)))
+            .map { _ in () }
+            .asObservable()
+
         let input = ParentApprovalViewModel.Input(
-            viewWillAppear: rx.viewWillAppear.map { _ in () }.asObservable(),
+            viewWillAppear: viewWillAppear,
             verificationSelected: verificationSelected,
             refreshTriggered: refreshControl.rx.controlEvent(.valueChanged).asObservable()
         )
@@ -139,7 +143,7 @@ final class ParentApprovalViewController: BaseViewController {
         let output = viewModel.transform(input: input)
 
         output.verifications
-            .drive(onNext: { [weak self] verifications in
+            .drive(onNext: { [weak self] (verifications: [ParentApprovalViewModel.VerificationWithMission]) in
                 self?.verifications = verifications
                 self?.tableView.reloadData()
                 self?.updateEmptyState(isEmpty: verifications.isEmpty)
@@ -147,7 +151,7 @@ final class ParentApprovalViewController: BaseViewController {
             .disposed(by: disposeBag)
 
         output.isLoading
-            .drive(onNext: { [weak self] isLoading in
+            .drive(onNext: { [weak self] (isLoading: Bool) in
                 if !isLoading {
                     self?.refreshControl.endRefreshing()
                 }
