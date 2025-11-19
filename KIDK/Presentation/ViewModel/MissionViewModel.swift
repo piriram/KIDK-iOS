@@ -77,7 +77,7 @@ final class MissionViewModel: BaseViewModel {
             }, onFailure: { [weak self] error in
                 guard let self = self else { return }
                 self.debugError("Failed to fetch missions", error: error)
-                self.error.accept(error)
+                self.error.onNext(error)
                 self.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
