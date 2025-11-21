@@ -290,7 +290,7 @@ final class TransactionInputViewController: BaseViewController {
     }
 
     private func createTransaction(account: Account, amount: Int) {
-        let description = descriptionTextField.text?.isEmpty == false ? descriptionTextField.text : nil
+        let descriptionText = descriptionTextField.text?.isEmpty == false ? descriptionTextField.text : nil
         let memo = memoTextField.text?.isEmpty == false ? memoTextField.text : nil
 
         let newBalance: Int
@@ -300,49 +300,45 @@ final class TransactionInputViewController: BaseViewController {
             newBalance = account.balance - amount
         }
 
-        let transaction = Transaction(
-            id: UUID().uuidString,
+        transactionRepository.createTransaction(
+            accountId: account.id,
             type: inputType.transactionType,
-            category: nil,
             amount: amount,
-            description: description ?? inputType.title,
-            memo: memo,
-            balanceAfter: newBalance,
-            date: Date()
+            category: nil,
+            description: descriptionText ?? inputType.title,
+            memo: memo
         )
+        .observe(on: MainScheduler.instance)
+        .subscribe(onSuccess: { [weak self] _ in
+            guard let self = self else { return }
 
-        transactionRepository.createTransaction(transaction, for: account.id)
-            .observe(on: MainScheduler.instance)
-            .subscribe(onSuccess: { [weak self] _ in
-                guard let self = self else { return }
+            // Update account balance
+            self.accountRepository.updateAccountBalance(accountId: account.id, newBalance: newBalance)
+                .observe(on: MainScheduler.instance)
+                .subscribe(onSuccess: { _ in
+                    // Post notification
+                    NotificationCenter.default.post(name: .transactionCreated, object: nil)
 
-                // Update account balance
-                self.accountRepository.updateBalance(accountId: account.id, newBalance: newBalance)
-                    .observe(on: MainScheduler.instance)
-                    .subscribe(onSuccess: { _ in
-                        // Post notification
-                        NotificationCenter.default.post(name: .transactionCreated, object: nil)
-
-                        self.dismiss(animated: true) {
-                            // Show success message
-                            if let presentingVC = self.presentingViewController {
-                                let alert = UIAlertController(
-                                    title: "완료",
-                                    message: "\(self.inputType.title)가 완료되었습니다.",
-                                    preferredStyle: .alert
-                                )
-                                alert.addAction(UIAlertAction(title: "확인", style: .default))
-                                presentingVC.present(alert, animated: true)
-                            }
+                    self.dismiss(animated: true) {
+                        // Show success message
+                        if let presentingVC = self.presentingViewController {
+                            let alert = UIAlertController(
+                                title: "완료",
+                                message: "\(self.inputType.title)가 완료되었습니다.",
+                                preferredStyle: .alert
+                            )
+                            alert.addAction(UIAlertAction(title: "확인", style: .default))
+                            presentingVC.present(alert, animated: true)
                         }
-                    }, onFailure: { [weak self] error in
-                        self?.showAlert(title: "오류", message: "잔액 업데이트에 실패했습니다.")
-                    })
-                    .disposed(by: self.disposeBag)
+                    }
+                }, onFailure: { [weak self] (error: Error) in
+                    self?.showAlert(title: "오류", message: "잔액 업데이트에 실패했습니다.")
+                })
+                .disposed(by: self.disposeBag)
 
-            }, onFailure: { [weak self] error in
-                self?.showAlert(title: "오류", message: "거래 생성에 실패했습니다.")
-            })
-            .disposed(by: disposeBag)
+        }, onFailure: { [weak self] (error: Error) in
+            self?.showAlert(title: "오류", message: "거래 생성에 실패했습니다.")
+        })
+        .disposed(by: disposeBag)
     }
 }

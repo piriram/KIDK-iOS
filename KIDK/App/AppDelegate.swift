@@ -25,7 +25,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
             migrationBlock: { migration, oldSchemaVersion in
                 if oldSchemaVersion < 2 {
                     // currentAmount 프로퍼티가 추가된 경우
-                    migration.enumerateObjects(ofType: MissionEntity.className()) { oldObject, newObject in
+                    migration.enumerateObjects(ofType: "MissionEntity") { oldObject, newObject in
                         // currentAmount가 없으면 기본값 0 설정
                         if oldObject?["currentAmount"] == nil {
                             newObject?["currentAmount"] = 0
