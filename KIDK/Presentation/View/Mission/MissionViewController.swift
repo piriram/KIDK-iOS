@@ -11,19 +11,23 @@ import RxCocoa
 import SnapKit
 
 final class MissionViewController: BaseViewController {
-    
+
     private let viewModel: MissionViewModel
-    
-    private let scrollView: UIScrollView = {
-        let scrollView = UIScrollView()
-        scrollView.showsVerticalScrollIndicator = true
-        scrollView.alwaysBounceVertical = true
-        return scrollView
-    }()
-    
-    private let contentView: UIView = {
-        let view = UIView()
-        return view
+
+    private var missions: [Mission] = []
+    private var collapseStates: [Bool] = []
+
+    private let collapseButtonTappedSubject = PublishSubject<Int>()
+
+    private lazy var tableView: UITableView = {
+        let tableView = UITableView()
+        tableView.backgroundColor = .clear
+        tableView.separatorStyle = .none
+        tableView.showsVerticalScrollIndicator = true
+        tableView.delegate = self
+        tableView.dataSource = self
+        tableView.register(MissionCardCell.self, forCellReuseIdentifier: MissionCardCell.identifier)
+        return tableView
     }()
     
     private let navigationBar: UIView = {
@@ -78,17 +82,12 @@ final class MissionViewController: BaseViewController {
         label.textColor = .kidkTextWhite
         return label
     }()
-    
+
     private let infoButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "info.circle"), for: .normal)
         button.tintColor = .kidkTextWhite.withAlphaComponent(0.6)
         return button
-    }()
-    
-    private lazy var missionCardView: MissionCardView = {
-        let view = MissionCardView()
-        return view
     }()
     
     init(viewModel: MissionViewModel) {
@@ -104,143 +103,173 @@ final class MissionViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         bind()
-        setupMockData()
-    }
-    
-    private func setupMockData() {
-        let mockParticipants = [
-            MissionParticipant(
-                id: "1",
-                missionId: "1",
-                userId: "1",
-                role: .leader,
-                joinedAt: Date()
-            ),
-            MissionParticipant(
-                id: "2",
-                missionId: "1",
-                userId: "2",
-                role: .member,
-                joinedAt: Date()
-            ),
-            MissionParticipant(
-                id: "3",
-                missionId: "1",
-                userId: "3",
-                role: .member,
-                joinedAt: Date()
-            )
-        ]
-        
-        let mockMission = Mission(
-            id: "1",
-            creatorId: "1",
-            ownerId: "1",
-            missionType: .savings,
-            title: "여름방학 놀이공원 가기",
-            description: nil,
-            targetAmount: 50000,
-            rewardAmount: 5000,
-            targetDate: Date(),
-            status: .inProgress,
-            createdAt: Date(),
-            completedAt: nil,
-            participants: mockParticipants
-        )
-        
-        missionCardView.configure(with: mockMission)
     }
     
     private func setupUI() {
         view.backgroundColor = .kidkDarkBackground
-        
+
         view.addSubview(navigationBar)
         navigationBar.addSubview(titleLabel)
         navigationBar.addSubview(menuButton)
-        
-        view.addSubview(scrollView)
-        scrollView.addSubview(contentView)
-        
-        contentView.addSubview(goToKIDKCityButton)
+
+        view.addSubview(goToKIDKCityButton)
         goToKIDKCityButton.addSubview(arrowImageView)
-        
-        contentView.addSubview(sectionHeaderView)
+
+        view.addSubview(sectionHeaderView)
         sectionHeaderView.addSubview(sectionTitleLabel)
         sectionHeaderView.addSubview(infoButton)
-        
-        contentView.addSubview(missionCardView)
-        
+
+        view.addSubview(tableView)
+
         navigationBar.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(54)
         }
-        
+
         titleLabel.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.lg)
             make.centerY.equalToSuperview()
         }
-        
+
         menuButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(24)
         }
-        
-        scrollView.snp.makeConstraints { make in
-            make.top.equalTo(navigationBar.snp.bottom)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-        
-        contentView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-            make.width.equalTo(scrollView)
-        }
-        
+
         goToKIDKCityButton.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(Spacing.md)
+            make.top.equalTo(navigationBar.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(64)
         }
-        
+
         arrowImageView.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
             make.width.height.equalTo(20)
         }
-        
+
         sectionHeaderView.snp.makeConstraints { make in
             make.top.equalTo(goToKIDKCityButton.snp.bottom).offset(Spacing.xl)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(24)
         }
-        
+
         sectionTitleLabel.snp.makeConstraints { make in
             make.leading.centerY.equalToSuperview()
         }
-        
+
         infoButton.snp.makeConstraints { make in
             make.trailing.centerY.equalToSuperview()
             make.width.height.equalTo(24)
         }
-        
-        missionCardView.snp.makeConstraints { make in
+
+        tableView.snp.makeConstraints { make in
             make.top.equalTo(sectionHeaderView.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.bottom.equalToSuperview().offset(-Spacing.xl)
+            make.leading.trailing.bottom.equalToSuperview()
         }
     }
     
     private func bind() {
         let input = MissionViewModel.Input(
             goToKIDKCityTapped: goToKIDKCityButton.rx.tap.asObservable(),
-            missionInfoTapped: infoButton.rx.tap.asObservable()
+            missionInfoTapped: infoButton.rx.tap.asObservable(),
+            collapseButtonTapped: collapseButtonTappedSubject.asObservable()
         )
-        
+
         let output = viewModel.transform(input: input)
-        
-        output.hasActiveMission
+
+        output.missions
+            .drive(onNext: { [weak self] missions in
+                self?.missions = missions
+                self?.tableView.reloadData()
+            })
+            .disposed(by: disposeBag)
+
+        output.collapseStates
+            .drive(onNext: { [weak self] states in
+                guard let self = self else { return }
+                let previousStates = self.collapseStates
+                self.collapseStates = states
+
+                // Find which index changed and animate only that cell
+                if previousStates.count == states.count {
+                    for (index, (previous, current)) in zip(previousStates, states).enumerated() {
+                        if previous != current {
+                            self.animateCellHeightChange(at: index)
+                            break
+                        }
+                    }
+                }
+            })
+            .disposed(by: disposeBag)
+
+        output.isLoading
             .drive()
             .disposed(by: disposeBag)
+    }
+
+    private func animateCellHeightChange(at index: Int) {
+        tableView.performBatchUpdates({
+            // Force the table view to recalculate the cell height
+            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
+        }, completion: nil)
+    }
+}
+
+// MARK: - UITableViewDataSource
+extension MissionViewController: UITableViewDataSource {
+
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+        return missions.count
+    }
+
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        guard let cell = tableView.dequeueReusableCell(withIdentifier: MissionCardCell.identifier, for: indexPath) as? MissionCardCell else {
+            return UITableViewCell()
+        }
+
+        let mission = missions[indexPath.row]
+        let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
+
+        cell.configure(with: mission, isCollapsed: isCollapsed)
+
+        cell.collapseButtonTapped
+            .subscribe(onNext: { [weak self] in
+                self?.collapseButtonTappedSubject.onNext(indexPath.row)
+            })
+            .disposed(by: cell.disposeBag)
+
+        cell.verifyButtonTapped
+            .subscribe(onNext: { [weak self] in
+                self?.showVerificationScreen(for: mission)
+            })
+            .disposed(by: cell.disposeBag)
+
+        return cell
+    }
+}
+
+// MARK: - UITableViewDelegate
+extension MissionViewController: UITableViewDelegate {
+
+    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        return UITableView.automaticDimension
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
+        return isCollapsed ? 80 : 500
+    }
+
+    // MARK: - Navigation
+
+    private func showVerificationScreen(for mission: Mission) {
+        let viewModel = MissionVerificationViewModel(mission: mission)
+        let verificationVC = MissionVerificationViewController(viewModel: viewModel)
+        let navController = UINavigationController(rootViewController: verificationVC)
+        navController.modalPresentationStyle = .fullScreen
+        present(navController, animated: true)
     }
 }

@@ -18,16 +18,17 @@ final class MissionCoordinator: BaseCoordinator {
     }
     
     override func start() {
-        let viewModel = MissionViewModel(user: user)
+        let missionRepository = MissionRepository(currentUserId: user.id)
+        let viewModel = MissionViewModel(user: user, missionRepository: missionRepository)
         let viewController = MissionViewController(viewModel: viewModel)
-        
+
         viewModel.navigateToKIDKCity
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] in
                 self?.showKIDKCity()
             })
             .disposed(by: disposeBag)
-        
+
         navigationController.setViewControllers([viewController], animated: false)
     }
     

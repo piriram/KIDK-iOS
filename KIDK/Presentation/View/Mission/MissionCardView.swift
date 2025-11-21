@@ -294,13 +294,15 @@ final class MissionCardView: UIView {
         showEmptyState()
     }
     
-    func configure(with mission: Mission?) {
+    func configure(with mission: Mission?, isCollapsed: Bool) {
         guard let mission = mission else {
             showEmptyState()
+            updateCollapseState(isCollapsed: isCollapsed)
             return
         }
-        
+
         showActiveMission(mission: mission)
+        updateCollapseState(isCollapsed: isCollapsed)
     }
     
     private func showEmptyState() {
@@ -314,24 +316,31 @@ final class MissionCardView: UIView {
     }
     
     private func showActiveMission(mission: Mission) {
-        titleLabel.text = "여름방학 놀이공원 가기"
+        titleLabel.text = mission.title
         emptyStateView.isHidden = true
         participantsStackView.isHidden = false
         participantsLabel.isHidden = false
         circularProgressView.isHidden = false
         deadlineLabel.isHidden = false
         missionSectionView.isHidden = false
-        
+
         setupParticipants(mission.participants)
-        
+
+        // Configure progress view with real data
         let schoolImage = UIImage(named: "kidk_city_school")
         circularProgressView.configure(
-            currentAmount: 12000,
-            targetAmount: 50000,
+            currentAmount: mission.currentAmount,
+            targetAmount: mission.targetAmount ?? 0,
             image: schoolImage
         )
-        
-        deadlineLabel.text = "6월 7일까지 50만 모으기"
+
+        // Configure deadline label with real data
+        if let formattedDate = mission.formattedTargetDate,
+           let formattedTarget = mission.formattedTargetAmount {
+            deadlineLabel.text = "\(formattedDate) \(formattedTarget) 모으기"
+        } else {
+            deadlineLabel.text = "목표 달성까지 화이팅!"
+        }
     }
     
     private func setupParticipants(_ participants: [MissionParticipant]) {
@@ -361,11 +370,44 @@ final class MissionCardView: UIView {
         }
     }
     
+    var collapseButtonTapped: Observable<Void> {
+        collapseButton.rx.tap.asObservable()
+    }
+
     var verifyButtonTapped: Observable<Void> {
         verifyButton.rx.tap.asObservable()
     }
-    
+
     var whatMissionButtonTapped: Observable<Void> {
         whatMissionButton.rx.tap.asObservable()
+    }
+
+    private func updateCollapseState(isCollapsed: Bool) {
+        let chevronImage = isCollapsed ? "chevron.down" : "chevron.up"
+        collapseButton.setImage(UIImage(systemName: chevronImage), for: .normal)
+
+        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
+            guard let self = self else { return }
+
+            if isCollapsed {
+                self.participantsStackView.alpha = 0
+                self.participantsLabel.alpha = 0
+                self.circularProgressView.alpha = 0
+                self.deadlineLabel.alpha = 0
+                self.missionSectionView.alpha = 0
+                self.emptyProgressCircleView.alpha = 0
+                self.emptySubtitleLabel.alpha = 0
+                self.whatMissionButton.alpha = 0
+            } else {
+                self.participantsStackView.alpha = 1
+                self.participantsLabel.alpha = 1
+                self.circularProgressView.alpha = 1
+                self.deadlineLabel.alpha = 1
+                self.missionSectionView.alpha = 1
+                self.emptyProgressCircleView.alpha = 1
+                self.emptySubtitleLabel.alpha = 1
+                self.whatMissionButton.alpha = 1
+            }
+        })
     }
 }

@@ -15,6 +15,7 @@ final class LoginViewModel: BaseViewModel {
         let emailText: Observable<String>
         let passwordText: Observable<String>
         let autoLoginToggled: Observable<Bool>
+        let userTypeSelected: Observable<UserType>
         let loginButtonTapped: Observable<Void>
         let signupButtonTapped: Observable<Void>
     }
@@ -42,11 +43,12 @@ final class LoginViewModel: BaseViewModel {
     func transform(input: Input) -> Output {
         let credentials = Observable.combineLatest(
             input.emailText,
-            input.passwordText
+            input.passwordText,
+            input.userTypeSelected
         )
         
         let isLoginEnabled = credentials
-            .map { email, password in
+            .map { email, password, _ in
                 !email.isEmpty && !password.isEmpty && email.contains("@")
             }
         
@@ -60,13 +62,13 @@ final class LoginViewModel: BaseViewModel {
         
         input.loginButtonTapped
             .withLatestFrom(credentials)
-            .do(onNext: { [weak self] email, password in
+            .do(onNext: { [weak self] email, password, userType in
                 self?.startLoading()
-                self?.debugLog("Login attempt with email: \(email)")
+                self?.debugLog("Login attempt with email: \(email), userType: \(userType)")
             })
-            .flatMapLatest { [weak self] email, password -> Observable<User> in
+            .flatMapLatest { [weak self] email, password, userType -> Observable<User> in
                 guard let self = self else { return .empty() }
-                return self.mockLogin(email: email, password: password)
+                return self.mockLogin(email: email, password: password, userType: userType)
             }
             .do(onNext: { [weak self] user in
                 self?.stopLoading()
@@ -100,11 +102,9 @@ final class LoginViewModel: BaseViewModel {
         )
     }
     
-    private func mockLogin(email: String, password: String) -> Observable<User> {
+    private func mockLogin(email: String, password: String, userType: UserType) -> Observable<User> {
         return Observable.create { [weak self] observer in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                let userType: UserType = .child
-//                let userType: UserType = email.contains("child") ? .child : .parent
                 let firebaseUID = "mock_\(UUID().uuidString)"
                 let user = User(
                     id: UUID().uuidString,
@@ -113,12 +113,12 @@ final class LoginViewModel: BaseViewModel {
                     name: email.components(separatedBy: "@").first ?? "User",
                     status: .active
                 )
-                
+
                 self?.authRepository.setFirstLaunchComplete()
                 observer.onNext(user)
                 observer.onCompleted()
             }
-            
+
             return Disposables.create()
         }
     }
