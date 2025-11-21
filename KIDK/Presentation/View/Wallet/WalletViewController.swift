@@ -125,8 +125,12 @@ final class WalletViewController: BaseViewController {
         switch sender.tag {
         case 0:
             actionType = .deposit
+            showTransactionInput(type: .deposit)
+            return
         case 1:
             actionType = .withdraw
+            showTransactionInput(type: .withdraw)
+            return
         case 2:
             actionType = .transfer
         case 3:
@@ -134,8 +138,23 @@ final class WalletViewController: BaseViewController {
         default:
             return
         }
-        
+
         showAlert(title: actionType.title, message: "\(actionType.title) 기능은 준비중입니다.")
+    }
+
+    private func showTransactionInput(type: TransactionInputType) {
+        let transactionInputVC = TransactionInputViewController(inputType: type)
+        let navController = UINavigationController(rootViewController: transactionInputVC)
+        navController.modalPresentationStyle = .pageSheet
+
+        if #available(iOS 15.0, *) {
+            if let sheet = navController.sheetPresentationController {
+                sheet.detents = [.medium(), .large()]
+                sheet.prefersGrabberVisible = true
+            }
+        }
+
+        present(navController, animated: true)
     }
 }
 
