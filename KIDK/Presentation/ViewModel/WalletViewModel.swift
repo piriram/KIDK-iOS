@@ -103,23 +103,8 @@ final class WalletViewModel {
             )
         ]
 
-        let mockSavingsGoals = [
-            SavingsGoal(
-                id: "1",
-                name: "놀이공원 가기",
-                targetAmount: 50000,
-                currentAmount: 30000,
-                targetDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()),
-                linkedMissionIds: ["mission1", "mission2"]
-            ),
-            SavingsGoal(
-                id: "2",
-                name: "새 자전거 사기",
-                targetAmount: 200000,
-                currentAmount: 45000,
-                targetDate: Calendar.current.date(byAdding: .day, value: 90, to: Date()),
-                linkedMissionIds: []
-            )
+        let mockSavingsGoals:[SavingsGoal] = [
+           
         ]
 
         let mockCard = Card(

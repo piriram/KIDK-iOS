@@ -5,63 +5,69 @@
 //  Created by 잠만보김쥬디 on 11/19/25.
 //
 
+
 import UIKit
 import SnapKit
 
 final class SectionHeaderView: UIView {
-
+    
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = .spoqaHanSansNeo(size: 20, weight: .bold)
-        label.textColor = .kidkTextWhite
+        label.applyTextStyle(
+            text: "",
+            size: .s20,
+            weight: .bold,
+            color: .kidkTextWhite,
+            lineHeight: 140
+        )
         return label
     }()
-
-    private let actionButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.titleLabel?.font = .spoqaHanSansNeo(size: 14, weight: .medium)
-        button.setTitleColor(.kidkGray, for: .normal)
-        return button
+    
+    private let subtitleLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(
+            text: "",
+            size: .s14,
+            weight: .regular,
+            color: .kidkGray,
+            lineHeight: 140
+        )
+        label.isHidden = true
+        return label
     }()
-
-    var actionHandler: (() -> Void)?
-
-    init(title: String, actionTitle: String? = nil) {
-        super.init(frame: .zero)
-        titleLabel.text = title
-        if let actionTitle = actionTitle {
-            actionButton.setTitle(actionTitle, for: .normal)
-            actionButton.isHidden = false
-        } else {
-            actionButton.isHidden = true
-        }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
     }
-
+    
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
+    
     private func setupUI() {
-        backgroundColor = .clear
-
         addSubview(titleLabel)
-        addSubview(actionButton)
-
+        addSubview(subtitleLabel)
+        
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.centerY.equalToSuperview()
+            make.top.leading.trailing.equalToSuperview()
         }
-
-        actionButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalToSuperview()
+        
+        subtitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview()
         }
-
-        actionButton.addTarget(self, action: #selector(actionButtonTapped), for: .touchUpInside)
     }
-
-    @objc private func actionButtonTapped() {
-        actionHandler?()
+    
+    func configure(title: String, subtitle: String? = nil) {
+        titleLabel.text = title
+        if let subtitle = subtitle {
+            subtitleLabel.text = subtitle
+            subtitleLabel.isHidden = false
+        } else {
+            subtitleLabel.isHidden = true
+        }
     }
 }
+
