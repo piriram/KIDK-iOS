@@ -25,4 +25,7 @@ extension Notification.Name {
 
     /// 미션 진행률이 업데이트되었을 때 발송되는 알림
     static let missionProgressUpdated = Notification.Name("missionProgressUpdated")
+
+    /// 사용자가 로그아웃했을 때 발송되는 알림
+    static let userLoggedOut = Notification.Name("userLoggedOut")
 }
