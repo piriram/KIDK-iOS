@@ -104,31 +104,67 @@ final class MissionViewModel: BaseViewModel {
             description: "친구들과 함께 놀이공원 가기 위해 저축하기"
         )
 
-        // Create second sample mission - 경제 퀴즈 10문제 풀기 (70% 진행)
+        // Create second sample mission - 새 자전거 사기 (56.7% 진행)
         let mission2 = MissionCreationRequest(
-            title: "경제 퀴즈 10문제 풀기",
-            missionType: .quiz,
-            targetAmount: 10,
-            currentAmount: 7,
+            title: "새 자전거 사기",
+            missionType: .savings,
+            targetAmount: 150000,
+            currentAmount: 85000,
             rewardAmount: 5000,
-            targetDate: Calendar.current.date(byAdding: .day, value: 7, to: Date()),
+            targetDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()),
             participantIds: [],
-            description: "경제 상식을 키우는 퀴즈 미션"
+            description: "학교 갈 때 탈 새 자전거 사기"
         )
 
-        // Create third sample mission - 용돈 기입장 1주일 쓰기 (71% 진행)
+        // Create third sample mission - 가족 여행 기금 (72.5% 진행)
         let mission3 = MissionCreationRequest(
-            title: "용돈 기입장 1주일 쓰기",
-            missionType: .custom,
-            targetAmount: 7,
-            currentAmount: 5,
-            rewardAmount: 3000,
-            targetDate: Calendar.current.date(byAdding: .day, value: 2, to: Date()),
+            title: "가족 여행 기금",
+            missionType: .savings,
+            targetAmount: 200000,
+            currentAmount: 145000,
+            rewardAmount: 8000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 20, to: Date()),
             participantIds: [],
-            description: "매일 용돈 사용 내역을 기록하기"
+            description: "가족과 함께 제주도 여행 가기"
         )
 
-        let missions = [mission1, mission2, mission3]
+        // Create fourth sample mission - 친구 생일 선물 (70% 진행)
+        let mission4 = MissionCreationRequest(
+            title: "친구 생일 선물",
+            missionType: .savings,
+            targetAmount: 50000,
+            currentAmount: 35000,
+            rewardAmount: 2000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 10, to: Date()),
+            participantIds: [],
+            description: "친한 친구 생일 선물 사기"
+        )
+
+        // Create fifth sample mission - 새 운동화 (31.25% 진행)
+        let mission5 = MissionCreationRequest(
+            title: "새 운동화",
+            missionType: .savings,
+            targetAmount: 80000,
+            currentAmount: 25000,
+            rewardAmount: 3000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 50, to: Date()),
+            participantIds: [],
+            description: "체육 시간에 신을 운동화 사기"
+        )
+
+        // Create sixth sample mission - 새 게임기 (40% 진행)
+        let mission6 = MissionCreationRequest(
+            title: "새 게임기",
+            missionType: .savings,
+            targetAmount: 300000,
+            currentAmount: 120000,
+            rewardAmount: 10000,
+            targetDate: Calendar.current.date(byAdding: .day, value: 60, to: Date()),
+            participantIds: [],
+            description: "친구들과 함께 할 게임기 사기"
+        )
+
+        let missions = [mission1, mission2, mission3, mission4, mission5, mission6]
         var createdCount = 0
 
         for request in missions {
