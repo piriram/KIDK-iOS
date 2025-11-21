@@ -265,7 +265,7 @@ final class ParentChildInfoViewController: BaseViewController {
         let stats: [(String, String, UIColor)] = [
             ("완료한 미션", "28", UIColor.kidkGreen),
             ("진행 중", "3", UIColor.kidkPink),
-            ("총 보상", "56,000원", UIColor.kidkYellow)
+            ("총 보상", "56,000원", UIColor(hex: "#FFD60A"))
         ]
 
         for (title, value, color) in stats {
@@ -417,3 +417,4 @@ final class ParentChildInfoViewController: BaseViewController {
         return containerView
     }
 }
+
