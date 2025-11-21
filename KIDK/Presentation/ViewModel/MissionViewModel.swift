@@ -68,8 +68,13 @@ final class MissionViewModel: BaseViewModel {
                 guard let self = self else { return }
                 self.debugLog("Fetched \(missions.count) missions")
 
-                // If no missions exist, create sample missions for testing
-                if missions.isEmpty {
+                // Check if we have enough savings missions
+                let savingsMissions = missions.filter { $0.missionType == .savings }
+                self.debugLog("Found \(savingsMissions.count) savings missions")
+
+                // If no missions exist or less than 3 savings missions, create sample missions
+                if missions.isEmpty || savingsMissions.count < 3 {
+                    self.debugLog("Creating sample missions (total: \(missions.count), savings: \(savingsMissions.count))")
                     self.createSampleMissions()
                 } else {
                     self.missionsRelay.accept(missions)
