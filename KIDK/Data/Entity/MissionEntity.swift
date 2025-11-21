@@ -16,13 +16,14 @@ final class MissionEntity: Object {
     @Persisted var title: String = ""
     @Persisted var missionDescription: String?
     @Persisted var targetAmount: Int?
+    @Persisted var currentAmount: Int = 0
     @Persisted var rewardAmount: Int = 0
     @Persisted var targetDate: Date?
     @Persisted var status: String = MissionStatus.inProgress.rawValue
     @Persisted var createdAt: Date = Date()
     @Persisted var completedAt: Date?
     @Persisted var participants: List<MissionParticipantEntity>
-    
+
     convenience init(from request: MissionCreationRequest, creatorId: String, ownerId: String) {
         self.init()
         self.creatorId = creatorId
@@ -30,12 +31,14 @@ final class MissionEntity: Object {
         self.missionType = request.missionType.rawValue
         self.title = request.title
         self.missionDescription = request.description
+        self.targetAmount = request.targetAmount
+        self.currentAmount = request.currentAmount ?? 0
         self.rewardAmount = request.rewardAmount
         self.targetDate = request.targetDate
         self.status = MissionStatus.inProgress.rawValue
         self.createdAt = Date()
     }
-    
+
     func toDomain() -> Mission {
         Mission(
             id: id,
@@ -45,6 +48,7 @@ final class MissionEntity: Object {
             title: title,
             description: missionDescription,
             targetAmount: targetAmount,
+            currentAmount: currentAmount,
             rewardAmount: rewardAmount,
             targetDate: targetDate,
             status: MissionStatus(rawValue: status) ?? .inProgress,

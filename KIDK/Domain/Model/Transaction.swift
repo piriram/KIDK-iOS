@@ -37,7 +37,7 @@ enum TransactionType: String {
     }
 }
 
-enum TransactionCategory: String {
+enum TransactionCategory: String, CaseIterable {
     case food = "음식"
     case shopping = "쇼핑"
     case transport = "교통"
@@ -45,7 +45,34 @@ enum TransactionCategory: String {
     case toy = "장난감"
     case game = "게임"
     case book = "책"
+    case hobby = "취미"
+    case culture = "문화"
     case etc = "기타"
+
+    var emoji: String {
+        switch self {
+        case .food:
+            return "🍔"
+        case .shopping:
+            return "🛍️"
+        case .transport:
+            return "🚌"
+        case .school:
+            return "📚"
+        case .toy:
+            return "⚽"
+        case .game:
+            return "🎮"
+        case .book:
+            return "📖"
+        case .hobby:
+            return "🎨"
+        case .culture:
+            return "🎬"
+        case .etc:
+            return "📦"
+        }
+    }
 
     var iconName: String {
         switch self {
@@ -61,6 +88,10 @@ enum TransactionCategory: String {
             return "kidk_icon_bowl"
         case .book:
             return "kidk_icon_home"
+        case .hobby:
+            return "kidk_icon_home"
+        case .culture:
+            return "kidk_icon_home"
         case .etc:
             return "kidk_icon_exclamation"
         }
@@ -74,6 +105,18 @@ enum TransactionCategory: String {
             return .kidkGreen
         case .transport:
             return .kidkBlue
+        case .school:
+            return UIColor(hex: "#FFB800")
+        case .toy:
+            return UIColor(hex: "#FF6B6B")
+        case .game:
+            return UIColor(hex: "#9B59B6")
+        case .book:
+            return UIColor(hex: "#3498DB")
+        case .hobby:
+            return UIColor(hex: "#1ABC9C")
+        case .culture:
+            return UIColor(hex: "#E74C3C")
         default:
             return .kidkGray
         }
