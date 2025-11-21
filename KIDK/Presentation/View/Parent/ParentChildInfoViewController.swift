@@ -191,7 +191,7 @@ final class ParentChildInfoViewController: BaseViewController {
     private func performLogout() {
         // Clear auto-login preference
         authRepository.saveAutoLoginPreference(false)
-        authRepository.clearLoginCredentials()
+        authRepository.saveLoginCredentials(email: "")
 
         // Post logout notification
         NotificationCenter.default.post(name: .userLoggedOut, object: nil)

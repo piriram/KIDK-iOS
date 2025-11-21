@@ -7,6 +7,7 @@
 
 import UIKit
 import RxSwift
+import RxCocoa
 
 protocol MainTabBarCoordinatorDelegate: AnyObject {
     func mainTabBarCoordinatorDidLogout(_ coordinator: MainTabBarCoordinator)
