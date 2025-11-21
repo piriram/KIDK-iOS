@@ -4,7 +4,7 @@
 //
 //  Created by 잠만보김쥬디 on 11/19/25.
 //
-//TODO: 포맷팅 확장 만들기
+
 import Foundation
 import UIKit
 
@@ -57,31 +57,20 @@ struct SavingsGoal: Codable {
     }
     
     var formattedTargetAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: targetAmount)) ?? "\(targetAmount)"
-        return "\(formatted)원"
+        return targetAmount.formattedCurrency
     }
-    
+
     var formattedCurrentAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: currentAmount)) ?? "\(currentAmount)"
-        return "\(formatted)원"
+        return currentAmount.formattedCurrency
     }
-    
+
     var formattedTargetDate: String? {
         guard let date = targetDate else { return nil }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy년 M월 d일"
-        return formatter.string(from: date)
+        return date.formattedFullDate
     }
-    
+
     var formattedRemainingAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: remainingAmount)) ?? "\(remainingAmount)"
-        return "\(formatted)원"
+        return remainingAmount.formattedCurrency
     }
 }
 
@@ -96,19 +85,13 @@ struct SavingsStats: Codable {
     let averageMonthlySavings: Int
     
     var formattedTotalSavings: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: totalSavings)) ?? "\(totalSavings)"
-        return "\(formatted)원"
+        return totalSavings.formattedCurrency
     }
-    
+
     var formattedThisMonthSavings: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: thisMonthSavings)) ?? "\(thisMonthSavings)"
-        return "\(formatted)원"
+        return thisMonthSavings.formattedCurrency
     }
-    
+
     var formattedSavingsRate: String {
         return String(format: "%.1f%%", savingsRate)
     }
@@ -123,9 +106,7 @@ struct SavingsTransaction: Codable {
     let note: String?
     
     var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
+        let formatted = FormatterCache.shared.currencyFormatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
         return "+\(formatted)원"
     }
 }

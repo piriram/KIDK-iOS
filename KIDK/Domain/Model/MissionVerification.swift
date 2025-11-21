@@ -71,10 +71,7 @@ struct MissionVerification {
 
     /// 포맷된 제출 날짜
     var formattedSubmittedDate: String {
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "M월 d일 HH:mm"
-        return formatter.string(from: submittedDate)
+        return submittedDate.formattedDateTime
     }
 }
 

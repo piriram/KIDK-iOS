@@ -548,10 +548,7 @@ final class MissionCreationViewController: BaseViewController {
         let selectAction = UIAlertAction(title: "선택", style: .default) { [weak self] _ in
             let selectedDate = datePicker.date
             self?.targetDateRelay.accept(selectedDate)
-            
-            let formatter = DateFormatter()
-            formatter.dateFormat = "MM/dd"
-            self?.dateButton.setTitle(formatter.string(from: selectedDate), for: .normal)
+            self?.dateButton.setTitle(selectedDate.formattedMonthDay, for: .normal)
         }
         
         let cancelAction = UIAlertAction(title: "취소", style: .cancel)
