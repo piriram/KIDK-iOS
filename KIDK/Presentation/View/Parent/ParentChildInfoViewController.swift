@@ -7,10 +7,14 @@
 
 import UIKit
 import SnapKit
+import RxSwift
+import RxCocoa
 
 /// Phase 1: 간단한 아이 정보 표시 뷰
 /// Phase 2: 상세 정보 및 설정 기능 추가
 final class ParentChildInfoViewController: BaseViewController {
+
+    private let authRepository: AuthRepositoryProtocol
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -65,11 +69,32 @@ final class ParentChildInfoViewController: BaseViewController {
         return stackView
     }()
 
+    // MARK: - Logout Button
+
+    private lazy var logoutButton = KIDKButton(
+        title: "로그아웃",
+        backgroundColor: .systemRed,
+        titleColor: .white,
+        font: .kidkFont(.s16, .bold)
+    )
+
+    // MARK: - Initialization
+
+    init(authRepository: AuthRepositoryProtocol = AuthRepository()) {
+        self.authRepository = authRepository
+        super.init(nibName: nil, bundle: nil)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
         setupUI()
         loadMockData()
+        bind()
     }
 
     private func setupNavigationBar() {
@@ -89,6 +114,7 @@ final class ParentChildInfoViewController: BaseViewController {
         profileCard.addSubview(levelBadge)
 
         contentView.addSubview(infoStackView)
+        contentView.addSubview(logoutButton)
 
         scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
@@ -125,8 +151,52 @@ final class ParentChildInfoViewController: BaseViewController {
         infoStackView.snp.makeConstraints { make in
             make.top.equalTo(profileCard.snp.bottom).offset(Spacing.lg)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        logoutButton.snp.makeConstraints { make in
+            make.top.equalTo(infoStackView.snp.bottom).offset(Spacing.xl)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.height.equalTo(56)
             make.bottom.equalToSuperview().offset(-Spacing.xl)
         }
+    }
+
+    private func bind() {
+        logoutButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.handleLogout()
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func handleLogout() {
+        let alert = UIAlertController(
+            title: "로그아웃",
+            message: "정말 로그아웃하시겠습니까?",
+            preferredStyle: .alert
+        )
+
+        let confirmAction = UIAlertAction(title: "로그아웃", style: .destructive) { [weak self] _ in
+            self?.performLogout()
+        }
+
+        let cancelAction = UIAlertAction(title: "취소", style: .cancel)
+
+        alert.addAction(confirmAction)
+        alert.addAction(cancelAction)
+
+        present(alert, animated: true)
+    }
+
+    private func performLogout() {
+        // Clear auto-login preference
+        authRepository.saveAutoLoginPreference(false)
+        authRepository.clearLoginCredentials()
+
+        // Post logout notification
+        NotificationCenter.default.post(name: .userLoggedOut, object: nil)
+
+        debugSuccess("User logged out successfully")
     }
 
     private func loadMockData() {

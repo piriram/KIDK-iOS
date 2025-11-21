@@ -24,12 +24,27 @@ final class MainTabBarCoordinator: BaseCoordinator {
     }
     
     override func start() {
+        // Subscribe to logout notification
+        subscribeToLogoutNotification()
+
         // Check user type and create appropriate tab bar controller
         if user.userType == .parent {
             setupParentTabBar()
         } else {
             setupChildTabBar()
         }
+    }
+
+    private func subscribeToLogoutNotification() {
+        NotificationCenter.default.rx
+            .notification(.userLoggedOut)
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self = self else { return }
+                self.debugLog("Logout notification received")
+                self.delegate?.mainTabBarCoordinatorDidLogout(self)
+            })
+            .disposed(by: disposeBag)
     }
 
     // MARK: - Child Tab Bar Setup
