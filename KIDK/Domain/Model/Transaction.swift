@@ -134,28 +134,19 @@ struct Transaction {
     let date: Date
 
     var formattedAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
+        let formatted = FormatterCache.shared.currencyFormatter.string(from: NSNumber(value: amount)) ?? "\(amount)"
         return "\(type.sign)\(formatted)원"
     }
 
     var formattedBalanceAfter: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        let formatted = formatter.string(from: NSNumber(value: balanceAfter)) ?? "\(balanceAfter)"
-        return "\(formatted)원"
+        return balanceAfter.formattedCurrency
     }
 
     var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: date)
+        return date.formattedTime
     }
 
     var formattedDateWithDay: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "M월 d일"
-        return formatter.string(from: date)
+        return date.formattedShortDate
     }
 }
