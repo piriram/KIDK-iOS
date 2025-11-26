@@ -1,10 +1,3 @@
-//
-//  CircularProgressView.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/18/25.
-//
-
 import UIKit
 import SnapKit
 
@@ -36,6 +29,12 @@ final class CircularProgressView: UIView {
     private var lineWidth: CGFloat = 12
     private var progressColor: UIColor = .kidkPink
     private var backgroundCircleColor: UIColor = UIColor(hex: "#1C1C1E")
+    
+    var arcPercentage: CGFloat = 0.7 {
+        didSet {
+            setNeedsLayout()
+        }
+    }
     
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -90,8 +89,12 @@ final class CircularProgressView: UIView {
     private func updateCirclePaths() {
         let center = CGPoint(x: bounds.width / 2, y: bounds.height / 2)
         let radius = (min(bounds.width, bounds.height) - lineWidth) / 2
-        let startAngle = CGFloat.pi
-        let endAngle = CGFloat.pi * 2
+        
+        let clampedArc = max(0, min(arcPercentage, 1))
+        let totalAngle = 2 * CGFloat.pi * clampedArc
+        let midAngle = 1.5 * CGFloat.pi
+        let startAngle = midAngle - totalAngle / 2
+        let endAngle = midAngle + totalAngle / 2
         
         let circularPath = UIBezierPath(
             arcCenter: center,
@@ -108,8 +111,11 @@ final class CircularProgressView: UIView {
     func configure(
         currentAmount: Int,
         targetAmount: Int,
-        image: UIImage?
+        image: UIImage?,
+        arcPercentage: CGFloat = 0.7
     ) {
+        self.arcPercentage = arcPercentage
+        
         let percentage = min(Double(currentAmount) / Double(targetAmount), 1.0)
         
         let amountText = "\(currentAmount.formattedWithComma)원"
