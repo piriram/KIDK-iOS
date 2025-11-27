@@ -1,10 +1,3 @@
-//
-//  LoginViewModel.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/15/25.
-//
-
 import Foundation
 import RxSwift
 import RxCocoa
@@ -102,6 +95,37 @@ final class LoginViewModel: BaseViewModel {
         )
     }
     
+    // MARK: - Real Login (Firebase + Backend API)
+
+    private func realLogin(email: String, password: String, userType: UserType) -> Observable<User> {
+        debugLog("Starting real login flow")
+
+        // 1. Firebase Authentication으로 로그인
+        return FirebaseAuthService.shared.signIn(email: email, password: password)
+            .do(onNext: { [weak self] firebaseToken in
+                self?.debugLog("Firebase login success, token: \(firebaseToken.prefix(20))...")
+            })
+            .flatMap { [weak self] firebaseToken -> Observable<Result<User, NetworkError>> in
+                guard let self = self else { return .empty() }
+                // 2. 백엔드 API에 Firebase Token으로 로그인
+                return self.authRepository.login(firebaseToken: firebaseToken)
+            }
+            .flatMap { result -> Observable<User> in
+                switch result {
+                case .success(let user):
+                    return .just(user)
+                case .failure(let error):
+                    return .error(error)
+                }
+            }
+            .do(onNext: { [weak self] user in
+                self?.authRepository.setFirstLaunchComplete()
+                self?.debugSuccess("Backend login success")
+            })
+    }
+
+    // MARK: - Mock Login (개발용)
+
     private func mockLogin(email: String, password: String, userType: UserType) -> Observable<User> {
         return Observable.create { [weak self] observer in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {

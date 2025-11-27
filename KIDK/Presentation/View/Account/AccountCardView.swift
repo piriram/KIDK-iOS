@@ -1,11 +1,4 @@
 //TODO: XMARK 에셋으로 바꾸기
-//
-//  AccountCardView.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/14/25.
-//
-
 import UIKit
 import SnapKit
 import RxSwift
