@@ -10,10 +10,17 @@ import RxSwift
 import RealmSwift
 
 class BaseRepository {
-    
+
     let disposeBag = DisposeBag()
-    
-    init() {
+    let networkService: NetworkService
+    let tokenManager: TokenManager
+
+    init(
+        networkService: NetworkService = .shared,
+        tokenManager: TokenManager = .shared
+    ) {
+        self.networkService = networkService
+        self.tokenManager = tokenManager
         logLifecycle("init")
         #if DEBUG
         if let realmURL = try? Realm().configuration.fileURL {
