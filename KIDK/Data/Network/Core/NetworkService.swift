@@ -154,6 +154,7 @@ final class NetworkService {
 
     private func buildURL(endpoint: APIEndpoint) -> URL? {
         let urlString = environment.baseURL + endpoint.path
+        print("custom: urlString -  \(urlString)")
         return URL(string: urlString)
     }
 
