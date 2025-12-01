@@ -50,8 +50,33 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                 return Disposables.create()
             }
 
-            self.debugSuccess("Fetched \(self.mockAccounts.count) accounts")
-            single(.success(self.mockAccounts))
+            // UserProfileManager에서 현재 사용자 ID 가져오기
+            Task {
+                guard let user = await UserProfileManager.shared.getCurrentUser(),
+                      let userId = Int(user.id) else {
+                    // 사용자 정보 없으면 Mock 데이터 반환
+                    self.debugWarning("No user found, returning mock accounts")
+                    single(.success(self.mockAccounts))
+                    return
+                }
+
+                // 실제 API 호출
+                self.networkService.request(AccountAPI.getUserAccounts(userId: userId))
+                    .subscribe(onNext: { (result: Result<[AccountResponse], NetworkError>) in
+                        switch result {
+                        case .success(let accountResponses):
+                            let accounts = accountResponses.map { $0.toDomain() }
+                            self.debugSuccess("Fetched \(accounts.count) accounts from API")
+                            single(.success(accounts))
+                        case .failure(let error):
+                            self.debugError("Failed to fetch accounts", error: error)
+                            // 에러 시 Mock 데이터 반환
+                            single(.success(self.mockAccounts))
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
+            }
+
             return Disposables.create()
         }
     }
@@ -81,13 +106,35 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                 return Disposables.create()
             }
 
-            let primaryAccount = self.mockAccounts.first(where: { $0.isPrimary })
-            if let account = primaryAccount {
-                self.debugSuccess("Found primary account: \(account.name)")
-            } else {
-                self.debugWarning("No primary account found")
+            // UserProfileManager에서 현재 사용자 ID 가져오기
+            Task {
+                guard let user = await UserProfileManager.shared.getCurrentUser(),
+                      let userId = Int(user.id) else {
+                    // 사용자 정보 없으면 Mock 데이터 반환
+                    let primaryAccount = self.mockAccounts.first(where: { $0.isPrimary })
+                    self.debugWarning("No user found, returning mock primary account")
+                    single(.success(primaryAccount))
+                    return
+                }
+
+                // 실제 API 호출
+                self.networkService.request(AccountAPI.getPrimaryAccount(userId: userId))
+                    .subscribe(onNext: { (result: Result<AccountResponse, NetworkError>) in
+                        switch result {
+                        case .success(let accountResponse):
+                            let account = accountResponse.toDomain()
+                            self.debugSuccess("Found primary account: \(account.name)")
+                            single(.success(account))
+                        case .failure(let error):
+                            self.debugError("Failed to fetch primary account", error: error)
+                            // 에러 시 Mock 데이터 반환
+                            let primaryAccount = self.mockAccounts.first(where: { $0.isPrimary })
+                            single(.success(primaryAccount))
+                        }
+                    })
+                    .disposed(by: self.disposeBag)
             }
-            single(.success(primaryAccount))
+
             return Disposables.create()
         }
     }

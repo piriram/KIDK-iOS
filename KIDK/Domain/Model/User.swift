@@ -11,13 +11,13 @@ struct User {
     let id: String
     let firebaseUID: String
     let userType: UserType
-    let name: String
-    let nickname: String?
-    let profileImageURL: String?
-    let birthdate: Date?
-    let status: UserStatus
+    var name: String
+    var nickname: String?
+    var profileImageURL: String?
+    var birthdate: Date?
+    var status: UserStatus
     let createdAt: Date
-    let lastLoginAt: Date?
+    var lastLoginAt: Date?
     
     init(
         id: String,

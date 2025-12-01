@@ -6,6 +6,7 @@ import RxCocoa
 final class AccountViewController: BaseViewController {
 
     private let viewModel: AccountViewModel
+    weak var coordinator: AccountCoordinator?
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -17,6 +18,7 @@ final class AccountViewController: BaseViewController {
 
     private let profileView: UIView = {
         let view = UIView()
+        view.isUserInteractionEnabled = true
         return view
     }()
 
@@ -30,7 +32,7 @@ final class AccountViewController: BaseViewController {
     private let nameLabel: UILabel = {
         let label = UILabel()
         label.applyTextStyle(
-            text: "김시아",
+            text: "",
             size: .s24,
             weight: .bold,
             color: .kidkTextWhite,
@@ -68,6 +70,13 @@ final class AccountViewController: BaseViewController {
         setupUI()
         setupCards()
         bind()
+        loadUserProfile()
+    }
+
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        // 프로필 수정 후 돌아왔을 때 업데이트
+        loadUserProfile()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -179,6 +188,50 @@ final class AccountViewController: BaseViewController {
     }
 
     private func bind() {
+        // ViewModel Input 설정
+        let viewDidLoad = rx.sentMessage(#selector(UIViewController.viewDidLoad))
+            .map { _ in () }
+            .asObservable()
+
+        let viewWillAppear = rx.sentMessage(#selector(UIViewController.viewWillAppear(_:)))
+            .map { _ in () }
+            .asObservable()
+
+        let input = AccountViewModel.Input(
+            viewDidLoad: viewDidLoad,
+            viewWillAppear: viewWillAppear
+        )
+
+        let output = viewModel.transform(input: input)
+
+        // 로딩 상태
+        output.isLoading
+            .drive(onNext: { [weak self] isLoading in
+                if isLoading {
+                    self?.showLoading()
+                } else {
+                    self?.hideLoading()
+                }
+            })
+            .disposed(by: disposeBag)
+
+        // 계좌 데이터 업데이트
+        output.accounts
+            .drive(onNext: { [weak self] accounts in
+                self?.updateAccountCards(with: accounts)
+            })
+            .disposed(by: disposeBag)
+
+        // 프로필 뷰 탭
+        let profileTapGesture = UITapGestureRecognizer()
+        profileView.addGestureRecognizer(profileTapGesture)
+
+        profileTapGesture.rx.event
+            .subscribe(onNext: { [weak self] _ in
+                self?.navigateToProfile()
+            })
+            .disposed(by: disposeBag)
+
         newMissionCard?.closeButtonTapped
             .subscribe(onNext: { [weak self] in
                 self?.removeCard(self?.newMissionCard)
@@ -232,5 +285,93 @@ final class AccountViewController: BaseViewController {
         let savingsViewModel = SavingsViewModel(user: viewModel.user)
         let savingsVC = SavingsViewController(viewModel: savingsViewModel)
         navigationController?.pushViewController(savingsVC, animated: true)
+    }
+
+    private func navigateToProfile() {
+        coordinator?.showProfile()
+    }
+
+    private func loadUserProfile() {
+        // UserProfileManager에서 사용자 정보 가져오기
+        Task { @MainActor in
+            if let user = await UserProfileManager.shared.getCurrentUser() {
+                nameLabel.text = user.name
+                debugLog("User name loaded: \(user.name)")
+            } else {
+                // UserProfileManager에 없으면 viewModel의 user 사용
+                nameLabel.text = viewModel.user.name
+                debugLog("Using viewModel user name: \(viewModel.user.name)")
+            }
+        }
+    }
+
+    private func updateAccountCards(with accounts: [Account]) {
+        debugLog("Updating account cards with \(accounts.count) accounts")
+
+        // spending account (내 지갑) 업데이트
+        if let spendingAccount = accounts.first(where: { $0.type == .spending }) {
+            let spendingData = AccountCardData(
+                iconName: "kidk_icon_wallet",
+                title: spendingAccount.name,
+                amount: spendingAccount.balance,
+                message: nil
+            )
+            spendingAccountCard = AccountCardFactory.makeSpendingAccountCard(data: spendingData)
+            debugLog("Updated spending card: \(spendingAccount.name) - \(spendingAccount.balance)원")
+        }
+
+        // savings account (내 저금통) 업데이트
+        if let savingsAccount = accounts.first(where: { $0.type == .savings }) {
+            let savingsData = AccountCardData(
+                iconName: "kidk_icon_piggy",
+                title: savingsAccount.name,
+                amount: savingsAccount.balance,
+                message: "친구들과 함께 저축 목표를 설정해보세요!"
+            )
+            savingsAccountCard = AccountCardFactory.makeSavingsAccountCard(data: savingsData)
+            debugLog("Updated savings card: \(savingsAccount.name) - \(savingsAccount.balance)원")
+        }
+
+        // 카드 스택 다시 구성
+        rebuildCardStack()
+    }
+
+    private func rebuildCardStack() {
+        // 기존 카드 제거
+        cardsStackView.arrangedSubviews.forEach {
+            cardsStackView.removeArrangedSubview($0)
+            $0.removeFromSuperview()
+        }
+
+        // 새 카드 추가
+        if let card = newMissionCard {
+            cardsStackView.addArrangedSubview(card)
+        }
+        if let card = spendingAccountCard {
+            cardsStackView.addArrangedSubview(card)
+        }
+        if let card = savingsAccountCard {
+            cardsStackView.addArrangedSubview(card)
+        }
+        if let card = monthlyReportCard {
+            cardsStackView.addArrangedSubview(card)
+        }
+
+        // 카드 탭 이벤트 다시 바인딩
+        bindCardTapEvents()
+    }
+
+    private func bindCardTapEvents() {
+        spendingAccountCard?.cardTapped
+            .subscribe(onNext: { [weak self] in
+                self?.navigateToWallet()
+            })
+            .disposed(by: disposeBag)
+
+        savingsAccountCard?.cardTapped
+            .subscribe(onNext: { [weak self] in
+                self?.navigateToSavings()
+            })
+            .disposed(by: disposeBag)
     }
 }
