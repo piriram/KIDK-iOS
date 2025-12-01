@@ -66,8 +66,24 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                         switch result {
                         case .success(let accountResponses):
                             let accounts = accountResponses.map { $0.toDomain() }
-                            self.debugSuccess("Fetched \(accounts.count) accounts from API")
-                            single(.success(accounts))
+
+                            // 계좌가 없으면 기본 계좌 자동 생성
+                            if accounts.isEmpty {
+                                self.debugWarning("No accounts found, creating default accounts")
+                                self.createDefaultAccounts()
+                                    .subscribe(onSuccess: { defaultAccounts in
+                                        self.debugSuccess("Created \(defaultAccounts.count) default accounts")
+                                        single(.success(defaultAccounts))
+                                    }, onFailure: { error in
+                                        self.debugError("Failed to create default accounts", error: error)
+                                        // 기본 계좌 생성 실패해도 Mock 반환
+                                        single(.success(self.mockAccounts))
+                                    })
+                                    .disposed(by: self.disposeBag)
+                            } else {
+                                self.debugSuccess("Fetched \(accounts.count) accounts from API")
+                                single(.success(accounts))
+                            }
                         case .failure(let error):
                             self.debugError("Failed to fetch accounts", error: error)
                             // 에러 시 Mock 데이터 반환
@@ -76,6 +92,47 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                     })
                     .disposed(by: self.disposeBag)
             }
+
+            return Disposables.create()
+        }
+    }
+
+    private func createDefaultAccounts() -> Single<[Account]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "AccountRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            // 내 지갑 (SPENDING) 생성
+            let spendingAccountSingle = self.createAccount(
+                type: .spending,
+                name: "내 지갑",
+                balance: 0,
+                isPrimary: true
+            )
+
+            // 내 저금통 (SAVINGS) 생성
+            let savingsAccountSingle = self.createAccount(
+                type: .savings,
+                name: "내 저금통",
+                balance: 0,
+                isPrimary: false
+            )
+
+            // 두 계좌를 순차적으로 생성
+            spendingAccountSingle
+                .flatMap { spendingAccount in
+                    savingsAccountSingle.map { savingsAccount in
+                        [spendingAccount, savingsAccount]
+                    }
+                }
+                .subscribe(onSuccess: { accounts in
+                    single(.success(accounts))
+                }, onFailure: { error in
+                    single(.failure(error))
+                })
+                .disposed(by: self.disposeBag)
 
             return Disposables.create()
         }
@@ -186,17 +243,66 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                 return Disposables.create()
             }
 
-            let newAccount = Account(
-                id: UUID().uuidString,
-                type: type,
-                name: name,
-                balance: balance,
-                isPrimary: isPrimary
-            )
+            // UserProfileManager에서 현재 사용자 ID 가져오기
+            Task {
+                guard let user = await UserProfileManager.shared.getCurrentUser(),
+                      let userId = Int(user.id) else {
+                    // 사용자 정보 없으면 Mock 계좌만 생성
+                    let newAccount = Account(
+                        id: UUID().uuidString,
+                        type: type,
+                        name: name,
+                        balance: balance,
+                        isPrimary: isPrimary
+                    )
+                    self.mockAccounts.append(newAccount)
+                    self.debugWarning("No user found, created mock account: \(name)")
+                    single(.success(newAccount))
+                    return
+                }
 
-            self.mockAccounts.append(newAccount)
-            self.debugSuccess("Created new account: \(name)")
-            single(.success(newAccount))
+                // 실제 API 호출
+                let accountTypeString: String
+                switch type {
+                case .spending:
+                    accountTypeString = "SPENDING"
+                case .savings:
+                    accountTypeString = "SAVINGS"
+                case .goal:
+                    accountTypeString = "GOAL"
+                }
+
+                self.networkService.request(
+                    AccountAPI.createAccount(
+                        userId: userId,
+                        accountType: accountTypeString,
+                        accountName: name,
+                        initialBalance: Double(balance)
+                    )
+                )
+                .subscribe(onNext: { (result: Result<AccountResponse, NetworkError>) in
+                    switch result {
+                    case .success(let accountResponse):
+                        let account = accountResponse.toDomain()
+                        self.debugSuccess("Created new account via API: \(account.name)")
+                        single(.success(account))
+                    case .failure(let error):
+                        self.debugError("Failed to create account", error: error)
+                        // 에러 시 Mock 계좌 생성
+                        let newAccount = Account(
+                            id: UUID().uuidString,
+                            type: type,
+                            name: name,
+                            balance: balance,
+                            isPrimary: isPrimary
+                        )
+                        self.mockAccounts.append(newAccount)
+                        single(.success(newAccount))
+                    }
+                })
+                .disposed(by: self.disposeBag)
+            }
+
             return Disposables.create()
         }
     }
