@@ -22,16 +22,16 @@ enum Environment {
     var baseURL: String {
         switch self {
         case .development:
-            return "http://YOUR_DEV_API_URL:8080/api/v1"
+            return SecretsManager.shared.apiBaseURLDev
         case .production:
-            return "https://YOUR_PROD_API_URL/api/v1" // TODO: 실제 프로덕션 URL로 변경
+            return SecretsManager.shared.apiBaseURLProd
         }
     }
 
     var swaggerURL: String? {
         switch self {
         case .development:
-            return "http://YOUR_DEV_API_URL:8080/swagger-ui/index.html"
+            return SecretsManager.shared.swaggerURLDev
         case .production:
             return nil
         }
