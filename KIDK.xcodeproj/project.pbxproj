@@ -8,6 +8,8 @@
 
 /* Begin PBXBuildFile section */
 		2102E44F2ED6D060009A1598 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 21BD66C42EC8DD3C00E15B12 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
+		2102E8302ED8767A009A1598 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E82F2ED8767A009A1598 /* FirebaseAuth */; };
+		2102E8322ED8767A009A1598 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = 2102E8312ED8767A009A1598 /* FirebaseCore */; };
 		21BA05E22EC5CE8D001BE4DA /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 21BA05E12EC5CE8D001BE4DA /* .gitignore */; };
 		21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA070F2EC5D369001BE4DA /* RxCocoa */; };
 		21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07112EC5D369001BE4DA /* RxSwift */; };
@@ -62,8 +64,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				21BA082D2EC76A50001BE4DA /* IQKeyboardManagerSwift in Frameworks */,
+				2102E8302ED8767A009A1598 /* FirebaseAuth in Frameworks */,
 				21BA07152EC5D375001BE4DA /* SnapKit in Frameworks */,
 				21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */,
+				2102E8322ED8767A009A1598 /* FirebaseCore in Frameworks */,
 				21BD66C52EC8DD3C00E15B12 /* RealmSwift in Frameworks */,
 				21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */,
 			);
@@ -115,6 +119,8 @@
 				21BA07142EC5D375001BE4DA /* SnapKit */,
 				21BA082C2EC76A50001BE4DA /* IQKeyboardManagerSwift */,
 				21BD66C42EC8DD3C00E15B12 /* RealmSwift */,
+				2102E82F2ED8767A009A1598 /* FirebaseAuth */,
+				2102E8312ED8767A009A1598 /* FirebaseCore */,
 			);
 			productName = KIDK;
 			productReference = 21BA05C92EC5CE6D001BE4DA /* KIDK.app */;
@@ -150,6 +156,7 @@
 				21BA07132EC5D375001BE4DA /* XCRemoteSwiftPackageReference "SnapKit" */,
 				21BA082B2EC76A50001BE4DA /* XCRemoteSwiftPackageReference "IQKeyboardManager" */,
 				21BD66C32EC8DD3C00E15B12 /* XCRemoteSwiftPackageReference "realm-swift" */,
+				2102E82E2ED8767A009A1598 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 21BA05CA2EC5CE6D001BE4DA /* Products */;
@@ -408,6 +415,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		2102E82E2ED8767A009A1598 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.6.0;
+			};
+		};
 		21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ReactiveX/RxSwift.git";
@@ -443,6 +458,16 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		2102E82F2ED8767A009A1598 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2102E82E2ED8767A009A1598 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		2102E8312ED8767A009A1598 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 2102E82E2ED8767A009A1598 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
 		21BA070F2EC5D369001BE4DA /* RxCocoa */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = 21BA070E2EC5D369001BE4DA /* XCRemoteSwiftPackageReference "RxSwift" */;

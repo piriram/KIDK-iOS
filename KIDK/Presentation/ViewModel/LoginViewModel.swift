@@ -61,7 +61,10 @@ final class LoginViewModel: BaseViewModel {
             })
             .flatMapLatest { [weak self] email, password, userType -> Observable<User> in
                 guard let self = self else { return .empty() }
-                return self.mockLogin(email: email, password: password, userType: userType)
+                // 🔥 Firebase + Backend API 로그인 활성화
+                return self.realLogin(email: email, password: password, userType: userType)
+                // Mock 로그인 (개발용)
+                // return self.mockLogin(email: email, password: password, userType: userType)
             }
             .do(onNext: { [weak self] user in
                 self?.stopLoading()
@@ -129,6 +132,11 @@ final class LoginViewModel: BaseViewModel {
     private func mockLogin(email: String, password: String, userType: UserType) -> Observable<User> {
         return Observable.create { [weak self] observer in
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                guard let self = self else {
+                    observer.onError(NSError(domain: "LoginViewModel", code: -1))
+                    return
+                }
+
                 let firebaseUID = "mock_\(UUID().uuidString)"
                 let user = User(
                     id: UUID().uuidString,
@@ -138,7 +146,14 @@ final class LoginViewModel: BaseViewModel {
                     status: .active
                 )
 
-                self?.authRepository.setFirstLaunchComplete()
+                // Mock 토큰 저장 (백엔드 준비되면 실제 토큰으로 대체)
+                let mockAccessToken = "mock_access_token_\(UUID().uuidString)"
+                let mockRefreshToken = "mock_refresh_token_\(UUID().uuidString)"
+                TokenManager.shared.saveAccessToken(mockAccessToken)
+                TokenManager.shared.saveRefreshToken(mockRefreshToken)
+
+                self.authRepository.setFirstLaunchComplete()
+                self.debugSuccess("Mock login successful with mock tokens")
                 observer.onNext(user)
                 observer.onCompleted()
             }

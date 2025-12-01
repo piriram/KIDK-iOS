@@ -12,8 +12,11 @@ final class SavingsRepository: BaseRepository, SavingsRepositoryProtocol {
 
     static let shared = SavingsRepository()
 
-    private override init() {
-        super.init()
+    private override init(
+        networkService: NetworkService = .shared,
+        tokenManager: TokenManager = .shared
+    ) {
+        super.init(networkService: networkService, tokenManager: tokenManager)
     }
 
     func fetchSavingsGoals() -> Single<[SavingsGoal]> {

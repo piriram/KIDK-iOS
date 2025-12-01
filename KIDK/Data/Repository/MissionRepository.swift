@@ -10,12 +10,16 @@ import RxSwift
 import RealmSwift
 
 final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
-    
+
     private let currentUserId: String
-    
-    init(currentUserId: String) {
+
+    init(
+        currentUserId: String,
+        networkService: NetworkService = .shared,
+        tokenManager: TokenManager = .shared
+    ) {
         self.currentUserId = currentUserId
-        super.init()
+        super.init(networkService: networkService, tokenManager: tokenManager)
     }
     
     func createMission(_ request: MissionCreationRequest) -> Single<Mission> {
