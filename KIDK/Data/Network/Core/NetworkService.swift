@@ -150,6 +150,27 @@ final class NetworkService {
         }
     }
 
+    // MARK: - Async/Await API
+
+    /// async/await 기반 네트워크 요청
+    /// - Parameter endpoint: API 엔드포인트
+    /// - Returns: 디코딩된 응답 데이터
+    /// - Throws: NetworkError
+    func request<T: Decodable>(_ endpoint: APIEndpoint) async throws -> T {
+        return try await withCheckedThrowingContinuation { continuation in
+            self.request(endpoint)
+                .subscribe(onNext: { (result: Result<T, NetworkError>) in
+                    switch result {
+                    case .success(let data):
+                        continuation.resume(returning: data)
+                    case .failure(let error):
+                        continuation.resume(throwing: error)
+                    }
+                })
+                .dispose()
+        }
+    }
+
     // MARK: - Helper Methods
 
     private func buildURL(endpoint: APIEndpoint) -> URL? {
@@ -167,3 +188,61 @@ final class NetworkService {
         return message
     }
 }
+
+// MARK: - Usage Examples
+
+/*
+ ## NetworkService 사용 예시
+
+ ### 1. RxSwift 방식 (기존)
+ ```swift
+ networkService.request(UserAPI.getMyProfile)
+     .subscribe(onNext: { result in
+         switch result {
+         case .success(let response):
+             // 성공 처리
+         case .failure(let error):
+             // 에러 처리
+         }
+     })
+     .disposed(by: disposeBag)
+ ```
+
+ ### 2. async/await 방식 (신규)
+ ```swift
+ Task {
+     do {
+         let response: ApiResponseUserResponse = try await networkService.request(UserAPI.getMyProfile)
+         // 성공 처리
+     } catch let error as NetworkError {
+         // NetworkError 타입으로 에러 처리
+         switch error {
+         case .unauthorized:
+             // 인증 에러
+         case .serverError(let statusCode, let message):
+             // 서버 에러
+         default:
+             // 기타 에러
+         }
+     }
+ }
+ ```
+
+ ## 언제 어떤 방식을 사용할까?
+
+ ### RxSwift 사용 (권장)
+ - Repository 레이어
+ - ViewModel에서 여러 스트림 조합이 필요한 경우
+ - 기존 RxSwift 기반 코드와 통합
+
+ ### async/await 사용 (권장)
+ - Actor 내부에서 네트워크 호출
+ - SwiftUI ViewModel (@Observable)
+ - 단순한 일회성 네트워크 호출
+
+ ## 포트폴리오 어필 포인트
+ - 두 가지 패러다임 모두 지원 가능
+ - 기존 코드 수정 없이 확장성 제공
+ - 레거시와 최신 기술의 공존
+ */
+
