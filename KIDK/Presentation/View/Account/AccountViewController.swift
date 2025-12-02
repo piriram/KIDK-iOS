@@ -239,8 +239,8 @@ final class AccountViewController: BaseViewController {
             .disposed(by: disposeBag)
 
         newMissionCard?.cardTapped
-            .subscribe(onNext: {
-                print("New mission card tapped")
+            .subscribe(onNext: { [weak self] in
+                self?.navigateToMissionCreation()
             })
             .disposed(by: disposeBag)
 
@@ -282,13 +282,19 @@ final class AccountViewController: BaseViewController {
     }
 
     private func navigateToSavings() {
-        let savingsViewModel = SavingsViewModel(user: viewModel.user)
+        let savingsViewModel = SavingsViewModel()
         let savingsVC = SavingsViewController(viewModel: savingsViewModel)
         navigationController?.pushViewController(savingsVC, animated: true)
     }
 
     private func navigateToProfile() {
         coordinator?.showProfile()
+    }
+
+    private func navigateToMissionCreation() {
+        let missionCreationViewModel = MissionCreationViewModel()
+        let missionCreationVC = MissionCreationViewController(viewModel: missionCreationViewModel)
+        navigationController?.pushViewController(missionCreationVC, animated: true)
     }
 
     private func loadUserProfile() {

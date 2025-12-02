@@ -93,7 +93,7 @@ final class SavingsDetailViewModel: BaseViewModel {
             savingsGoal: goalRelay.asDriver(),
             transactions: transactionsRelay.asDriver(),
             isLoading: isLoading.asDriver(),
-            error: error.compactMap { $0 }.asDriver(onErrorJustReturn: "알 수 없는 오류")
+            error: error.map { $0.localizedDescription }.asDriver(onErrorJustReturn: "알 수 없는 오류")
         )
     }
 
@@ -144,29 +144,27 @@ final class SavingsDetailViewModel: BaseViewModel {
 
         Task {
             guard let user = await UserProfileManager.shared.getCurrentUser() else {
-                self.error.accept("사용자 정보를 불러올 수 없습니다")
+                self.error.onNext(NSError(domain: "SavingsDetailViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "사용자 정보를 불러올 수 없습니다"]))
                 return
             }
 
             // 사용자의 지출 계좌 조회
             guard let userId = Int(user.id) else {
-                self.error.accept("유효하지 않은 사용자 ID입니다")
+                self.error.onNext(NSError(domain: "SavingsDetailViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "유효하지 않은 사용자 ID입니다"]))
                 return
             }
 
             self.startLoading()
 
             // 계좌 조회
-            self.accountRepository.getAccountsByUser(userId: userId)
+            self.accountRepository.getAllAccounts()
                 .flatMap { accounts -> Single<SavingsGoal> in
-                    guard let spendingAccount = accounts.first(where: { $0.accountType == .spending }) else {
-                        return .error(RepositoryError.notFound(message: "지출 계좌를 찾을 수 없습니다"))
+                    guard let spendingAccount = accounts.first(where: { $0.type == AccountType.spending }) else {
+                        return .error(RepositoryError.notFound)
                     }
 
-                    guard let savingsId = Int(self.savingsGoal.id),
-                          let accountId = Int(spendingAccount.id) else {
-                        return .error(RepositoryError.invalidParameter)
-                    }
+                    let savingsId = self.savingsGoal.id
+                    let accountId = spendingAccount.id
 
                     // 저축 입금 API 호출
                     return self.savingsRepository.deposit(
@@ -177,13 +175,13 @@ final class SavingsDetailViewModel: BaseViewModel {
                 }
                 .observe(on: MainScheduler.instance)
                 .subscribe(
-                    onSuccess: { [weak self] updatedGoal in
+                    onSuccess: { [weak self] (updatedGoal: SavingsGoal) in
                         self?.stopLoading()
                         goalRelay.accept(updatedGoal)
                         self?.depositSuccess.onNext(depositAmount)
                         self?.debugSuccess("Deposited \(depositAmount) to savings goal")
                     },
-                    onFailure: { [weak self] error in
+                    onFailure: { [weak self] (error: Error) in
                         self?.stopLoading()
                         self?.handleError(error)
                     }
@@ -198,7 +196,7 @@ final class SavingsDetailViewModel: BaseViewModel {
         let currentGoal = goalRelay.value
 
         guard currentGoal.currentAmount > 0 else {
-            self.error.accept("출금할 금액이 없습니다")
+            self.error.onNext(NSError(domain: "SavingsDetailViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "출금할 금액이 없습니다"]))
             return
         }
 
@@ -209,28 +207,26 @@ final class SavingsDetailViewModel: BaseViewModel {
 
         Task {
             guard let user = await UserProfileManager.shared.getCurrentUser() else {
-                self.error.accept("사용자 정보를 불러올 수 없습니다")
+                self.error.onNext(NSError(domain: "SavingsDetailViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "사용자 정보를 불러올 수 없습니다"]))
                 return
             }
 
             guard let userId = Int(user.id) else {
-                self.error.accept("유효하지 않은 사용자 ID입니다")
+                self.error.onNext(NSError(domain: "SavingsDetailViewModel", code: -1, userInfo: [NSLocalizedDescriptionKey: "유효하지 않은 사용자 ID입니다"]))
                 return
             }
 
             self.startLoading()
 
             // 계좌 조회
-            self.accountRepository.getAccountsByUser(userId: userId)
+            self.accountRepository.getAllAccounts()
                 .flatMap { accounts -> Single<SavingsGoal> in
-                    guard let spendingAccount = accounts.first(where: { $0.accountType == .spending }) else {
-                        return .error(RepositoryError.notFound(message: "지출 계좌를 찾을 수 없습니다"))
+                    guard let spendingAccount = accounts.first(where: { $0.type == AccountType.spending }) else {
+                        return .error(RepositoryError.notFound)
                     }
 
-                    guard let savingsId = Int(self.savingsGoal.id),
-                          let accountId = Int(spendingAccount.id) else {
-                        return .error(RepositoryError.invalidParameter)
-                    }
+                    let savingsId = self.savingsGoal.id
+                    let accountId = spendingAccount.id
 
                     // 저축 출금 API 호출
                     return self.savingsRepository.withdraw(
@@ -241,13 +237,13 @@ final class SavingsDetailViewModel: BaseViewModel {
                 }
                 .observe(on: MainScheduler.instance)
                 .subscribe(
-                    onSuccess: { [weak self] updatedGoal in
+                    onSuccess: { [weak self] (updatedGoal: SavingsGoal) in
                         self?.stopLoading()
                         goalRelay.accept(updatedGoal)
                         self?.withdrawSuccess.onNext(withdrawAmount)
                         self?.debugSuccess("Withdrew \(withdrawAmount) from savings goal")
                     },
-                    onFailure: { [weak self] error in
+                    onFailure: { [weak self] (error: Error) in
                         self?.stopLoading()
                         self?.handleError(error)
                     }

@@ -188,7 +188,7 @@ final class SavingsDetailViewController: BaseViewController {
 
     private func setupUI() {
         title = "저축 목표"
-        view.backgroundColor = .kidkBackground
+        view.backgroundColor = UIColor(hex: "#1C1C1E")
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)

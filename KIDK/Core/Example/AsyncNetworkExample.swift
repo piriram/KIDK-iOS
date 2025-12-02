@@ -49,7 +49,7 @@ actor NetworkExampleService {
         }
 
         let accountsResponse: ApiResponseAccountList = try await networkService.request(
-            AccountAPI.getAccountsByUser(userId: userId)
+            AccountAPI.getUserAccounts(userId: userId)
         )
         let accounts = accountsResponse.data?.map { $0.toDomain() } ?? []
 
@@ -62,7 +62,7 @@ actor NetworkExampleService {
     func fetchDashboardData() async throws -> DashboardData {
         async let userTask: ApiResponseUserResponse = networkService.request(UserAPI.getMyProfile)
         async let accountsTask: ApiResponseAccountList = networkService.request(
-            AccountAPI.getAccountsByUser(userId: 1) // 실제로는 userId 필요
+            AccountAPI.getUserAccounts(userId: 1) // 실제로는 userId 필요
         )
 
         // 두 API가 모두 완료될 때까지 대기
@@ -81,29 +81,20 @@ actor NetworkExampleService {
     // MARK: - Example 4: 에러 처리
 
     /// NetworkError를 적절히 처리하는 패턴
-    func fetchUserProfileWithErrorHandling() async -> Result<User, String> {
+    func fetchUserProfileWithErrorHandling() async -> Result<User, NetworkError> {
         do {
             let response: ApiResponseUserResponse = try await networkService.request(UserAPI.getMyProfile)
 
             guard let userData = response.data else {
-                return .failure("응답 데이터가 없습니다")
+                return .failure(.decodingFailed(NSError(domain: "AsyncNetworkExample", code: -1, userInfo: [NSLocalizedDescriptionKey: "응답 데이터가 없습니다"])))
             }
 
             return .success(userData.toDomain())
 
         } catch let error as NetworkError {
-            switch error {
-            case .unauthorized:
-                return .failure("인증이 필요합니다")
-            case .serverError(let statusCode, let message):
-                return .failure("서버 오류 (\(statusCode)): \(message ?? "알 수 없음")")
-            case .noInternetConnection:
-                return .failure("인터넷 연결을 확인해주세요")
-            default:
-                return .failure("네트워크 오류가 발생했습니다")
-            }
+            return .failure(error)
         } catch {
-            return .failure("알 수 없는 오류: \(error.localizedDescription)")
+            return .failure(.unknown(error))
         }
     }
 }
