@@ -13,7 +13,7 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
 
     // MARK: - Real API
 
-    func login(firebaseToken: String) -> Observable<Result<User, NetworkError>> {
+    func login(firebaseToken: String, firebaseUID: String) -> Observable<Result<User, NetworkError>> {
         debugLog("Starting login with Firebase token")
 
         let deviceId = UIDevice.current.identifierForVendor?.uuidString
@@ -34,7 +34,7 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
                     self.tokenManager.saveRefreshToken(loginData.refreshToken)
 
                     // 사용자 정보 저장
-                    let user = loginData.toDomain()
+                    let user = loginData.toDomain(firebaseUID: firebaseUID)
                     self.userDefaultsManager.saveMockFirebaseUID(user.firebaseUID)
                     self.userDefaultsManager.saveUserType(user.userType.rawValue)
                     self.userDefaultsManager.saveLastLoginDate(Date())
@@ -45,12 +45,12 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
                     self.debugError("Login failed", error: error)
                 }
             })
-            .map { (result: Result<ApiResponse<LoginResponseData>, NetworkError>) -> Result<User, NetworkError> in
+            .map { [firebaseUID] (result: Result<ApiResponse<LoginResponseData>, NetworkError>) -> Result<User, NetworkError> in
                 return result.flatMap { apiResponse in
                     guard let loginData = apiResponse.data else {
                         return .failure(.decodingFailed(NSError(domain: "AuthRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Login data is nil"])))
                     }
-                    return .success(loginData.toDomain())
+                    return .success(loginData.toDomain(firebaseUID: firebaseUID))
                 }
             }
     }
