@@ -178,16 +178,15 @@ final class ProfileViewController: BaseViewController {
         return label
     }()
 
-    private let userTypeValueLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "아이",
-            size: .s16,
-            weight: .regular,
-            color: .kidkGray,
-            lineHeight: 140
-        )
-        return label
+    private let userTypeSegmentedControl: UISegmentedControl = {
+        let items = ["아이", "부모"]
+        let control = UISegmentedControl(items: items)
+        control.selectedSegmentIndex = 0
+        control.backgroundColor = .cardBackground
+        control.selectedSegmentTintColor = .kidkPink
+        control.setTitleTextAttributes([.foregroundColor: UIColor.kidkTextWhite], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
     }()
 
     private lazy var saveButton = KIDKButton(
@@ -237,7 +236,7 @@ final class ProfileViewController: BaseViewController {
         contentView.addSubview(phoneLabel)
         contentView.addSubview(phoneTextField)
         contentView.addSubview(userTypeLabel)
-        contentView.addSubview(userTypeValueLabel)
+        contentView.addSubview(userTypeSegmentedControl)
         contentView.addSubview(saveButton)
 
         scrollView.snp.makeConstraints { make in
@@ -307,13 +306,14 @@ final class ProfileViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
         }
 
-        userTypeValueLabel.snp.makeConstraints { make in
-            make.top.equalTo(userTypeLabel.snp.bottom).offset(Spacing.xxs)
+        userTypeSegmentedControl.snp.makeConstraints { make in
+            make.top.equalTo(userTypeLabel.snp.bottom).offset(Spacing.xs)
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
+            make.height.equalTo(44)
         }
 
         saveButton.snp.makeConstraints { make in
-            make.top.equalTo(userTypeValueLabel.snp.bottom).offset(Spacing.xxl)
+            make.top.equalTo(userTypeSegmentedControl.snp.bottom).offset(Spacing.xxl)
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
             make.height.equalTo(56)
             make.bottom.equalToSuperview().offset(-Spacing.lg)
@@ -382,11 +382,18 @@ final class ProfileViewController: BaseViewController {
             }
             .asObservable()
 
+        let userTypeSelected = userTypeSegmentedControl.rx.selectedSegmentIndex
+            .map { index -> UserType? in
+                return index == 0 ? .child : .parent
+            }
+            .asObservable()
+
         let input = ProfileViewModel.Input(
             viewDidLoad: viewDidLoad,
             nameText: nameTextField.rx.text.orEmpty.asObservable(),
             birthdateText: birthdateText.map { Optional($0) },
             phoneText: phoneTextField.rx.text.asObservable(),
+            userTypeSelected: userTypeSelected,
             profileImageSelected: .never(), // TODO: 이미지 선택 기능 추가
             saveButtonTapped: saveButton.rx.tap.asObservable()
         )
@@ -397,7 +404,9 @@ final class ProfileViewController: BaseViewController {
         output.userProfile
             .drive(onNext: { [weak self] user in
                 self?.nameTextField.text = user.name
-                self?.userTypeValueLabel.text = user.userType == .parent ? "부모" : "아이"
+
+                // userType 표시
+                self?.userTypeSegmentedControl.selectedSegmentIndex = user.userType == .parent ? 1 : 0
 
                 // birthdate 표시
                 if let birthdate = user.birthdate {

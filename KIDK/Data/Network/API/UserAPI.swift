@@ -9,7 +9,7 @@ import Foundation
 
 enum UserAPI {
     case getMyProfile
-    case updateProfile(name: String, birthDate: String?, phone: String?)
+    case updateProfile(name: String, birthDate: String?, phone: String?, userType: String?)
     case uploadProfileImage(imageData: Data)
     case deleteAccount
     case updateStatus(status: String)
@@ -51,13 +51,16 @@ extension UserAPI: APIEndpoint {
 
     var parameters: [String: Any]? {
         switch self {
-        case .updateProfile(let name, let birthDate, let phone):
+        case .updateProfile(let name, let birthDate, let phone, let userType):
             var params: [String: Any] = ["name": name]
             if let birthDate = birthDate {
                 params["birthDate"] = birthDate
             }
             if let phone = phone {
                 params["phone"] = phone
+            }
+            if let userType = userType {
+                params["userType"] = userType
             }
             return params
 

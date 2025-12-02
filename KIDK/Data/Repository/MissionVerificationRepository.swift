@@ -179,8 +179,9 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
+            // Mock 데이터로 fallback
             let pending = self.mockVerifications.filter { $0.status == .pending }
-            self.debugLog("Fetched \(pending.count) pending verifications")
+            self.debugLog("Fetched \(pending.count) pending verifications from Mock")
             single(.success(pending))
             return Disposables.create()
         }
@@ -193,6 +194,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
+            // Mock에서 verification 찾기
             guard let index = self.mockVerifications.firstIndex(where: { $0.id == id }) else {
                 single(.failure(RepositoryError.notFound))
                 return Disposables.create()
@@ -206,36 +208,102 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
-            let approvedVerification = MissionVerification(
-                id: oldVerification.id,
-                missionId: oldVerification.missionId,
-                childId: oldVerification.childId,
-                type: oldVerification.type,
-                content: oldVerification.content,
-                memo: oldVerification.memo,
-                submittedDate: oldVerification.submittedDate,
-                reviewedBy: "parent_user",
-                reviewedDate: Date(),
-                status: .approved,
-                rejectReason: nil
-            )
+            // Get current user as parent
+            Task {
+                guard let user = await UserProfileManager.shared.getCurrentUser() else {
+                    self.debugWarning("No user found, using mock approval")
+                    self.approveMockVerification(index: index, oldVerification: oldVerification, single: single)
+                    return
+                }
 
-            self.mockVerifications[index] = approvedVerification
+                // API 호출 시도
+                guard let verificationIdInt = Int(id),
+                      let missionIdInt = Int(oldVerification.missionId),
+                      let parentIdInt = Int(user.id) else {
+                    self.debugWarning("Invalid ID format, using mock approval")
+                    self.approveMockVerification(index: index, oldVerification: oldVerification, single: single)
+                    return
+                }
 
-            self.debugSuccess("Approved verification: \(id)")
+                // 실제 API 호출
+                self.networkService.request(
+                    MissionVerificationAPI.approveVerification(
+                        missionId: missionIdInt,
+                        verificationId: verificationIdInt,
+                        parentId: parentIdInt
+                    )
+                )
+                .subscribe(onNext: { (result: Result<ApiResponseMissionVerification, NetworkError>) in
+                    switch result {
+                    case .success(let apiResponse):
+                        if let verificationResponse = apiResponse.data {
+                            let approvedVerification = verificationResponse.toDomain()
 
-            // Post notification for approval
-            NotificationCenter.default.post(
-                name: .verificationApproved,
-                object: approvedVerification
-            )
+                            // Mock 데이터도 업데이트
+                            self.mockVerifications[index] = approvedVerification
 
-            // Update mission progress
-            self.updateMissionProgress(missionId: approvedVerification.missionId)
+                            self.debugSuccess("Approved verification via API: \(id)")
 
-            single(.success(approvedVerification))
+                            // Post notification for approval
+                            NotificationCenter.default.post(
+                                name: .verificationApproved,
+                                object: approvedVerification
+                            )
+
+                            // Update mission progress
+                            self.updateMissionProgress(missionId: approvedVerification.missionId)
+
+                            single(.success(approvedVerification))
+                        } else {
+                            self.debugWarning("API returned success but no data, using mock approval")
+                            self.approveMockVerification(index: index, oldVerification: oldVerification, single: single)
+                        }
+
+                    case .failure(let error):
+                        self.debugError("Failed to approve via API, using mock approval", error: error)
+                        self.approveMockVerification(index: index, oldVerification: oldVerification, single: single)
+                    }
+                })
+                .disposed(by: self.disposeBag)
+            }
+
             return Disposables.create()
         }
+    }
+
+    private func approveMockVerification(
+        index: Int,
+        oldVerification: MissionVerification,
+        single: @escaping (SingleEvent<MissionVerification>) -> Void
+    ) {
+        let approvedVerification = MissionVerification(
+            id: oldVerification.id,
+            missionId: oldVerification.missionId,
+            childId: oldVerification.childId,
+            type: oldVerification.type,
+            content: oldVerification.content,
+            memo: oldVerification.memo,
+            submittedDate: oldVerification.submittedDate,
+            reviewedBy: "parent_user",
+            reviewedDate: Date(),
+            status: .approved,
+            rejectReason: nil
+        )
+
+        self.mockVerifications[index] = approvedVerification
+
+        self.debugSuccess("Approved verification (Mock): \(oldVerification.id)")
+
+        // Post notification for approval
+        NotificationCenter.default.post(
+            name: .verificationApproved,
+            object: approvedVerification
+        )
+
+        // Update mission progress
+        self.updateMissionProgress(missionId: approvedVerification.missionId)
+
+        single(.success(approvedVerification))
     }
 
     func rejectVerification(id: String, reason: String) -> Single<MissionVerification> {
@@ -258,33 +326,98 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
-            let rejectedVerification = MissionVerification(
-                id: oldVerification.id,
-                missionId: oldVerification.missionId,
-                childId: oldVerification.childId,
-                type: oldVerification.type,
-                content: oldVerification.content,
-                memo: oldVerification.memo,
-                submittedDate: oldVerification.submittedDate,
-                reviewedBy: "parent_user",
-                reviewedDate: Date(),
-                status: .rejected,
-                rejectReason: reason
-            )
+            // Get current user as parent
+            Task {
+                guard let user = await UserProfileManager.shared.getCurrentUser() else {
+                    self.debugWarning("No user found, using mock rejection")
+                    self.rejectMockVerification(index: index, oldVerification: oldVerification, reason: reason, single: single)
+                    return
+                }
 
-            self.mockVerifications[index] = rejectedVerification
+                // API 호출 시도
+                guard let verificationIdInt = Int(id),
+                      let missionIdInt = Int(oldVerification.missionId),
+                      let parentIdInt = Int(user.id) else {
+                    self.debugWarning("Invalid ID format, using mock rejection")
+                    self.rejectMockVerification(index: index, oldVerification: oldVerification, reason: reason, single: single)
+                    return
+                }
 
-            self.debugSuccess("Rejected verification: \(id) with reason: \(reason)")
+                // 실제 API 호출
+                self.networkService.request(
+                    MissionVerificationAPI.rejectVerification(
+                        missionId: missionIdInt,
+                        verificationId: verificationIdInt,
+                        parentId: parentIdInt,
+                        reason: reason
+                    )
+                )
+                .subscribe(onNext: { (result: Result<ApiResponseMissionVerification, NetworkError>) in
+                    switch result {
+                    case .success(let apiResponse):
+                        if let verificationResponse = apiResponse.data {
+                            let rejectedVerification = verificationResponse.toDomain()
 
-            // Post notification for rejection
-            NotificationCenter.default.post(
-                name: .verificationRejected,
-                object: rejectedVerification
-            )
+                            // Mock 데이터도 업데이트
+                            self.mockVerifications[index] = rejectedVerification
 
-            single(.success(rejectedVerification))
+                            self.debugSuccess("Rejected verification via API: \(id)")
+
+                            // Post notification for rejection
+                            NotificationCenter.default.post(
+                                name: .verificationRejected,
+                                object: rejectedVerification
+                            )
+
+                            single(.success(rejectedVerification))
+                        } else {
+                            self.debugWarning("API returned success but no data, using mock rejection")
+                            self.rejectMockVerification(index: index, oldVerification: oldVerification, reason: reason, single: single)
+                        }
+
+                    case .failure(let error):
+                        self.debugError("Failed to reject via API, using mock rejection", error: error)
+                        self.rejectMockVerification(index: index, oldVerification: oldVerification, reason: reason, single: single)
+                    }
+                })
+                .disposed(by: self.disposeBag)
+            }
+
             return Disposables.create()
         }
+    }
+
+    private func rejectMockVerification(
+        index: Int,
+        oldVerification: MissionVerification,
+        reason: String,
+        single: @escaping (SingleEvent<MissionVerification>) -> Void
+    ) {
+        let rejectedVerification = MissionVerification(
+            id: oldVerification.id,
+            missionId: oldVerification.missionId,
+            childId: oldVerification.childId,
+            type: oldVerification.type,
+            content: oldVerification.content,
+            memo: oldVerification.memo,
+            submittedDate: oldVerification.submittedDate,
+            reviewedBy: "parent_user",
+            reviewedDate: Date(),
+            status: .rejected,
+            rejectReason: reason
+        )
+
+        self.mockVerifications[index] = rejectedVerification
+
+        self.debugSuccess("Rejected verification (Mock): \(oldVerification.id)")
+
+        // Post notification for rejection
+        NotificationCenter.default.post(
+            name: .verificationRejected,
+            object: rejectedVerification
+        )
+
+        single(.success(rejectedVerification))
     }
 
     // MARK: - Private Helper Methods

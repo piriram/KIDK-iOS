@@ -69,31 +69,30 @@ enum AccountCardFactory {
         let card = AccountCardView()
         let contentView = UIView()
         
-        let iconImageView = IconContainerView(data.iconName)
-        
+        let iconImageView = IconContainerView(data.iconName, size: 40, iconSize: 24)
+
         let titleLabel = UILabel()
         titleLabel.text = data.title
         titleLabel.font = .kidkSubtitle
         titleLabel.textColor = .kidkGray
-        
+
         let amountLabel = UILabel()
         amountLabel.text = data.formattedAmount
         amountLabel.font = .kidkTitle
         amountLabel.textColor = .kidkTextWhite
-        
+
         let arrowImageView = UIImageView()
         arrowImageView.image = UIImage(systemName: "chevron.right")
         arrowImageView.tintColor = .kidkGray
         arrowImageView.contentMode = .scaleAspectFit
-        
+
         contentView.addSubview(iconImageView)
         contentView.addSubview(titleLabel)
         contentView.addSubview(amountLabel)
         contentView.addSubview(arrowImageView)
-        
+
         iconImageView.snp.makeConstraints { make in
             make.leading.centerY.equalToSuperview()
-            make.width.height.equalTo(40)
         }
         
         titleLabel.snp.makeConstraints { make in
@@ -120,31 +119,30 @@ enum AccountCardFactory {
         let card = AccountCardView()
         let contentView = UIView()
         
-        let iconImageView = IconContainerView(data.iconName)
-        
+        let iconImageView = IconContainerView(data.iconName, size: 40, iconSize: 24)
+
         let titleLabel = UILabel()
         titleLabel.text = data.title
         titleLabel.font = .kidkBody
         titleLabel.textColor = .kidkGray
-        
+
         let amountLabel = UILabel()
         amountLabel.text = data.formattedAmount
         amountLabel.font = .kidkTitle
         amountLabel.textColor = .kidkTextWhite
-        
+
         let arrowImageView = UIImageView()
         arrowImageView.image = UIImage(systemName: "chevron.right")
         arrowImageView.tintColor = .kidkGray
         arrowImageView.contentMode = .scaleAspectFit
-        
+
         contentView.addSubview(iconImageView)
         contentView.addSubview(titleLabel)
         contentView.addSubview(amountLabel)
         contentView.addSubview(arrowImageView)
-        
+
         iconImageView.snp.makeConstraints { make in
             make.leading.top.equalToSuperview()
-            make.width.height.equalTo(40)
         }
         
         titleLabel.snp.makeConstraints { make in

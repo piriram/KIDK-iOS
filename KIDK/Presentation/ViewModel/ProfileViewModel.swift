@@ -16,6 +16,7 @@ final class ProfileViewModel: BaseViewModel {
         let nameText: Observable<String>
         let birthdateText: Observable<String?>
         let phoneText: Observable<String?>
+        let userTypeSelected: Observable<UserType?>
         let profileImageSelected: Observable<Data?>
         let saveButtonTapped: Observable<Void>
     }
@@ -118,23 +119,28 @@ final class ProfileViewModel: BaseViewModel {
             .withLatestFrom(Observable.combineLatest(
                 input.nameText,
                 input.birthdateText,
-                input.phoneText
+                input.phoneText,
+                input.userTypeSelected
             ))
             .do(onNext: { [weak self] _ in
                 self?.startLoading()
                 self?.debugLog("Updating profile...")
             })
-            .flatMapLatest { [weak self] name, birthdate, phone -> Observable<Result<ApiResponseUserResponse, NetworkError>> in
+            .flatMapLatest { [weak self] name, birthdate, phone, userType -> Observable<Result<ApiResponseUserResponse, NetworkError>> in
                 guard let self = self else { return .empty() }
 
                 // birthdate를 Date -> String 변환 (YYYY-MM-DD)
                 let birthdateString = birthdate
 
+                // userType을 String으로 변환
+                let userTypeString = userType?.rawValue.uppercased()
+
                 return self.networkService.request(
                     UserAPI.updateProfile(
                         name: name,
                         birthDate: birthdateString,
-                        phone: phone
+                        phone: phone,
+                        userType: userTypeString
                     )
                 )
             }
