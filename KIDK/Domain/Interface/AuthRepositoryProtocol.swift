@@ -11,6 +11,7 @@ import RxSwift
 protocol AuthRepositoryProtocol {
     // Real API
     func login(firebaseToken: String) -> Observable<Result<User, NetworkError>>
+    func logout() -> Observable<Result<Void, NetworkError>>
 
     // Mock methods
     func generateMockUser(userType: UserType) -> Observable<User>

@@ -14,6 +14,9 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
 
+        // 앱 빌드 환경 설정 정보 출력
+        AppConfiguration.printConfiguration()
+
         configureFirebase()
         configureRealm()
         configureIQKeyboardManager()

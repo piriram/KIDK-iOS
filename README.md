@@ -98,11 +98,57 @@ cp ~/Downloads/GoogleService-Info.plist KIDK/
 
 Firebase Console에서 Authentication → Sign-in method → 이메일/비밀번호 활성화
 
-### 6. 빌드 및 실행
+### 6. 빌드 환경 선택
+
+이 프로젝트는 **개발(Development)**와 **배포(Production)** 두 가지 빌드 환경을 지원함:
+
+| 환경 | Scheme | API 서버 | 기능 |
+|-----|--------|---------|------|
+| 🔧 **개발** | Debug | DEV 서버 | - Mock 데이터 사용 가능<br>- 상세 로그 출력<br>- 개발자 메뉴 표시<br>- Swagger UI 접근<br>- 앱 이름: "KIDK-DEV" |
+| 🚀 **배포** | Release | PROD 서버 | - 실제 API만 사용<br>- 최소 로그 출력<br>- 개발자 메뉴 숨김<br>- Swagger 비활성화<br>- 앱 이름: "KIDK" |
+
+#### Xcode에서 빌드 환경 전환
+
+1. Xcode 상단 메뉴: `Product` → `Scheme` → `Edit Scheme...`
+2. `Run` 탭 선택
+3. `Build Configuration` 변경:
+   - **Debug** = 개발 환경 (기본값)
+   - **Release** = 배포 환경
+
+또는 단축키로 빠르게 전환:
+```
+Cmd + < (Scheme 선택 메뉴)
+```
+
+#### 환경별 설정 위치
+
+모든 환경 관련 설정은 `AppConfiguration.swift`에서 관리됨:
+- API Base URL
+- Feature Flags (Mock 데이터, 로깅, 개발자 메뉴)
+- API Timeout
+- Bundle Identifier Suffix
+
+### 7. 빌드 및 실행
 
 1. Xcode에서 `KIDK.xcworkspace` 열기 (`.xcodeproj`가 아님)
-2. 시뮬레이터 또는 실제 기기 선택
-3. `Cmd + R`로 빌드 및 실행
+2. 빌드 환경 선택 (Debug/Release)
+3. 시뮬레이터 또는 실제 기기 선택
+4. `Cmd + R`로 빌드 및 실행
+
+**개발 시작 시 콘솔에 출력되는 환경 정보:**
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📱 KIDK App Configuration
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🏗️  Environment: 개발
+🌐 API Base URL: http://43.202.165.98:8080/api/v1
+⏱️  API Timeout: 30.0s
+🧪 Mock Data: Enabled
+📊 Logging: Enabled
+🔧 Developer Menu: Visible
+📖 Swagger: Enabled
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
 
 ## 프로젝트 구조
 

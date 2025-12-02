@@ -23,6 +23,7 @@ final class MissionViewModel: BaseViewModel {
 
     private let missionsRelay = BehaviorRelay<[Mission]>(value: [])
     private let collapseStatesRelay = BehaviorRelay<[Bool]>(value: [])
+    private var hasSampleMissionsCreated = false
 
     init(user: User, missionRepository: MissionRepositoryProtocol) {
         self.user = user
@@ -65,10 +66,11 @@ final class MissionViewModel: BaseViewModel {
                 let savingsMissions = missions.filter { $0.missionType == .savings }
                 self.debugLog("Found \(savingsMissions.count) savings missions")
 
-                // If no missions exist or less than 3 savings missions, create sample missions
-                if missions.isEmpty || savingsMissions.count < 3 {
-                    self.debugLog("Creating sample missions (total: \(missions.count), savings: \(savingsMissions.count))")
-                    self.createSampleMissions()
+                // Only create sample missions if NO missions exist at all
+                // (avoiding duplicate creation when API returns empty but Realm has data)
+                if missions.isEmpty {
+                    self.debugLog("No missions found, creating sample missions")
+                    self.createSampleMissionsOnce()
                 } else {
                     self.missionsRelay.accept(missions)
 
@@ -85,6 +87,16 @@ final class MissionViewModel: BaseViewModel {
                 self.isLoading.accept(false)
             })
             .disposed(by: disposeBag)
+    }
+
+    private func createSampleMissionsOnce() {
+        // Prevent duplicate creation
+        guard !hasSampleMissionsCreated else {
+            debugLog("Sample missions already created, skipping")
+            return
+        }
+        hasSampleMissionsCreated = true
+        createSampleMissions()
     }
 
     private func createSampleMissions() {

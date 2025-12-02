@@ -55,6 +55,57 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
             }
     }
 
+    func logout() -> Observable<Result<Void, NetworkError>> {
+        debugLog("Starting logout")
+
+        // RefreshToken 가져오기
+        guard let refreshToken = tokenManager.refreshToken else {
+            debugWarning("No refresh token found, proceeding with local logout")
+            // 토큰이 없어도 로컬 세션은 정리
+            return clearSession()
+                .map { .success(()) }
+                .catch { error in
+                    return .just(.failure(.unknown(error)))
+                }
+        }
+
+        return networkService.request(AuthAPI.logout(refreshToken: refreshToken))
+            .do(onNext: { [weak self] (result: Result<ApiResponse<EmptyResponse>, NetworkError>) in
+                guard let self = self else { return }
+
+                switch result {
+                case .success:
+                    // 서버 로그아웃 성공 시 로컬 세션 정리
+                    self.tokenManager.clearAllTokens()
+                    self.userDefaultsManager.clearAll()
+
+                    do {
+                        try self.keychainWrapper.delete(key: "mock_token")
+                    } catch {
+                        self.debugWarning("Failed to delete keychain token: \(error.localizedDescription)")
+                    }
+
+                    self.debugSuccess("Logout successful, session cleared")
+
+                case .failure(let error):
+                    self.debugError("Logout API failed", error: error)
+                    // API 실패해도 로컬 세션은 정리
+                    self.tokenManager.clearAllTokens()
+                    self.userDefaultsManager.clearAll()
+
+                    do {
+                        try self.keychainWrapper.delete(key: "mock_token")
+                    } catch {
+                        self.debugWarning("Failed to delete keychain token: \(error.localizedDescription)")
+                    }
+                }
+            })
+            .map { (result: Result<ApiResponse<EmptyResponse>, NetworkError>) -> Result<Void, NetworkError> in
+                // API 성공/실패 여부와 관계없이 로컬 세션은 정리되었으므로 성공 반환
+                return .success(())
+            }
+    }
+
     // MARK: - Mock Methods
 
     func isAutoLoginEnabled() -> Bool {
