@@ -176,6 +176,7 @@ KIDK/
 - **Actor Pattern**: UserProfileManager에서 thread-safe 상태 관리
 - **Generic + Protocol**: StorageProtocol로 확장 가능한 저장소 레이어
 - **Property Wrapper**: @UserDefault로 선언적 UserDefaults 접근
+- **RxSwift + async/await 공존**: NetworkService가 두 패러다임 모두 지원
 
 ## 보안
 
