@@ -18,16 +18,17 @@ final class SavingsViewModel: BaseViewModel {
         let error: Driver<String>
     }
 
-    private let user: User
+    weak var coordinator: SavingsCoordinator?
+
+    private let savingsRepository: SavingsRepositoryProtocol
     private let statsRelay = BehaviorRelay<SavingsStats>(value: SavingsViewModel.createMockStats())
     private let inProgressGoalsRelay = BehaviorRelay<[SavingsGoal]>(value: SavingsViewModel.createMockInProgressGoals())
     private let completedGoalsRelay = BehaviorRelay<[SavingsGoal]>(value: SavingsViewModel.createMockCompletedGoals())
     private let errorRelay = PublishRelay<String>()
 
-    init(user: User) {
-        self.user = user
+    init(savingsRepository: SavingsRepositoryProtocol = SavingsRepository.shared) {
+        self.savingsRepository = savingsRepository
         super.init()
-        debugLog("SavingsViewModel initialized with user: \(user.name)")
     }
 
     func transform(input: Input) -> Output {
@@ -46,6 +47,7 @@ final class SavingsViewModel: BaseViewModel {
         input.goalSelected
             .subscribe(onNext: { [weak self] goal in
                 self?.debugLog("Goal selected: \(goal.name)")
+                self?.coordinator?.showSavingsDetail(goal: goal)
             })
             .disposed(by: disposeBag)
 

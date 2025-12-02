@@ -1,20 +1,32 @@
-////
-////  SavingsCoordinator.swift
-////  KIDK
-////
-////  Created by 잠만보김쥬디 on 11/19/25.
-////
 //
-//import UIKit
-//import RxSwift
+//  SavingsCoordinator.swift
+//  KIDK
 //
-//final class SavingsCoordinator: BaseCoordinator {
+//  Created by 잠만보김쥬디 on 11/19/25.
 //
-//    override func start() {
-//        let savingsRepository = SavingsRepository.shared
-//        let viewModel = SavingsViewModel(savingsRepository: savingsRepository)
-//        let viewController = SavingsViewController(viewModel: viewModel)
-//
-//        navigationController.setViewControllers([viewController], animated: false)
-//    }
-//}
+
+import UIKit
+import RxSwift
+
+final class SavingsCoordinator: BaseCoordinator {
+
+    override func start() {
+        let savingsRepository = SavingsRepository.shared
+        let viewModel = SavingsViewModel(savingsRepository: savingsRepository)
+        viewModel.coordinator = self
+
+        let viewController = SavingsViewController(viewModel: viewModel)
+        viewController.coordinator = self
+
+        navigationController.setViewControllers([viewController], animated: false)
+    }
+
+    /// 저축 목표 상세 화면으로 이동
+    func showSavingsDetail(goal: SavingsGoal) {
+        let viewModel = SavingsDetailViewModel(savingsGoal: goal)
+        let viewController = SavingsDetailViewController(viewModel: viewModel)
+        viewController.coordinator = self
+
+        navigationController.pushViewController(viewController, animated: true)
+    }
+}
