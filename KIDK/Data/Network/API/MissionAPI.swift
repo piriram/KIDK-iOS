@@ -58,14 +58,14 @@ extension MissionAPI: APIEndpoint {
                 "ownerId": ownerId,
                 "missionType": missionType,
                 "title": title,
-                "rewardAmount": rewardAmount,
+                "rewardAmount": rewardAmount,  // Double로 전송
                 "status": status
             ]
             if let desc = description {
                 params["description"] = desc
             }
             if let target = targetAmount {
-                params["targetAmount"] = target
+                params["targetAmount"] = target  // Double로 전송
             }
             if let date = targetDate {
                 params["targetDate"] = date

@@ -48,6 +48,14 @@ final class NetworkService {
             // Body 설정
             if let parameters = endpoint.parameters {
                 do {
+                    #if DEBUG
+                    // 파라미터 타입 검증
+                    print("📋 [Parameter Types]")
+                    for (key, value) in parameters {
+                        print("  - \(key): \(type(of: value)) = \(value)")
+                    }
+                    #endif
+
                     request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
                 } catch {
                     observer.onNext(.failure(.encodingFailed(error)))
@@ -57,7 +65,7 @@ final class NetworkService {
             }
 
             // Interceptor를 통한 헤더 추가
-            request = self.interceptor.adapt(request)
+            request = self.interceptor.adapt(request, endpoint: endpoint)
 
             // Custom 헤더 추가
             endpoint.headers?.forEach { key, value in
@@ -92,52 +100,66 @@ final class NetworkService {
 
                 #if DEBUG
                 print("📥 [Response] Status Code: \(httpResponse.statusCode)")
+
+                // Response Headers 출력 (500 에러 시 유용)
+                if httpResponse.statusCode >= 400 {
+                    print("📋 [Response Headers]")
+                    for (key, value) in httpResponse.allHeaderFields {
+                        print("  - \(key): \(value)")
+                    }
+                }
+
                 if let data = data, let responseString = String(data: data, encoding: .utf8) {
                     print("📦 [Response Body] \(responseString)")
                 }
                 #endif
 
-                // 상태 코드별 에러 처리
-                switch httpResponse.statusCode {
-                case 200...299:
-                    guard let data = data else {
-                        observer.onNext(.failure(.unknown(nil)))
-                        observer.onCompleted()
-                        return
+                guard let data = data else {
+                    observer.onNext(.failure(.unknown(nil)))
+                    observer.onCompleted()
+                    return
+                }
+
+                // 백엔드 공통 응답 포맷 파싱
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<T>.self, from: data)
+
+                    if apiResponse.success {
+                        // ✅ 성공 응답
+                        if let responseData = apiResponse.data {
+                            observer.onNext(.success(responseData))
+                        } else {
+                            observer.onNext(.failure(.unknown(nil)))
+                        }
+                    } else {
+                        // ❌ 실패 응답
+                        if let errorInfo = apiResponse.error {
+                            // 에러 코드별 분기 처리
+                            let errorCode = errorInfo.code
+                            let errorMessage = errorInfo.message
+
+                            switch httpResponse.statusCode {
+                            case 401:
+                                observer.onNext(.failure(.unauthorized(code: errorCode, message: errorMessage)))
+                            case 403:
+                                observer.onNext(.failure(.forbidden(code: errorCode, message: errorMessage)))
+                            case 404:
+                                observer.onNext(.failure(.notFound(code: errorCode, message: errorMessage)))
+                            case 500...599:
+                                observer.onNext(.failure(.serverError(statusCode: httpResponse.statusCode, code: errorCode, message: errorMessage)))
+                            default:
+                                observer.onNext(.failure(.apiError(code: errorCode, message: errorMessage)))
+                            }
+                        } else {
+                            observer.onNext(.failure(.unknown(nil)))
+                        }
                     }
-
-                    do {
-                        let decodedData = try JSONDecoder().decode(T.self, from: data)
-                        observer.onNext(.success(decodedData))
-                        observer.onCompleted()
-                    } catch {
-                        observer.onNext(.failure(.decodingFailed(error)))
-                        observer.onCompleted()
-                    }
-
-                case 401:
-                    let message = self.extractErrorMessage(from: data)
-                    observer.onNext(.failure(.unauthorized(message: message)))
                     observer.onCompleted()
-
-                case 403:
-                    let message = self.extractErrorMessage(from: data)
-                    observer.onNext(.failure(.forbidden(message: message)))
-                    observer.onCompleted()
-
-                case 404:
-                    let message = self.extractErrorMessage(from: data)
-                    observer.onNext(.failure(.notFound(message: message)))
-                    observer.onCompleted()
-
-                case 500...599:
-                    let message = self.extractErrorMessage(from: data)
-                    observer.onNext(.failure(.serverError(statusCode: httpResponse.statusCode, message: message)))
-                    observer.onCompleted()
-
-                default:
-                    let message = self.extractErrorMessage(from: data)
-                    observer.onNext(.failure(.serverError(statusCode: httpResponse.statusCode, message: message)))
+                } catch {
+                    #if DEBUG
+                    print("⚠️ [Decoding Error] \(error)")
+                    #endif
+                    observer.onNext(.failure(.decodingFailed(error)))
                     observer.onCompleted()
                 }
             }
@@ -177,15 +199,6 @@ final class NetworkService {
         let urlString = environment.baseURL + endpoint.path
         print("custom: urlString -  \(urlString)")
         return URL(string: urlString)
-    }
-
-    private func extractErrorMessage(from data: Data?) -> String? {
-        guard let data = data,
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let message = json["message"] as? String else {
-            return nil
-        }
-        return message
     }
 }
 

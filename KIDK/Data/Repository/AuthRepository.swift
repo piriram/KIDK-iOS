@@ -19,16 +19,11 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
         let deviceId = UIDevice.current.identifierForVendor?.uuidString
 
         return networkService.request(AuthAPI.login(firebaseToken: firebaseToken, deviceId: deviceId))
-            .do(onNext: { [weak self] (result: Result<ApiResponse<LoginResponseData>, NetworkError>) in
+            .do(onNext: { [weak self] (result: Result<LoginResponseData, NetworkError>) in
                 guard let self = self else { return }
 
                 switch result {
-                case .success(let apiResponse):
-                    guard let loginData = apiResponse.data else {
-                        self.debugError("Login response data is nil", error: nil)
-                        return
-                    }
-
+                case .success(let loginData):
                     // 토큰 저장
                     self.tokenManager.saveAccessToken(loginData.accessToken)
                     self.tokenManager.saveRefreshToken(loginData.refreshToken)
@@ -45,12 +40,9 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
                     self.debugError("Login failed", error: error)
                 }
             })
-            .map { [firebaseUID] (result: Result<ApiResponse<LoginResponseData>, NetworkError>) -> Result<User, NetworkError> in
-                return result.flatMap { apiResponse in
-                    guard let loginData = apiResponse.data else {
-                        return .failure(.decodingFailed(NSError(domain: "AuthRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Login data is nil"])))
-                    }
-                    return .success(loginData.toDomain(firebaseUID: firebaseUID))
+            .map { [firebaseUID] (result: Result<LoginResponseData, NetworkError>) -> Result<User, NetworkError> in
+                return result.map { loginData in
+                    loginData.toDomain(firebaseUID: firebaseUID)
                 }
             }
     }
@@ -59,7 +51,7 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
         debugLog("Starting logout")
 
         // RefreshToken 가져오기
-        guard let refreshToken = tokenManager.refreshToken else {
+        guard tokenManager.refreshToken != nil else {
             debugWarning("No refresh token found, proceeding with local logout")
             // 토큰이 없어도 로컬 세션은 정리
             return clearSession()
@@ -69,8 +61,8 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
                 }
         }
 
-        return networkService.request(AuthAPI.logout(refreshToken: refreshToken))
-            .do(onNext: { [weak self] (result: Result<ApiResponse<EmptyResponse>, NetworkError>) in
+        return networkService.request(AuthAPI.logout)
+            .do(onNext: { [weak self] (result: Result<EmptyData, NetworkError>) in
                 guard let self = self else { return }
 
                 switch result {
@@ -100,7 +92,7 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
                     }
                 }
             })
-            .map { (result: Result<ApiResponse<EmptyResponse>, NetworkError>) -> Result<Void, NetworkError> in
+            .map { (result: Result<EmptyData, NetworkError>) -> Result<Void, NetworkError> in
                 // API 성공/실패 여부와 관계없이 로컬 세션은 정리되었으므로 성공 반환
                 return .success(())
             }

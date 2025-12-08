@@ -42,17 +42,8 @@ struct TransactionResponse: Decodable {
 
 // MARK: - API Response Wrapper
 
-struct ApiResponseTransaction: Decodable {
-    let success: Bool
-    let data: TransactionResponse?
-    let error: ErrorBody?
-}
-
-struct ApiResponseTransactionList: Decodable {
-    let success: Bool
-    let data: [TransactionResponse]?
-    let error: ErrorBody?
-}
+typealias ApiResponseTransaction = ApiResponse<TransactionResponse>
+typealias ApiResponseTransactionList = ApiResponse<[TransactionResponse]>
 
 // MARK: - DTO to Domain Model
 

@@ -10,19 +10,24 @@ import Foundation
 // MARK: - Family Response
 
 struct FamilyResponse: Decodable {
-    let createdAt: String
-    let updatedAt: String
     let id: Int
     let familyName: String
     let inviteCode: String
+    let onCreate: String  // API 응답 필드명과 일치
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case familyName
+        case inviteCode
+        case onCreate
+    }
 }
 
 // MARK: - Family Creation Request
 
 struct FamilyCreationRequestDTO: Encodable {
+    let userId: Int
     let familyName: String
-    let creatorId: Int
-    let creatorRole: String
 }
 
 // MARK: - Family Join Request
@@ -30,7 +35,6 @@ struct FamilyCreationRequestDTO: Encodable {
 struct FamilyJoinRequestDTO: Encodable {
     let userId: Int
     let inviteCode: String
-    let role: String
 }
 
 // MARK: - API Response Wrappers
@@ -44,15 +48,14 @@ extension FamilyResponse {
     func toDomain() -> Family {
         // ISO8601 날짜 파싱
         let dateFormatter = ISO8601DateFormatter()
-        let createdDate = dateFormatter.date(from: createdAt) ?? Date()
-        let updatedDate = dateFormatter.date(from: updatedAt) ?? Date()
+        let createdDate = dateFormatter.date(from: onCreate) ?? Date()
 
         return Family(
             id: String(id),
             familyName: familyName,
             inviteCode: inviteCode,
             createdAt: createdDate,
-            updatedAt: updatedDate
+            updatedAt: createdDate  // onCreate만 있으므로 같은 값 사용
         )
     }
 }
@@ -64,9 +67,8 @@ extension FamilyCreationRequest {
         guard let creatorIdInt = Int(creatorId) else { return nil }
 
         return FamilyCreationRequestDTO(
-            familyName: familyName,
-            creatorId: creatorIdInt,
-            creatorRole: creatorRole.rawValue
+            userId: creatorIdInt,
+            familyName: familyName
         )
     }
 }
@@ -77,8 +79,7 @@ extension FamilyJoinRequest {
 
         return FamilyJoinRequestDTO(
             userId: userIdInt,
-            inviteCode: inviteCode,
-            role: role.rawValue
+            inviteCode: inviteCode
         )
     }
 }

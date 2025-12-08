@@ -8,22 +8,32 @@
 import Foundation
 
 protocol RequestInterceptor {
-    func adapt(_ request: URLRequest) -> URLRequest
+    func adapt(_ request: URLRequest, endpoint: APIEndpoint) -> URLRequest
 }
 
 final class AuthRequestInterceptor: RequestInterceptor {
 
     private let tokenManager = TokenManager.shared
 
-    func adapt(_ request: URLRequest) -> URLRequest {
+    func adapt(_ request: URLRequest, endpoint: APIEndpoint) -> URLRequest {
         var request = request
 
         // Content-Type 설정
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // Authorization 헤더 추가 (토큰이 있는 경우)
-        if let accessToken = tokenManager.accessToken {
-            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        // 인증이 필요한 경우 토큰 헤더 추가
+        if endpoint.requiresAuth {
+            if endpoint.usesRefreshToken {
+                // Refresh Token 사용 (로그아웃/재발급 등)
+                if let refreshToken = tokenManager.refreshToken {
+                    request.setValue(refreshToken, forHTTPHeaderField: "Refresh-Token")
+                }
+            } else {
+                // Access Token 사용 (일반 API)
+                if let accessToken = tokenManager.accessToken {
+                    request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+                }
+            }
         }
 
         #if DEBUG

@@ -26,4 +26,11 @@ protocol TransactionRepositoryProtocol {
     ) -> Single<Account>
 
     func getAccount(id: String) -> Single<Account?>
+
+    func transfer(
+        fromAccountId: String,
+        toAccountId: String,
+        amount: Int,
+        description: String
+    ) -> Single<Void>
 }

@@ -38,17 +38,12 @@ final class FriendRepository: BaseRepository, FriendRepositoryProtocol {
                     addresseeId: dto.addresseeId
                 )
             )
-            .subscribe(onNext: { (result: Result<ApiResponseFriend, NetworkError>) in
+            .subscribe(onNext: { (result: Result<FriendResponse, NetworkError>) in
                 switch result {
-                case .success(let apiResponse):
-                    if let friendResponse = apiResponse.data {
-                        let friend = friendResponse.toDomain()
-                        self.debugSuccess("Friend request sent via API")
-                        single(.success(friend))
-                    } else {
-                        self.debugWarning("API returned success but no data")
-                        single(.failure(RepositoryError.unknown(NSError(domain: "FriendRepository", code: -2))))
-                    }
+                case .success(let friendResponse):
+                    let friend = friendResponse.toDomain()
+                    self.debugSuccess("Friend request sent via API")
+                    single(.success(friend))
 
                 case .failure(let error):
                     self.debugError("Failed to send friend request via API", error: error)
@@ -109,7 +104,7 @@ final class FriendRepository: BaseRepository, FriendRepositoryProtocol {
 
             // 실제 API 호출
             self.networkService.request(FriendAPI.deleteFriend(friendId: friendIdInt))
-                .subscribe(onNext: { (result: Result<ApiResponse<EmptyResponse>, NetworkError>) in
+                .subscribe(onNext: { (result: Result<EmptyData, NetworkError>) in
                     switch result {
                     case .success:
                         self.debugSuccess("Friend deleted via API")
