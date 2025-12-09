@@ -133,8 +133,12 @@ final class WalletViewController: BaseViewController {
             return
         case 2:
             actionType = .transfer
+            showTransferScreen()
+            return
         case 3:
             actionType = .scanReceipt
+            showReceiptScanScreen()
+            return
         default:
             return
         }
@@ -155,6 +159,16 @@ final class WalletViewController: BaseViewController {
         }
 
         present(navController, animated: true)
+    }
+
+    private func showTransferScreen() {
+        let transferVC = TransferViewController()
+        navigationController?.pushViewController(transferVC, animated: true)
+    }
+
+    private func showReceiptScanScreen() {
+        let receiptScanVC = ReceiptScanViewController()
+        navigationController?.pushViewController(receiptScanVC, animated: true)
     }
 }
 

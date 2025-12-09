@@ -278,9 +278,9 @@ final class TransferViewController: BaseViewController {
             .observe(on: MainScheduler.instance)
             .subscribe(onSuccess: { [weak self] accounts in
                 self?.accounts = accounts
-                debugLog("Loaded \(accounts.count) accounts for transfer")
-            }, onFailure: { error in
-                debugError("Failed to load accounts", error: error)
+                self?.debugLog("Loaded \(accounts.count) accounts for transfer")
+            }, onFailure: { [weak self] error in
+                self?.debugError("Failed to load accounts", error: error)
             })
             .disposed(by: disposeBag)
     }
@@ -401,14 +401,5 @@ final class TransferViewController: BaseViewController {
 
         transferButton.isEnabled = isValid
         transferButton.alpha = isValid ? 1.0 : 0.5
-    }
-}
-
-// MARK: - Int Extension for Formatting
-private extension Int {
-    var formattedWithComma: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return formatter.string(from: NSNumber(value: self)) ?? "\(self)"
     }
 }

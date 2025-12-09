@@ -221,42 +221,112 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
                 return Disposables.create()
             }
 
-            // 실제 API 호출
-            self.networkService.request(
-                TransactionAPI.transfer(
-                    fromAccountId: fromAccountIdInt,
-                    toAccountId: toAccountIdInt,
-                    amount: Double(amount),
-                    description: description
-                )
+            // Transfer API는 {success: true} 형태로 반환하므로 raw helper 사용
+            self.transferRaw(
+                fromAccountId: fromAccountIdInt,
+                toAccountId: toAccountIdInt,
+                amount: amount,
+                description: description
             )
-            .subscribe(onNext: { (result: Result<EmptyData, NetworkError>) in
-                switch result {
-                case .success:
-                    self.debugSuccess("Transfer successful: \(amount)원 from \(fromAccountId) to \(toAccountId)")
+            .subscribe(onSuccess: { _ in
+                self.debugSuccess("Transfer successful: \(amount)원 from \(fromAccountId) to \(toAccountId)")
 
-                    // Post notification for UI update
-                    NotificationCenter.default.post(
-                        name: .transactionCreated,
-                        object: nil,
-                        userInfo: [
-                            "type": "transfer",
-                            "fromAccountId": fromAccountId,
-                            "toAccountId": toAccountId,
-                            "amount": amount
-                        ]
-                    )
+                // Post notification for UI update
+                NotificationCenter.default.post(
+                    name: .transactionCreated,
+                    object: nil,
+                    userInfo: [
+                        "type": "transfer",
+                        "fromAccountId": fromAccountId,
+                        "toAccountId": toAccountId,
+                        "amount": amount
+                    ]
+                )
 
-                    single(.success(()))
-
-                case .failure(let error):
-                    self.debugError("Failed to transfer", error: error)
-                    single(.failure(RepositoryError.networkError(error)))
-                }
+                single(.success(()))
+            }, onFailure: { error in
+                self.debugError("Failed to transfer", error: error)
+                single(.failure(RepositoryError.networkError(error as? NetworkError ?? NetworkError.unknown(error))))
             })
             .disposed(by: self.disposeBag)
 
             return Disposables.create()
+        }
+    }
+
+    // MARK: - Raw Response Helpers
+
+    /// Transfer API는 {success: true} 형태로 직접 반환
+    private func transferRaw(
+        fromAccountId: Int,
+        toAccountId: Int,
+        amount: Int,
+        description: String
+    ) -> Single<Void> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/transactions/transfer") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let params: [String: Any] = [
+                "fromAccountId": fromAccountId,
+                "toAccountId": toAccountId,
+                "amount": Double(amount),
+                "description": description
+            ]
+
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: params)
+            } catch {
+                single(.failure(RepositoryError.unknown(error)))
+                return Disposables.create()
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Transfer request error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    self.debugError("No HTTP response", error: nil)
+                    single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -3))))
+                    return
+                }
+
+                guard httpResponse.statusCode == 200 else {
+                    self.debugError("Transfer failed with status \(httpResponse.statusCode)", error: nil)
+                    single(.failure(RepositoryError.unknown(NSError(
+                        domain: "TransactionRepository",
+                        code: httpResponse.statusCode,
+                        userInfo: [NSLocalizedDescriptionKey: "Server returned error \(httpResponse.statusCode)"]
+                    ))))
+                    return
+                }
+
+                // {success: true} 응답만 확인
+                self.debugSuccess("Transfer API call successful")
+                single(.success(()))
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
         }
     }
 }
