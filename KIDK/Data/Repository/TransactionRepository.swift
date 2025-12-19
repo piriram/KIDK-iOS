@@ -329,4 +329,92 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
             return Disposables.create { task.cancel() }
         }
     }
+
+    // MARK: - Category & Statistics
+
+    func fetchTransactionsByCategory(
+        for userId: String,
+        category: TransactionCategory
+    ) -> Single<[Transaction]> {
+        return fetchAllTransactions(for: userId)
+            .map { transactions in
+                transactions.filter { $0.category == category && $0.type == .withdrawal }
+            }
+    }
+
+    func fetchAllTransactions(for userId: String) -> Single<[Transaction]> {
+        return accountRepository.getAllAccounts()
+            .flatMap { [weak self] accounts -> Single<[Transaction]> in
+                guard let self = self else {
+                    return Single.just([])
+                }
+
+                // 계좌가 없으면 빈 배열 반환
+                guard !accounts.isEmpty else {
+                    return Single.just([])
+                }
+
+                // 첫 번째 계좌만 있는 경우
+                if accounts.count == 1 {
+                    return self.fetchTransactions(for: accounts[0].id)
+                }
+
+                // 여러 계좌가 있는 경우
+                return self.fetchMultipleAccountTransactions(accounts: accounts)
+            }
+    }
+
+    private func fetchMultipleAccountTransactions(accounts: [Account]) -> Single<[Transaction]> {
+        // 재귀적으로 거래 내역 합치기
+        return fetchTransactionsRecursive(accounts: accounts, index: 0, accumulated: [])
+    }
+
+    private func fetchTransactionsRecursive(
+        accounts: [Account],
+        index: Int,
+        accumulated: [Transaction]
+    ) -> Single<[Transaction]> {
+        // 모든 계좌를 처리했으면 정렬해서 반환
+        guard index < accounts.count else {
+            let sorted = accumulated.sorted { (t1: Transaction, t2: Transaction) -> Bool in
+                return t1.date > t2.date
+            }
+            return Single.just(sorted)
+        }
+
+        // 현재 계좌의 거래 내역 가져오기
+        let account = accounts[index]
+        return fetchTransactions(for: account.id)
+            .catchAndReturn([])
+            .flatMap { [weak self] (transactions: [Transaction]) -> Single<[Transaction]> in
+                guard let self = self else {
+                    return Single.just(accumulated)
+                }
+                // 다음 계좌로 재귀 호출
+                let newAccumulated = accumulated + transactions
+                return self.fetchTransactionsRecursive(
+                    accounts: accounts,
+                    index: index + 1,
+                    accumulated: newAccumulated
+                )
+            }
+    }
+
+    func fetchCategoryStatistics(for userId: String) -> Single<[TransactionCategory: Int]> {
+        return fetchAllTransactions(for: userId)
+            .map { transactions in
+                var statistics: [TransactionCategory: Int] = [:]
+
+                // 출금 거래만 필터링하여 카테고리별로 합산
+                let withdrawals = transactions.filter { $0.type == .withdrawal }
+
+                for transaction in withdrawals {
+                    if let category = transaction.category {
+                        statistics[category, default: 0] += transaction.amount
+                    }
+                }
+
+                return statistics
+            }
+    }
 }
