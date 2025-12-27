@@ -1,10 +1,3 @@
-//
-//  MainTabBarCoordinator.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/13/25.
-//
-
 import UIKit
 import RxSwift
 
@@ -76,13 +69,24 @@ final class MainTabBarCoordinator: BaseCoordinator {
         // Tab 1: 아이 지갑
         let walletNav = UINavigationController()
         walletNav.setNavigationBarHidden(true, animated: false)
-        let walletVC = ParentChildWalletViewController()
+        let accountRepository = AccountRepository.shared
+        let transactionRepository = TransactionRepository.shared
+        let walletViewModel = ParentChildWalletViewModel(
+            accountRepository: accountRepository,
+            transactionRepository: transactionRepository
+        )
+        let walletVC = ParentChildWalletViewController(viewModel: walletViewModel)
         walletNav.setViewControllers([walletVC], animated: false)
 
         // Tab 2: 아이 정보
         let infoNav = UINavigationController()
         infoNav.setNavigationBarHidden(true, animated: false)
-        let infoVC = ParentChildInfoViewController()
+        let infoViewModel = ParentChildInfoViewModel(
+            accountRepository: accountRepository,
+            transactionRepository: transactionRepository,
+            missionRepository: missionRepository
+        )
+        let infoVC = ParentChildInfoViewController(viewModel: infoViewModel)
         infoNav.setViewControllers([infoVC], animated: false)
 
         tabBarController.viewControllers = [approvalNav, walletNav, infoNav]

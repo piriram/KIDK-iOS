@@ -1,10 +1,3 @@
-//
-//  TransactionInputViewController.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/21/25.
-//
-
 import UIKit
 import SnapKit
 import RxSwift

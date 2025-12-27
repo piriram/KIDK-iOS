@@ -1,10 +1,3 @@
-//
-//  SavingsSummaryView.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/19/25.
-//
-
 import UIKit
 import SnapKit
 
