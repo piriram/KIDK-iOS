@@ -1,0 +1,11 @@
+sandbox_mode = "workspace-write"
+writable_roots = ["/Users/ram/25-2/KIDK", "/Users/ram/25-2/DoSurf-iOS03", "/Users/ram/25-2/piri_portfolio/files/portfolio_piri"]
+ask_for_approval = "auto"
+approval_policy = "never"
+network_access = "enabled"
+
+[projects."/Users/ram/25-2/DoSurf-iOS03"]
+trust_level = "trusted"
+
+[projects."/Users/ram/25-2/piri_portfolio/files/portfolio_piri"]
+trust_level = "trusted"
