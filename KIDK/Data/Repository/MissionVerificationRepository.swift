@@ -148,31 +148,25 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                     verificationTypeString = "PARENT_CHECK"
                 }
 
-                // API call
-                self.networkService.request(
-                    MissionVerificationAPI.submitVerification(
-                        missionId: missionIdInt,
-                        childId: childIdInt,
-                        verificationType: verificationTypeString,
-                        content: request.content.isEmpty ? nil : request.content
-                    )
+                // Mission Verification API는 객체를 직접 반환 (ApiResponse 래퍼 없음)
+                self.submitVerificationRaw(
+                    missionId: missionIdInt,
+                    childId: childIdInt,
+                    verificationType: verificationTypeString,
+                    content: request.content.isEmpty ? nil : request.content
                 )
-                .subscribe(onNext: { (result: Result<MissionVerificationResponse, NetworkError>) in
-                    switch result {
-                    case .success(let verificationResponse):
-                        let verification = verificationResponse.toDomain()
+                .subscribe(onSuccess: { verificationResponse in
+                    let verification = verificationResponse.toDomain()
 
-                        // Add to mockVerifications for sync
-                        self.mockVerifications.append(verification)
+                    // Add to mockVerifications for sync
+                    self.mockVerifications.append(verification)
 
-                        self.debugSuccess("Submitted verification via API: \(verification.id)")
+                    self.debugSuccess("Submitted verification via API: \(verification.id)")
 
-                        single(.success(verification))
-
-                    case .failure(let error):
-                        self.debugError("Failed to submit via API, using mock submission", error: error)
-                        self.submitMockVerification(request: request, single: single)
-                    }
+                    single(.success(verification))
+                }, onFailure: { error in
+                    self.debugError("Failed to submit via API, using mock submission", error: error)
+                    self.submitMockVerification(request: request, single: single)
                 })
                 .disposed(by: self.disposeBag)
             }
@@ -196,27 +190,23 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
-            // API call
-            self.networkService.request(MissionVerificationAPI.getVerifications(missionId: missionIdInt))
-                .subscribe(onNext: { (result: Result<[MissionVerificationResponse], NetworkError>) in
-                    switch result {
-                    case .success(let verificationResponses):
-                        let verifications = verificationResponses.map { $0.toDomain() }
+            // Mission Verification API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            self.getVerificationsRaw(missionId: missionIdInt)
+                .subscribe(onSuccess: { verificationResponses in
+                    let verifications = verificationResponses.map { $0.toDomain() }
 
-                        // Sync mockVerifications with API results
-                        // Remove old verifications for this mission and add new ones
-                        self.mockVerifications.removeAll { $0.missionId == missionId }
-                        self.mockVerifications.append(contentsOf: verifications)
+                    // Sync mockVerifications with API results
+                    // Remove old verifications for this mission and add new ones
+                    self.mockVerifications.removeAll { $0.missionId == missionId }
+                    self.mockVerifications.append(contentsOf: verifications)
 
-                        self.debugSuccess("Fetched \(verifications.count) verifications via API for mission: \(missionId)")
-                        single(.success(verifications))
-
-                    case .failure(let error):
-                        self.debugError("Failed to fetch via API, using mock verifications", error: error)
-                        let verifications = self.mockVerifications.filter { $0.missionId == missionId }
-                        self.debugLog("Fetched \(verifications.count) verifications from Mock")
-                        single(.success(verifications))
-                    }
+                    self.debugSuccess("Fetched \(verifications.count) verifications via API for mission: \(missionId)")
+                    single(.success(verifications))
+                }, onFailure: { error in
+                    self.debugError("Failed to fetch via API, using mock verifications", error: error)
+                    let verifications = self.mockVerifications.filter { $0.missionId == missionId }
+                    self.debugLog("Fetched \(verifications.count) verifications from Mock")
+                    single(.success(verifications))
                 })
                 .disposed(by: self.disposeBag)
 
@@ -541,6 +531,122 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
             name: .missionProgressUpdated,
             object: missionId
         )
+    }
+
+    // MARK: - Raw API Helpers
+
+    private func submitVerificationRaw(
+        missionId: Int,
+        childId: Int,
+        verificationType: String,
+        content: String?
+    ) -> Single<MissionVerificationResponse> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/verifications") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            var params: [String: Any] = [
+                "childId": childId,
+                "verificationType": verificationType
+            ]
+            if let text = content {
+                params["content"] = text
+            }
+
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: params)
+            } catch {
+                single(.failure(RepositoryError.unknown(error)))
+                return Disposables.create()
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Verification submission error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let verification = try JSONDecoder().decode(MissionVerificationResponse.self, from: data)
+                    single(.success(verification))
+                } catch {
+                    self.debugError("Failed to decode verification response", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
+    }
+
+    private func getVerificationsRaw(missionId: Int) -> Single<[MissionVerificationResponse]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/verifications") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Verifications fetch error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let verifications = try JSONDecoder().decode([MissionVerificationResponse].self, from: data)
+                    single(.success(verifications))
+                } catch {
+                    self.debugError("Failed to decode verifications array", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
     }
 }
 

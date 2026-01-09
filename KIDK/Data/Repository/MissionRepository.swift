@@ -403,26 +403,22 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Try API first
-            self.networkService.request(MissionAPI.getMissionProgress(missionId: missionIdInt))
-                .subscribe(onNext: { (result: Result<[MissionProgressResponse], NetworkError>) in
-                    switch result {
-                    case .success(let progressResponses):
-                        // Return first progress (there should be only one per mission)
-                        if let firstProgress = progressResponses.first {
-                            let progress = firstProgress.toDomain()
-                            self.debugSuccess("Fetched mission progress via API: \(progress.id)")
-                            single(.success(progress))
-                        } else {
-                            self.debugWarning("No progress found for mission")
-                            single(.success(nil))
-                        }
-
-                    case .failure(let error):
-                        self.debugError("Failed to fetch mission progress via API", error: error)
-                        // Fallback to nil (no Mock data for progress)
+            // Mission Progress API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            self.getMissionProgressRaw(missionId: missionIdInt)
+                .subscribe(onSuccess: { progressResponses in
+                    // Return first progress (there should be only one per mission)
+                    if let firstProgress = progressResponses.first {
+                        let progress = firstProgress.toDomain()
+                        self.debugSuccess("Fetched mission progress via API: \(progress.id)")
+                        single(.success(progress))
+                    } else {
+                        self.debugWarning("No progress found for mission")
                         single(.success(nil))
                     }
+                }, onFailure: { error in
+                    self.debugError("Failed to fetch mission progress via API", error: error)
+                    // Fallback to nil (no Mock data for progress)
+                    single(.success(nil))
                 })
                 .disposed(by: self.disposeBag)
 
@@ -443,20 +439,16 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Try API first
-            self.networkService.request(MissionAPI.getMissionProgressByUser(userId: userIdInt))
-                .subscribe(onNext: { (result: Result<[MissionProgressResponse], NetworkError>) in
-                    switch result {
-                    case .success(let progressResponses):
-                        let progressList = progressResponses.map { $0.toDomain() }
-                        self.debugSuccess("Fetched \(progressList.count) progress items via API")
-                        single(.success(progressList))
-
-                    case .failure(let error):
-                        self.debugError("Failed to fetch mission progress via API", error: error)
-                        // Fallback to empty array
-                        single(.success([]))
-                    }
+            // Mission Progress API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            self.getMissionProgressByUserRaw(userId: userIdInt)
+                .subscribe(onSuccess: { progressResponses in
+                    let progressList = progressResponses.map { $0.toDomain() }
+                    self.debugSuccess("Fetched \(progressList.count) progress items via API")
+                    single(.success(progressList))
+                }, onFailure: { error in
+                    self.debugError("Failed to fetch mission progress via API", error: error)
+                    // Fallback to empty array
+                    single(.success([]))
                 })
                 .disposed(by: self.disposeBag)
 
@@ -483,38 +475,196 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Try API first
-            self.networkService.request(
-                MissionAPI.updateMissionProgress(
-                    missionId: missionIdInt,
-                    userId: userIdInt,
-                    progressAmount: progressAmount,
-                    progressPercentage: progressPercentage
-                )
+            // Mission Progress API는 객체를 직접 반환 (ApiResponse 래퍼 없음)
+            self.updateMissionProgressRaw(
+                missionId: missionIdInt,
+                userId: userIdInt,
+                progressAmount: progressAmount,
+                progressPercentage: progressPercentage
             )
-            .subscribe(onNext: { (result: Result<MissionProgressResponse, NetworkError>) in
-                switch result {
-                case .success(let progressResponse):
-                    let progress = progressResponse.toDomain()
+            .subscribe(onSuccess: { progressResponse in
+                let progress = progressResponse.toDomain()
 
-                    self.debugSuccess("Updated mission progress via API: \(progress.id)")
+                self.debugSuccess("Updated mission progress via API: \(progress.id)")
 
-                    // Post notification for UI updates
-                    NotificationCenter.default.post(
-                        name: .missionProgressUpdated,
-                        object: missionId
-                    )
+                // Post notification for UI updates
+                NotificationCenter.default.post(
+                    name: .missionProgressUpdated,
+                    object: missionId
+                )
 
-                    single(.success(progress))
-
-                case .failure(let error):
-                    self.debugError("Failed to update mission progress via API", error: error)
-                    single(.failure(RepositoryError.networkError(error)))
-                }
+                single(.success(progress))
+            }, onFailure: { error in
+                self.debugError("Failed to update mission progress via API", error: error)
+                single(.failure(RepositoryError.networkError(NetworkError.unknown(error))))
             })
             .disposed(by: self.disposeBag)
 
             return Disposables.create()
         }
     }
+
+    // MARK: - Mission Progress Raw Helpers
+
+    private func getMissionProgressRaw(missionId: Int) -> Single<[MissionProgressResponse]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/mission-progress/\(missionId)") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Mission progress fetch error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let progressList = try JSONDecoder().decode([MissionProgressResponse].self, from: data)
+                    single(.success(progressList))
+                } catch {
+                    self.debugError("Failed to decode mission progress array", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
+    }
+
+    private func getMissionProgressByUserRaw(userId: Int) -> Single<[MissionProgressResponse]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/mission-progress/user/\(userId)") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("User mission progress fetch error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let progressList = try JSONDecoder().decode([MissionProgressResponse].self, from: data)
+                    single(.success(progressList))
+                } catch {
+                    self.debugError("Failed to decode user mission progress array", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
+    }
+
+    private func updateMissionProgressRaw(
+        missionId: Int,
+        userId: Int,
+        progressAmount: Double?,
+        progressPercentage: Double?
+    ) -> Single<MissionProgressResponse> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/mission-progress/\(missionId)") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            var params: [String: Any] = ["userId": userId]
+            if let amount = progressAmount {
+                params["progressAmount"] = amount
+            }
+            if let percentage = progressPercentage {
+                params["progressPercentage"] = percentage
+            }
+
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: params)
+            } catch {
+                single(.failure(RepositoryError.unknown(error)))
+                return Disposables.create()
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Mission progress update error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let progress = try JSONDecoder().decode(MissionProgressResponse.self, from: data)
+                    single(.success(progress))
+                } catch {
+                    self.debugError("Failed to decode mission progress response", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
+    }
+}
 }
