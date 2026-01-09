@@ -1,8 +1,8 @@
 # KIDK API Document (v1.0.0)
 
-**Base URL**: `http://43.202.165.98:8080`
+**Base URL**: `https://kidk.kro.kr`
 
-**Swagger**: http://43.202.165.98:8080/swagger-ui/index.html
+**Swagger**: https://kidk.kro.kr/swagger-ui/index.html
 
 **인증**: Bearer Token (JWT)
 
