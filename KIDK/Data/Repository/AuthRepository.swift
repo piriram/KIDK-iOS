@@ -40,6 +40,40 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
             }
     }
 
+    func devLogin() -> Observable<Result<User, NetworkError>> {
+        debugLog("Starting dev login (no Firebase required)")
+
+        return networkService.request(AuthAPI.devLogin)
+            .do(onNext: { [weak self] (result: Result<LoginResponseData, NetworkError>) in
+                guard let self = self else { return }
+
+                switch result {
+                case .success(let loginData):
+                    // 토큰 저장
+                    self.tokenManager.saveAccessToken(loginData.accessToken)
+                    self.tokenManager.saveRefreshToken(loginData.refreshToken)
+
+                    // 사용자 정보 저장 (Dev Login용 임시 UID 사용)
+                    let devFirebaseUID = "DEV_USER_\(loginData.userId)"
+                    let user = loginData.toDomain(firebaseUID: devFirebaseUID)
+                    self.userDefaultsManager.saveMockFirebaseUID(user.firebaseUID)
+                    self.userDefaultsManager.saveUserType(user.userType.rawValue)
+                    self.userDefaultsManager.saveLastLoginDate(Date())
+
+                    self.debugSuccess("Dev login successful, tokens saved")
+
+                case .failure(let error):
+                    self.debugError("Dev login failed", error: error)
+                }
+            })
+            .map { (result: Result<LoginResponseData, NetworkError>) -> Result<User, NetworkError> in
+                return result.map { loginData in
+                    let devFirebaseUID = "DEV_USER_\(loginData.userId)"
+                    return loginData.toDomain(firebaseUID: devFirebaseUID)
+                }
+            }
+    }
+
     func logout() -> Observable<Result<Void, NetworkError>> {
         debugLog("Starting logout")
 

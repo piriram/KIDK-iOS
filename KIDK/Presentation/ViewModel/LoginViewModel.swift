@@ -101,6 +101,29 @@ final class LoginViewModel: BaseViewModel {
     // MARK: - Real Login (Firebase + Backend API)
 
     private func realLogin(email: String, password: String, userType: UserType) -> Observable<User> {
+        debugLog("Starting dev login flow (Firebase temporarily disabled)")
+
+        // 🚧 임시: Dev Login 사용 (백엔드 Firebase 연동 문제 해결 시 원래대로 복구)
+        return authRepository.devLogin()
+            .flatMap { result -> Observable<User> in
+                switch result {
+                case .success(let user):
+                    return .just(user)
+                case .failure(let error):
+                    return .error(error)
+                }
+            }
+            .do(onNext: { [weak self] user in
+                self?.authRepository.setFirstLaunchComplete()
+                self?.debugSuccess("Dev login success with userId: \(user.id)")
+
+                // UserProfileManager에 사용자 정보 저장
+                Task {
+                    await UserProfileManager.shared.saveProfile(user)
+                }
+            })
+
+        /* 🔥 원래 코드 (백엔드 Firebase 문제 해결 후 복구)
         debugLog("Starting real login flow")
 
         // 1. Firebase Authentication으로 로그인
@@ -130,6 +153,7 @@ final class LoginViewModel: BaseViewModel {
                     await UserProfileManager.shared.saveProfile(user)
                 }
             })
+        */
     }
 
     // MARK: - Mock Login (개발용)
