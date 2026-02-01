@@ -27,7 +27,7 @@ final class MissionCoordinator: BaseCoordinator {
     
     private func showKIDKCity() {
         let viewModel = KIDKCityViewModel(user: user)
-        let viewController = KIDKCityViewController(viewModel: viewModel)
+        let viewController = KIDKCityViewController(viewModel: viewModel, user: user)
         navigationController.pushViewController(viewController, animated: true)
         debugLog("Navigated to KIDK City")
     }

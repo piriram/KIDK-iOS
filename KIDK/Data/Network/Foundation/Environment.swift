@@ -29,4 +29,13 @@ enum Environment {
             return nil
         }
     }
+
+    var useMockMissionData: Bool {
+        switch self {
+        case .development:
+            return true  // 개발 환경에서는 목업 데이터 사용
+        case .production:
+            return false
+        }
+    }
 }

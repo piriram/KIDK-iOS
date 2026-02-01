@@ -5,6 +5,8 @@ import RealmSwift
 final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
     private let currentUserId: String
+    private var mockMissions: [Mission] = []
+    private var nextMockId = 1
 
     init(
         currentUserId: String,
@@ -13,30 +15,139 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
     ) {
         self.currentUserId = currentUserId
         super.init(networkService: networkService, tokenManager: tokenManager)
+
+        // 목업 데이터가 활성화되어 있으면 초기 샘플 미션 생성
+        if Environment.current.useMockMissionData {
+            createInitialMockMissions()
+        }
+    }
+
+    // MARK: - Mock Data Helpers
+
+    private func createInitialMockMissions() {
+        let calendar = Calendar.current
+        let today = Date()
+
+        mockMissions = [
+            Mission(
+                id: String(nextMockId),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "닌텐도 스위치 모으기",
+                description: "친구들과 함께 놀이공원 가기 위해 저축하기",
+                targetAmount: 300000,
+                currentAmount: 125000,
+                rewardAmount: 10000,
+                targetDate: calendar.date(byAdding: .month, value: 1, to: today),
+                status: .inProgress,
+                createdAt: today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 1),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "새 자전거 사기",
+                description: "학교 갈 때 탈 새 자전거 사기",
+                targetAmount: 150000,
+                currentAmount: 80000,
+                rewardAmount: 5000,
+                targetDate: calendar.date(byAdding: .month, value: 1, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -5, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 2),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .video,
+                title: "공룡 다큐멘터리 보기",
+                description: "공룡에 대해 배우기",
+                targetAmount: nil,
+                currentAmount: 0,
+                rewardAmount: 2000,
+                targetDate: calendar.date(byAdding: .day, value: 7, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -2, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 3),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .study,
+                title: "수학 공부 1시간",
+                description: "매일 수학 문제 풀기",
+                targetAmount: nil,
+                currentAmount: 0,
+                rewardAmount: 1500,
+                targetDate: calendar.date(byAdding: .day, value: 3, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -1, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 4),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "용돈 모으기",
+                description: "첫 저축 목표 달성하기",
+                targetAmount: 50000,
+                currentAmount: 50000,
+                rewardAmount: 3000,
+                targetDate: calendar.date(byAdding: .day, value: -7, to: today),
+                status: .completed,
+                createdAt: calendar.date(byAdding: .month, value: -1, to: today) ?? today,
+                completedAt: calendar.date(byAdding: .day, value: -7, to: today),
+                participants: []
+            )
+        ]
+        nextMockId += 5
+        debugLog("Created \(mockMissions.count) initial mock missions")
     }
     
     func createMission(_ request: MissionCreationRequest) -> Single<Mission> {
-        debugLog("Creating mission via API: \(request.title)")
+        debugLog("Creating mission: \(request.title)")
 
-        // creatorId와 ownerId는 currentUserId를 Int로 변환
-        guard let creatorIdInt = Int(currentUserId) else {
-            return .error(RepositoryError.invalidParameter)
+        // 목업 데이터 사용 시
+        if Environment.current.useMockMissionData {
+            return createMockMission(request)
         }
 
-        // ownerId는 participantIds의 첫 번째 값, 없으면 creatorId
-        let ownerIdInt = request.participantIds.compactMap { Int($0) }.first ?? creatorIdInt
+        // 실제 API 호출
+        debugLog("Mission request details - type: \(request.missionType.rawValue), targetAmount: \(request.targetAmount ?? 0), rewardAmount: \(request.rewardAmount), participantIds: \(request.participantIds)")
+        debugLog("Current userId: \(currentUserId)")
 
-        // targetDate를 "yyyy-MM-dd" 형식으로 변환
+        guard let creatorIdInt = Int(currentUserId) else {
+            debugError("Failed to convert currentUserId to Int: \(currentUserId)")
+            return .error(RepositoryError.invalidParameter)
+        }
+        debugLog("CreatorId converted: \(creatorIdInt)")
+
+        let ownerIdInt = request.participantIds.compactMap { Int($0) }.first ?? creatorIdInt
+        debugLog("OwnerId determined: \(ownerIdInt)")
+
         let targetDateString: String?
         if let targetDate = request.targetDate {
             let dateFormatter = DateFormatter()
             dateFormatter.dateFormat = "yyyy-MM-dd"
             targetDateString = dateFormatter.string(from: targetDate)
+            debugLog("Target date converted: \(targetDateString ?? "nil")")
         } else {
             targetDateString = nil
+            debugLog("No target date provided")
         }
 
-        // API 호출 - Mission 생성은 공통 응답 포맷을 사용하지 않고 직접 MissionResponse 반환
+        debugLog("Calling createMissionRaw...")
+
         return createMissionRaw(
             creatorId: creatorIdInt,
             ownerId: ownerIdInt,
@@ -54,6 +165,41 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
         })
         .map { $0.toDomain() }
     }
+
+    private func createMockMission(_ request: MissionCreationRequest) -> Single<Mission> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            // 목업 미션 생성
+            let newMission = Mission(
+                id: String(self.nextMockId),
+                creatorId: self.currentUserId,
+                ownerId: self.currentUserId,
+                missionType: request.missionType,
+                title: request.title,
+                description: request.description,
+                targetAmount: request.targetAmount,
+                currentAmount: request.currentAmount ?? 0,
+                rewardAmount: request.rewardAmount,
+                targetDate: request.targetDate,
+                status: .inProgress,
+                createdAt: Date(),
+                completedAt: nil,
+                participants: []
+            )
+
+            self.mockMissions.append(newMission)
+            self.nextMockId += 1
+
+            self.debugSuccess("Mock mission created: \(newMission.title) (id: \(newMission.id))")
+            single(.success(newMission))
+
+            return Disposables.create()
+        }
+    }
     
     func fetchMission(by id: String) -> Single<Mission?> {
         Single.create { [weak self] single in
@@ -61,19 +207,28 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
                 return Disposables.create()
             }
-            
+
+            // 목업 데이터 사용 시
+            if Environment.current.useMockMissionData {
+                let mission = self.mockMissions.first { $0.id == id }
+                self.debugLog("Fetched mock mission: \(id), found: \(mission != nil)")
+                single(.success(mission))
+                return Disposables.create()
+            }
+
+            // Realm 사용
             do {
                 let realm = try Realm()
                 let missionEntity = realm.object(ofType: MissionEntity.self, forPrimaryKey: id)
                 let mission = missionEntity?.toDomain()
-                
+
                 self.debugLog("Fetched mission: \(id), found: \(mission != nil)")
                 single(.success(mission))
             } catch {
                 self.debugError("Failed to fetch mission", error: error)
                 single(.failure(RepositoryError.unknown(error)))
             }
-            
+
             return Disposables.create()
         }
     }
@@ -82,6 +237,13 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
         Single.create { [weak self] (single: @escaping (SingleEvent<[Mission]>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            // 목업 데이터 사용 시
+            if Environment.current.useMockMissionData {
+                self.debugSuccess("Fetched \(self.mockMissions.count) mock missions")
+                single(.success(self.mockMissions))
                 return Disposables.create()
             }
 
@@ -131,21 +293,30 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
                 return Disposables.create()
             }
-            
+
+            // 목업 데이터 사용 시
+            if Environment.current.useMockMissionData {
+                let filteredMissions = self.mockMissions.filter { $0.status == status }
+                self.debugLog("Fetched \(filteredMissions.count) mock missions with status: \(status.rawValue)")
+                single(.success(filteredMissions))
+                return Disposables.create()
+            }
+
+            // Realm 사용
             do {
                 let realm = try Realm()
                 let missions = realm.objects(MissionEntity.self)
                     .filter("(ownerId == %@ OR creatorId == %@) AND status == %@", userId, userId, status.rawValue)
                     .sorted(byKeyPath: "createdAt", ascending: false)
                     .map { $0.toDomain() }
-                
+
                 self.debugLog("Fetched \(missions.count) missions with status: \(status.rawValue)")
                 single(.success(Array(missions)))
             } catch {
                 self.debugError("Failed to fetch missions by status", error: error)
                 single(.failure(RepositoryError.unknown(error)))
             }
-            
+
             return Disposables.create()
         }
     }
@@ -156,7 +327,40 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
                 return Disposables.create()
             }
-            
+
+            // 목업 데이터 사용 시
+            if Environment.current.useMockMissionData {
+                guard let index = self.mockMissions.firstIndex(where: { $0.id == missionId }) else {
+                    self.debugError("Mock mission not found: \(missionId)")
+                    single(.failure(RepositoryError.notFound))
+                    return Disposables.create()
+                }
+
+                let oldMission = self.mockMissions[index]
+                let updatedMission = Mission(
+                    id: oldMission.id,
+                    creatorId: oldMission.creatorId,
+                    ownerId: oldMission.ownerId,
+                    missionType: oldMission.missionType,
+                    title: oldMission.title,
+                    description: oldMission.description,
+                    targetAmount: oldMission.targetAmount,
+                    currentAmount: oldMission.currentAmount,
+                    rewardAmount: oldMission.rewardAmount,
+                    targetDate: oldMission.targetDate,
+                    status: status,
+                    createdAt: oldMission.createdAt,
+                    completedAt: status == .completed ? Date() : oldMission.completedAt,
+                    participants: oldMission.participants
+                )
+                self.mockMissions[index] = updatedMission
+
+                self.debugSuccess("Mock mission status updated: \(missionId) -> \(status.rawValue)")
+                single(.success(updatedMission))
+                return Disposables.create()
+            }
+
+            // Realm 사용
             do {
                 let realm = try Realm()
                 guard let missionEntity = realm.object(ofType: MissionEntity.self, forPrimaryKey: missionId) else {
@@ -164,21 +368,21 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                     single(.failure(RepositoryError.notFound))
                     return Disposables.create()
                 }
-                
+
                 try realm.write {
                     missionEntity.status = status.rawValue
                     if status == .completed {
                         missionEntity.completedAt = Date()
                     }
                 }
-                
+
                 self.debugSuccess("Mission status updated: \(missionId) -> \(status.rawValue)")
                 single(.success(missionEntity.toDomain()))
             } catch {
                 self.debugError("Failed to update mission status", error: error)
                 single(.failure(RepositoryError.unknown(error)))
             }
-            
+
             return Disposables.create()
         }
     }
@@ -189,7 +393,21 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 completable(.error(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
                 return Disposables.create()
             }
-            
+
+            // 목업 데이터 사용 시
+            if Environment.current.useMockMissionData {
+                if let index = self.mockMissions.firstIndex(where: { $0.id == missionId }) {
+                    self.mockMissions.remove(at: index)
+                    self.debugSuccess("Mock mission deleted: \(missionId)")
+                    completable(.completed)
+                } else {
+                    self.debugError("Mock mission not found for deletion: \(missionId)")
+                    completable(.error(RepositoryError.notFound))
+                }
+                return Disposables.create()
+            }
+
+            // Realm 사용
             do {
                 let realm = try Realm()
                 guard let missionEntity = realm.object(ofType: MissionEntity.self, forPrimaryKey: missionId) else {
@@ -197,19 +415,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                     completable(.error(RepositoryError.notFound))
                     return Disposables.create()
                 }
-                
+
                 try realm.write {
                     realm.delete(missionEntity.participants)
                     realm.delete(missionEntity)
                 }
-                
+
                 self.debugSuccess("Mission deleted: \(missionId)")
                 completable(.completed)
             } catch {
                 self.debugError("Failed to delete mission", error: error)
                 completable(.error(RepositoryError.unknown(error)))
             }
-            
+
             return Disposables.create()
         }
     }
@@ -267,6 +485,13 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 params["targetDate"] = date
             }
 
+            #if DEBUG
+            let hasAuthHeader = request.value(forHTTPHeaderField: "Authorization") != nil
+            self.debugLog("Mission create request url: \(url.absoluteString)")
+            self.debugLog("Mission create request has auth: \(hasAuthHeader)")
+            self.debugLog("Mission create request params: \(params)")
+            #endif
+
             do {
                 request.httpBody = try JSONSerialization.data(withJSONObject: params)
             } catch {
@@ -290,6 +515,16 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                     single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -4))))
                     return
                 }
+
+                #if DEBUG
+                if let responseString = String(data: data, encoding: .utf8) {
+                    self.debugLog("Mission create response status: \(httpResponse.statusCode)")
+                    self.debugLog("Mission create response body: \(responseString)")
+                } else {
+                    self.debugLog("Mission create response status: \(httpResponse.statusCode)")
+                    self.debugLog("Mission create response body: <non-utf8>")
+                }
+                #endif
 
                 // 500 에러 등 서버 에러 처리
                 if httpResponse.statusCode >= 400 {

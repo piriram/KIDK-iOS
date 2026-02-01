@@ -66,9 +66,9 @@ final class MissionViewModel: BaseViewModel {
                 let savingsMissions = missions.filter { $0.missionType == .savings }
                 self.debugLog("Found \(savingsMissions.count) savings missions")
 
-                // Only create sample missions if NO missions exist at all
+                // Only create sample missions if NO missions exist at all AND not using mock data
                 // (avoiding duplicate creation when API returns empty but Realm has data)
-                if missions.isEmpty {
+                if missions.isEmpty && !Environment.current.useMockMissionData {
                     self.debugLog("No missions found, creating sample missions")
                     self.createSampleMissionsOnce()
                 } else {
