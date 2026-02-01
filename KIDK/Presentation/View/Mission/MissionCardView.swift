@@ -85,6 +85,49 @@ final class MissionCardView: UIView {
         label.textColor = .kidkTextWhite
         return label
     }()
+
+    private let savingsMockupView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hex: "#2A2A2E")
+        view.layer.cornerRadius = CornerRadius.medium
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.kidkTextWhite.withAlphaComponent(0.08).cgColor
+        return view
+    }()
+
+    private let savingsMockupTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "저축 현황"
+        label.font = .kidkFont(.s14, .bold)
+        label.textColor = .kidkTextWhite
+        return label
+    }()
+
+    private let savingsMockupChipLabel: UILabel = {
+        let label = UILabel()
+        label.font = .kidkFont(.s12, .bold)
+        label.textColor = .kidkTextWhite
+        label.backgroundColor = .kidkPink
+        label.layer.cornerRadius = 10
+        label.layer.masksToBounds = true
+        label.textAlignment = .center
+        return label
+    }()
+
+    private let savingsMockupStatsStack: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = Spacing.xxs
+        return stackView
+    }()
+
+    private let savingsCurrentValueLabel = UILabel()
+    private let savingsRemainingValueLabel = UILabel()
+    private let savingsRewardValueLabel = UILabel()
+
+    private var savingsMockupHeightConstraint: Constraint?
+    private var savingsMockupTopConstraint: Constraint?
+    private var missionInputTopConstraint: Constraint?
     
     private let missionInputContainer: UIView = {
         let view = UIView()
@@ -185,12 +228,13 @@ final class MissionCardView: UIView {
         contentContainerView.addSubview(emptyStateView)
         
         missionSectionView.addSubview(missionTitleLabel)
+        missionSectionView.addSubview(savingsMockupView)
         missionSectionView.addSubview(missionInputContainer)
         missionSectionView.addSubview(verifyButton)
         
         missionInputContainer.addSubview(missionIconView)
         missionInputContainer.addSubview(missionPlaceholderLabel)
-        
+
         emptyStateView.addSubview(emptySubtitleLabel)
         emptyStateView.addSubview(emptyProgressCircleView)
         emptyStateView.addSubview(whatMissionButton)
@@ -249,9 +293,46 @@ final class MissionCardView: UIView {
         missionTitleLabel.snp.makeConstraints { make in
             make.top.leading.equalToSuperview()
         }
-        
+
+        savingsMockupView.snp.makeConstraints { make in
+            savingsMockupTopConstraint = make.top.equalTo(missionTitleLabel.snp.bottom).offset(Spacing.xs).constraint
+            make.leading.trailing.equalToSuperview()
+            savingsMockupHeightConstraint = make.height.equalTo(120).constraint
+        }
+
+        savingsMockupView.addSubview(savingsMockupTitleLabel)
+        savingsMockupView.addSubview(savingsMockupChipLabel)
+        savingsMockupView.addSubview(savingsMockupStatsStack)
+
+        savingsMockupTitleLabel.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(Spacing.sm)
+        }
+
+        savingsMockupChipLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(savingsMockupTitleLabel)
+            make.trailing.equalToSuperview().inset(Spacing.sm)
+            make.height.equalTo(20)
+            make.width.greaterThanOrEqualTo(64)
+        }
+
+        savingsMockupStatsStack.snp.makeConstraints { make in
+            make.top.equalTo(savingsMockupTitleLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.bottom.equalToSuperview().inset(Spacing.sm)
+        }
+
+        savingsCurrentValueLabel.font = .kidkFont(.s14, .bold)
+        savingsCurrentValueLabel.textColor = .kidkTextWhite
+        savingsRemainingValueLabel.font = .kidkFont(.s14, .bold)
+        savingsRemainingValueLabel.textColor = .kidkTextWhite
+        savingsRewardValueLabel.font = .kidkFont(.s14, .bold)
+        savingsRewardValueLabel.textColor = .kidkTextWhite
+
+        savingsMockupStatsStack.addArrangedSubview(makeStatRow(title: "현재까지", valueLabel: savingsCurrentValueLabel))
+        savingsMockupStatsStack.addArrangedSubview(makeStatRow(title: "남은 금액", valueLabel: savingsRemainingValueLabel))
+        savingsMockupStatsStack.addArrangedSubview(makeStatRow(title: "보상", valueLabel: savingsRewardValueLabel))
+
         missionInputContainer.snp.makeConstraints { make in
-            make.top.equalTo(missionTitleLabel.snp.bottom).offset(Spacing.xs)
+            missionInputTopConstraint = make.top.equalTo(savingsMockupView.snp.bottom).offset(Spacing.xs).constraint
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(48)
         }
@@ -324,6 +405,7 @@ final class MissionCardView: UIView {
         circularProgressView.isHidden = true
         deadlineLabel.isHidden = true
         missionSectionView.isHidden = true
+        updateSavingsMockup(isVisible: false, mission: nil)
     }
     
     private func showActiveMission(mission: Mission) {
@@ -334,6 +416,7 @@ final class MissionCardView: UIView {
         circularProgressView.isHidden = false
         deadlineLabel.isHidden = false
         missionSectionView.isHidden = false
+        updateSavingsMockup(isVisible: mission.missionType == .savings, mission: mission)
         
         setupParticipants(mission.participants)
         
@@ -350,6 +433,19 @@ final class MissionCardView: UIView {
         } else {
             deadlineLabel.text = "목표 달성까지 화이팅!"
         }
+    }
+
+    private func updateSavingsMockup(isVisible: Bool, mission: Mission?) {
+        savingsMockupView.isHidden = !isVisible
+        savingsMockupHeightConstraint?.update(offset: isVisible ? 120 : 0)
+        savingsMockupTopConstraint?.update(offset: isVisible ? Spacing.xs : 0)
+        missionInputTopConstraint?.update(offset: isVisible ? Spacing.sm : Spacing.xs)
+
+        guard isVisible, let mission = mission else { return }
+        savingsMockupChipLabel.text = "  진행률 \(mission.progressPercentage)%  "
+        savingsCurrentValueLabel.text = mission.formattedCurrentAmount
+        savingsRemainingValueLabel.text = mission.remainingAmount.formattedCurrency
+        savingsRewardValueLabel.text = mission.rewardAmount.formattedCurrency
     }
     
     private func setupParticipants(_ participants: [MissionParticipant]) {
@@ -400,5 +496,21 @@ final class MissionCardView: UIView {
             self.contentContainerView.isHidden = isCollapsed
             self.layoutIfNeeded()
         })
+    }
+
+    private func makeStatRow(title: String, valueLabel: UILabel) -> UIStackView {
+        let titleLabel = UILabel()
+        titleLabel.font = .kidkFont(.s12, .regular)
+        titleLabel.textColor = .kidkTextWhite.withAlphaComponent(0.7)
+        titleLabel.text = title
+
+        valueLabel.setContentHuggingPriority(.required, for: .horizontal)
+        valueLabel.setContentCompressionResistancePriority(.required, for: .horizontal)
+
+        let spacer = UIView()
+        let stackView = UIStackView(arrangedSubviews: [titleLabel, spacer, valueLabel])
+        stackView.axis = .horizontal
+        stackView.alignment = .center
+        return stackView
     }
 }
