@@ -23,12 +23,8 @@ final class CircularProgressView: UIView {
     private let lineWidth: CGFloat = 22
     private let progressColor: UIColor = .kidkPink
     private let backgroundCircleColor: UIColor = .kidkDarkBackground.withAlphaComponent(0.85)
-    private let defaultArcPercentage: CGFloat = 0.82
-    private var arcPercentage: CGFloat = 0.82 {
-        didSet {
-            setNeedsLayout()
-        }
-    }
+    private let startDegree: CGFloat = 240
+    private let sweepDegree: CGFloat = 240
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -55,17 +51,19 @@ final class CircularProgressView: UIView {
         backgroundCircleLayer.strokeColor = backgroundCircleColor.cgColor
         backgroundCircleLayer.lineWidth = lineWidth
         backgroundCircleLayer.lineCap = .round
+        backgroundCircleLayer.contentsScale = UIScreen.main.scale
 
         progressCircleLayer.fillColor = UIColor.clear.cgColor
         progressCircleLayer.strokeColor = progressColor.cgColor
         progressCircleLayer.lineWidth = lineWidth
         progressCircleLayer.lineCap = .round
         progressCircleLayer.strokeEnd = 0
+        progressCircleLayer.contentsScale = UIScreen.main.scale
         progressGradientLayer.mask = progressCircleLayer
         progressGradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
         progressGradientLayer.endPoint = CGPoint(x: 0.8, y: 1.0)
         progressGradientLayer.colors = [
-            UIColor.kidkPinkLight.cgColor,
+            UIColor.kidkPink.cgColor,
             UIColor.kidkPink.cgColor
         ]
 
@@ -86,12 +84,8 @@ final class CircularProgressView: UIView {
         progressGradientLayer.frame = bounds
         let center = CGPoint(x: bounds.width / 2, y: bounds.height / 2)
         let radius = (min(bounds.width, bounds.height) - lineWidth) / 2
-
-        let clampedArc = max(0, min(arcPercentage, 1))
-        let totalAngle = 2 * CGFloat.pi * clampedArc
-        let midAngle = -CGFloat.pi / 2
-        let startAngle = midAngle - totalAngle / 2
-        let endAngle = midAngle + totalAngle / 2
+        let startAngle = radiansFromTop(deg: startDegree)
+        let endAngle = radiansFromTop(deg: startDegree + sweepDegree)
 
         let circularPath = UIBezierPath(
             arcCenter: center,
@@ -108,10 +102,8 @@ final class CircularProgressView: UIView {
     func configure(
         currentAmount: Int,
         targetAmount: Int,
-        image: UIImage?,
-        arcPercentage: CGFloat = 0.82
+        image: UIImage?
     ) {
-        self.arcPercentage = arcPercentage
         amountLabel.isHidden = false
 
         let percentage = targetAmount > 0
@@ -146,10 +138,14 @@ final class CircularProgressView: UIView {
     }
 
     func configureEmpty(image: UIImage?) {
-        arcPercentage = defaultArcPercentage
         amountLabel.isHidden = true
         centerImageView.image = image
         setProgress(to: 0, animated: false)
+    }
+
+    private func radiansFromTop(deg: CGFloat) -> CGFloat {
+        let adjusted = deg - 90
+        return adjusted * .pi / 180
     }
 
     private func setProgress(to progress: CGFloat, animated: Bool) {
