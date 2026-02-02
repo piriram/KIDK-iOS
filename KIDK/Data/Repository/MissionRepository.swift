@@ -65,6 +65,38 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 id: String(nextMockId + 2),
                 creatorId: currentUserId,
                 ownerId: currentUserId,
+                missionType: .savings,
+                title: "친구와 캠핑 가기",
+                description: "캠핑 장비 대여비 모으기",
+                targetAmount: 220000,
+                currentAmount: 154000,
+                rewardAmount: 7000,
+                targetDate: calendar.date(byAdding: .day, value: 24, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -9, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 3),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "미니 드론 모으기",
+                description: "주말에 날릴 드론 구매하기",
+                targetAmount: 120000,
+                currentAmount: 48000,
+                rewardAmount: 4000,
+                targetDate: calendar.date(byAdding: .day, value: 40, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -3, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 4),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
                 missionType: .video,
                 title: "공룡 다큐멘터리 보기",
                 description: "공룡에 대해 배우기",
@@ -78,7 +110,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 participants: []
             ),
             Mission(
-                id: String(nextMockId + 3),
+                id: String(nextMockId + 5),
                 creatorId: currentUserId,
                 ownerId: currentUserId,
                 missionType: .study,
@@ -94,7 +126,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 participants: []
             ),
             Mission(
-                id: String(nextMockId + 4),
+                id: String(nextMockId + 6),
                 creatorId: currentUserId,
                 ownerId: currentUserId,
                 missionType: .savings,
@@ -110,7 +142,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 participants: []
             )
         ]
-        nextMockId += 5
+        nextMockId += 7
         debugLog("Created \(mockMissions.count) initial mock missions")
     }
     
