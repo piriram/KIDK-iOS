@@ -87,9 +87,9 @@ final class MissionCardView: UIView {
         let button = UIButton(type: .system)
         button.titleLabel?.font = .kidkBody
         button.setTitleColor(.kidkPink, for: .normal)
-        button.backgroundColor = .kidkDarkBackground
-        button.layer.cornerRadius = 16
-        button.contentEdgeInsets = UIEdgeInsets(top: 0, left: 16, bottom: 0, right: 16)
+        button.backgroundColor = .kidkBlack
+        button.layer.cornerRadius = 18
+        button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 18, bottom: 6, right: 18)
         return button
     }()
 
@@ -213,23 +213,23 @@ final class MissionCardView: UIView {
 
         progressContainer.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
-            make.height.equalTo(326)
+            make.height.equalTo(352)
         }
 
         circularProgressView.snp.makeConstraints { make in
             make.top.bottom.equalToSuperview()
-            make.leading.trailing.equalToSuperview().inset(12)
+            make.leading.trailing.equalToSuperview().inset(8)
         }
 
-        contentStackView.setCustomSpacing(30, after: progressContainer)
+        contentStackView.setCustomSpacing(26, after: progressContainer)
 
         goalPillContainer.snp.makeConstraints { make in
-            make.height.equalTo(32)
+            make.height.equalTo(36)
         }
 
         whatMissionButton.snp.makeConstraints { make in
             make.center.equalToSuperview()
-            make.height.equalTo(32)
+            make.height.equalTo(36)
         }
 
         contentStackView.setCustomSpacing(24, after: goalPillContainer)
@@ -330,17 +330,9 @@ final class MissionCardView: UIView {
             string: goalText,
             attributes: [
                 .font: UIFont.kidkBody,
-                .foregroundColor: UIColor.kidkTextWhite
+                .foregroundColor: UIColor.kidkPink
             ]
         )
-
-        if let formattedTarget = mission.formattedTargetAmount,
-           let range = goalText.range(of: formattedTarget) {
-            let nsRange = NSRange(range, in: goalText)
-            attributedGoal.addAttributes([
-                .foregroundColor: UIColor.kidkPink
-            ], range: nsRange)
-        }
 
         whatMissionButton.setAttributedTitle(attributedGoal, for: .normal)
         whatMissionButton.isUserInteractionEnabled = false
