@@ -48,9 +48,9 @@ final class MissionSelectionSheetView: UIView {
         return button
     }()
     
-    private let videoMissionCard: MissionCardButton = {
+    private lazy var videoMissionCard: MissionCardButton = {
         let card = MissionCardButton(
-            icon: "📹",
+            iconImage: UIImage(named: "kidk_mission_video"),
             badge: "추천",
             title: "영상 시청 후 퀴즈 풀기",
             missionType: .video
@@ -58,9 +58,9 @@ final class MissionSelectionSheetView: UIView {
         return card
     }()
     
-    private let studyMissionCard: MissionCardButton = {
+    private lazy var studyMissionCard: MissionCardButton = {
         let card = MissionCardButton(
-            icon: "✏️",
+            iconImage: UIImage(named: "kidk_mission_study"),
             badge: "추천",
             title: "1시간씩 수학 공부를 하기",
             missionType: .study
@@ -68,9 +68,9 @@ final class MissionSelectionSheetView: UIView {
         return card
     }()
     
-    private let quizMissionCard: MissionCardButton = {
+    private lazy var quizMissionCard: MissionCardButton = {
         let card = MissionCardButton(
-            icon: "🅰️",
+            iconImage: UIImage(named: "kidk_mission_quiz"),
             badge: "추천",
             title: "30개씩 영어 단어를 외우기",
             missionType: .quiz
@@ -109,6 +109,8 @@ final class MissionSelectionSheetView: UIView {
     }
     
     private func setupUI() {
+        backgroundColor = .clear
+        
         addSubview(containerView)
         containerView.addSubview(handleBar)
         containerView.addSubview(titleLabel)
@@ -121,7 +123,7 @@ final class MissionSelectionSheetView: UIView {
         
         containerView.snp.makeConstraints { make in
             make.leading.trailing.bottom.equalToSuperview()
-            make.height.equalTo(600)
+            make.top.greaterThanOrEqualToSuperview().offset(100)
         }
         
         handleBar.snp.makeConstraints { make in
@@ -144,49 +146,50 @@ final class MissionSelectionSheetView: UIView {
         
         videoMissionCard.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.large)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
-            make.height.equalTo(80)
+            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.height.equalTo(70)
         }
         
         studyMissionCard.snp.makeConstraints { make in
             make.top.equalTo(videoMissionCard.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
-            make.height.equalTo(80)
+            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.height.equalTo(70)
         }
         
         quizMissionCard.snp.makeConstraints { make in
             make.top.equalTo(studyMissionCard.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.large)
-            make.height.equalTo(80)
+            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.height.equalTo(70)
         }
         
         previousButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.large)
-            make.bottom.equalToSuperview().offset(-50)
+            make.leading.equalToSuperview().offset(Spacing.medium)
+            make.top.equalTo(quizMissionCard.snp.bottom).offset(Spacing.large)
+            make.bottom.equalToSuperview().offset(-40)
             make.height.equalTo(56)
-            make.width.equalTo(120)
+            make.width.equalTo(130)
         }
         
         customMissionButton.snp.makeConstraints { make in
-            make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.medium)
-            make.trailing.equalToSuperview().offset(-Spacing.large)
-            make.bottom.equalToSuperview().offset(-50)
+            make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.small)
+            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.centerY.equalTo(previousButton)
             make.height.equalTo(56)
         }
     }
     
     private func bind() {
-        videoMissionCard.rx.tap
+        videoMissionCard.rx.controlEvent(.touchUpInside)
             .map { MissionType.video }
             .bind(to: missionSelected)
             .disposed(by: disposeBag)
         
-        studyMissionCard.rx.tap
+        studyMissionCard.rx.controlEvent(.touchUpInside)
             .map { MissionType.study }
             .bind(to: missionSelected)
             .disposed(by: disposeBag)
         
-        quizMissionCard.rx.tap
+        quizMissionCard.rx.controlEvent(.touchUpInside)
             .map { MissionType.quiz }
             .bind(to: missionSelected)
             .disposed(by: disposeBag)
