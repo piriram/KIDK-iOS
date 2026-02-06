@@ -10,9 +10,7 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class CustomMissionViewController: UIViewController {
-    
-    private let disposeBag = DisposeBag()
+final class CustomMissionViewController: BaseViewController {
     
     let missionCreated = PublishSubject<Void>()
     let previousTapped = PublishSubject<Void>()

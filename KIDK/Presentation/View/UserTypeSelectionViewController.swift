@@ -10,10 +10,9 @@ import RxSwift
 import RxCocoa
 import SnapKit
 
-final class UserTypeSelectionViewController: UIViewController {
+final class UserTypeSelectionViewController: BaseViewController {
     
     private let viewModel: UserTypeSelectionViewModel
-    private let disposeBag = DisposeBag()
     
     private let titleLabel: UILabel = {
         let label = UILabel()
@@ -136,11 +135,5 @@ final class UserTypeSelectionViewController: UIViewController {
                 self?.showError(message: errorMessage)
             })
             .disposed(by: disposeBag)
-    }
-    
-    private func showError(message: String) {
-        let alert = UIAlertController(title: "Error", message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default))
-        present(alert, animated: true)
     }
 }
