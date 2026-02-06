@@ -66,17 +66,13 @@ final class MissionSelectionSheetViewController: UIViewController {
     private let previousButton = KIDKButton(
         title: "이전으로",
         backgroundColor: UIColor(hex: "#2C2C2E"),
-        titleColor: .kidkTextWhite,
-        fontSize: 16,
-        fontWeight: .semibold
+        titleColor: .kidkTextWhite
     )
 
     private let customMissionButton = KIDKButton(
         title: "직접 미션 설정하기",
         backgroundColor: .kidkPink,
-        titleColor: .kidkTextWhite,
-        fontSize: 16,
-        fontWeight: .semibold
+        titleColor: .kidkTextWhite
     )
     
     override func viewDidLoad() {
@@ -98,44 +94,44 @@ final class MissionSelectionSheetViewController: UIViewController {
         
         titleLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(40)
-            make.leading.equalToSuperview().offset(Spacing.large)
+            make.leading.equalToSuperview().offset(Spacing.xl)
         }
         
         infoButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.large)
+            make.trailing.equalToSuperview().offset(-Spacing.xl)
             make.centerY.equalTo(titleLabel)
             make.width.height.equalTo(24)
         }
         
         videoMissionCard.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.large)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xl)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(70)
         }
         
         studyMissionCard.snp.makeConstraints { make in
-            make.top.equalTo(videoMissionCard.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(videoMissionCard.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(70)
         }
         
         quizMissionCard.snp.makeConstraints { make in
-            make.top.equalTo(studyMissionCard.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalTo(studyMissionCard.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(70)
         }
         
         previousButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.medium)
-            make.top.equalTo(quizMissionCard.snp.bottom).offset(Spacing.large)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.medium)
+            make.leading.equalToSuperview().offset(Spacing.md)
+            make.top.equalTo(quizMissionCard.snp.bottom).offset(Spacing.xl)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
             make.height.equalTo(56)
             make.width.equalTo(130)
         }
         
         customMissionButton.snp.makeConstraints { make in
-            make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.small)
-            make.trailing.equalToSuperview().offset(-Spacing.medium)
+            make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.xs)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalTo(previousButton)
             make.height.equalTo(56)
         }

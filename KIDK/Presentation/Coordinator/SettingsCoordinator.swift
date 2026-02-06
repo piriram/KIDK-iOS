@@ -20,7 +20,7 @@ final class SettingsCoordinator: Coordinator {
     
     func start() {
         let viewController = UIViewController()
-        viewController.view.backgroundColor = .kidkBackground
+        viewController.view.backgroundColor = .white
         navigationController.setViewControllers([viewController], animated: false)
     }
 }

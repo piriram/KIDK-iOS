@@ -39,15 +39,14 @@ final class AccountViewController: UIViewController {
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-//        label.setTextWithLineHeight(text: "김시아", font: .spoqaHanSansNeo(size: 24, weight: .bold), lineHeight: 14)
-        label.setTextWithLineHeight(text: "김시아", font: .spoqaHanSansNeo(size: 24, weight: .bold), lineHeightPercentage: 140)
+        label.applyTextStyle(text: "김시아", size: .s24, weight: .bold, color: .kidkTextWhite,lineHeight: 140)
         return label
     }()
     
     private let cardsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = Spacing.medium
+        stackView.spacing = Spacing.md
         return stackView
     }()
     
@@ -98,8 +97,8 @@ final class AccountViewController: UIViewController {
         }
         
         profileView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
+            make.top.equalToSuperview().offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(50)
         }
         
@@ -109,14 +108,14 @@ final class AccountViewController: UIViewController {
         }
         
         nameLabel.snp.makeConstraints { make in
-            make.leading.equalTo(profileImageView.snp.trailing).offset(Spacing.small)
+            make.leading.equalTo(profileImageView.snp.trailing).offset(Spacing.xs)
             make.centerY.equalToSuperview()
         }
         
         cardsStackView.snp.makeConstraints { make in
-            make.top.equalTo(profileView.snp.bottom).offset(Spacing.medium)
-            make.leading.trailing.equalToSuperview().inset(Spacing.medium)
-            make.bottom.equalToSuperview().offset(-Spacing.medium)
+            make.top.equalTo(profileView.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.bottom.equalToSuperview().offset(-Spacing.md)
         }
     }
     
@@ -169,54 +168,47 @@ final class AccountViewController: UIViewController {
         
         let contentView = UIView()
         
-        let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: "kidk_icon_mission_new")
-        iconImageView.contentMode = .scaleAspectFit
+        let iconContainer = IconContainerView("kidk_icon_mission_new",size: 60,iconSize: 44)
         
         let titleLabel = UILabel()
-        titleLabel.text = "새로운 미션이 있어요!"
-        titleLabel.font = .kidkSubtitle
-        titleLabel.textColor = .kidkTextWhite
+        titleLabel.applyTextStyle(text: "새로운 미션이 있어요!", size: .s20, weight: .bold, color: .kidkTextWhite, lineHeight: 140)
         
         let subtitleLabel = UILabel()
-        subtitleLabel.text = "책 30분 읽고 1000원 받기"
-        subtitleLabel.font = .kidkBody
-        subtitleLabel.textColor = .kidkGray
+        subtitleLabel.applyTextStyle(text: "책 30분 읽고 1000원 받기", size: .s16, weight: .medium, color: .kidkGray)
         
         let button = KIDKButton(
             title: "미션 하러 가기",
             backgroundColor: .kidkPink,
             titleColor: .kidkTextWhite,
-            fontSize: 16,
-            fontWeight: .semibold
+            font: .spoqaHanSansNeo(size: 16, weight: .bold)
         )
         button.isUserInteractionEnabled = false
         
-        contentView.addSubview(iconImageView)
+        contentView.addSubview(iconContainer)
         contentView.addSubview(titleLabel)
         contentView.addSubview(subtitleLabel)
         contentView.addSubview(button)
         
-        iconImageView.snp.makeConstraints { make in
+        iconContainer.snp.makeConstraints { make in
             make.leading.top.equalToSuperview()
-            make.width.height.equalTo(40)
+            make.width.height.equalTo(60)
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.small)
-            make.top.equalToSuperview()
+            make.leading.equalTo(iconContainer.snp.trailing).offset(Spacing.xs)
+            make.top.equalTo(iconContainer.snp.top)
         }
         
         subtitleLabel.snp.makeConstraints { make in
             make.leading.equalTo(titleLabel)
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
+            make.top.equalTo(titleLabel.snp.bottom).offset(8)
         }
         
         button.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.medium)
+            make.top.equalTo(iconContainer.snp.bottom).offset(Spacing.md)
             make.bottom.equalToSuperview()
-            make.height.equalTo(44)
+            make.height.equalTo(48)
         }
         
         card.configure(with: contentView, showCloseButton: true)
@@ -228,13 +220,11 @@ final class AccountViewController: UIViewController {
         
         let contentView = UIView()
         
-        let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: "kidk_icon_wallet")
-        iconImageView.contentMode = .scaleAspectFit
+        let iconImageView = IconContainerView("kidk_icon_wallet")
         
         let titleLabel = UILabel()
         titleLabel.text = "내 지갑"
-        titleLabel.font = .kidkBody
+        titleLabel.font = .kidkSubtitle
         titleLabel.textColor = .kidkGray
         
         let amountLabel = UILabel()
@@ -258,7 +248,7 @@ final class AccountViewController: UIViewController {
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.small)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.xs)
             make.top.equalToSuperview()
         }
         
@@ -282,9 +272,7 @@ final class AccountViewController: UIViewController {
         
         let contentView = UIView()
         
-        let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: "kidk_icon_piggy")
-        iconImageView.contentMode = .scaleAspectFit
+        let iconImageView = IconContainerView("kidk_icon_piggy")
         
         let titleLabel = UILabel()
         titleLabel.text = "내 저금통"
@@ -302,13 +290,14 @@ final class AccountViewController: UIViewController {
         arrowImageView.contentMode = .scaleAspectFit
         
         let messageContainer = UIView()
-        messageContainer.backgroundColor = UIColor(hex: "#242426")
+        messageContainer.backgroundColor = .kidkDarkBackground
         messageContainer.layer.cornerRadius = 10
         
         let messageLabel = UILabel()
         messageLabel.text = "친구들과 함께 저축 목표를 설정해보세요!"
-        messageLabel.font = .kidkBody
+        messageLabel.font = .spoqaHanSansNeo(size: 14, weight: .bold)
         messageLabel.textColor = .kidkGreen
+        messageLabel.textAlignment = .center
         messageLabel.numberOfLines = 0
         
         contentView.addSubview(iconImageView)
@@ -324,7 +313,7 @@ final class AccountViewController: UIViewController {
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.small)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.xs)
             make.top.equalToSuperview()
         }
         
@@ -335,18 +324,19 @@ final class AccountViewController: UIViewController {
         
         arrowImageView.snp.makeConstraints { make in
             make.trailing.equalToSuperview()
-            make.centerY.equalTo(amountLabel)
+            //            make.centerY.equalTo(amountLabel)
+            make.top.equalTo(titleLabel.snp.bottom)
             make.width.height.equalTo(20)
         }
         
         messageContainer.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
-            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.medium)
+            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.md)
             make.bottom.equalToSuperview()
         }
         
         messageLabel.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(Spacing.medium)
+            make.edges.equalToSuperview().inset(Spacing.md)
         }
         
         card.configure(with: contentView, showCloseButton: false)
@@ -361,9 +351,9 @@ final class AccountViewController: UIViewController {
         let headerView = UIView()
         
         let questionLabel = UILabel()
-        questionLabel.text = "어버덤은 어디에 돈을 많이 사용했을까요?"
+        questionLabel.text = "이번달은 어디에 돈을 많이 사용했을까요?"
         questionLabel.font = .kidkBody
-        questionLabel.textColor = .kidkGray
+        questionLabel.textColor = .kidkTextWhite.withAlphaComponent(0.8)
         
         let titleStackView = UIStackView()
         titleStackView.axis = .horizontal
@@ -403,7 +393,7 @@ final class AccountViewController: UIViewController {
         
         let category1View = createCategoryView(icon: "kidk_category_food", title: "음식", amount: "12,000원", color: .kidkPink)
         let category2View = createCategoryView(icon: "kidk_category_shopping", title: "쇼핑", amount: "5,000원", color: .kidkGreen)
-        let category3View = createCategoryView(icon: "kidk_category_transport", title: "교통", amount: "3,000원", color: UIColor(hex: "#00A8FF"))
+        let category3View = createCategoryView(icon: "kidk_category_transport", title: "교통", amount: "3,000원", color: UIColor(hex: "#0095FF"))
         
         titleStackView.addArrangedSubview(monthLabel)
         titleStackView.addArrangedSubview(spendingLabel)
@@ -433,7 +423,7 @@ final class AccountViewController: UIViewController {
         
         titleStackView.snp.makeConstraints { make in
             make.leading.equalToSuperview()
-            make.top.equalTo(questionLabel.snp.bottom).offset(Spacing.small)
+            make.top.equalTo(questionLabel.snp.bottom).offset(Spacing.xs)
             make.bottom.equalToSuperview()
         }
         
@@ -450,7 +440,7 @@ final class AccountViewController: UIViewController {
         }
         
         progressView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(Spacing.medium)
+            make.top.equalTo(headerView.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(8)
         }
@@ -472,17 +462,17 @@ final class AccountViewController: UIViewController {
         }
         
         category1View.snp.makeConstraints { make in
-            make.top.equalTo(progressView.snp.bottom).offset(Spacing.medium)
+            make.top.equalTo(progressView.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview()
         }
         
         category2View.snp.makeConstraints { make in
-            make.top.equalTo(category1View.snp.bottom).offset(Spacing.small)
+            make.top.equalTo(category1View.snp.bottom).offset(Spacing.xs)
             make.leading.trailing.equalToSuperview()
         }
         
         category3View.snp.makeConstraints { make in
-            make.top.equalTo(category2View.snp.bottom).offset(Spacing.small)
+            make.top.equalTo(category2View.snp.bottom).offset(Spacing.xs)
             make.leading.trailing.bottom.equalToSuperview()
         }
         
@@ -493,9 +483,7 @@ final class AccountViewController: UIViewController {
     private func createCategoryView(icon: String, title: String, amount: String, color: UIColor) -> UIView {
         let view = UIView()
         
-        let iconImageView = UIImageView()
-        iconImageView.image = UIImage(named: icon)
-        iconImageView.contentMode = .scaleAspectFit
+        let iconImageView = IconContainerView(icon,backgroundColor: color ,alpha: 0.2)
         
         let titleLabel = UILabel()
         titleLabel.text = title
@@ -511,21 +499,22 @@ final class AccountViewController: UIViewController {
         
         iconImageView.snp.makeConstraints { make in
             make.leading.centerY.equalToSuperview()
-            make.width.height.equalTo(32)
+            make.width.height.equalTo(44)
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.small)
+            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.xs)
             make.centerY.equalToSuperview()
         }
         
         amountView.snp.makeConstraints { make in
-            make.trailing.centerY.equalToSuperview()
+            make.leading.equalTo(titleLabel.snp.trailing).offset(14)
+            make.centerY.equalToSuperview()
             make.height.equalTo(36)
         }
         
         view.snp.makeConstraints { make in
-            make.height.equalTo(40)
+            make.height.equalTo(60)
         }
         
         return view
