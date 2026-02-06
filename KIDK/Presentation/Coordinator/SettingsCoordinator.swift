@@ -7,20 +7,18 @@
 
 import UIKit
 
-final class SettingsCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
+final class SettingsCoordinator: BaseCoordinator {
     
     private let user: User
     
     init(navigationController: UINavigationController, user: User) {
-        self.navigationController = navigationController
         self.user = user
+        super.init(navigationController: navigationController)
     }
     
-    func start() {
+    override func start() {
         let viewController = UIViewController()
-        viewController.view.backgroundColor = .white
+        viewController.view.backgroundColor = UIColor(hex: "#1C1C1E")
         navigationController.setViewControllers([viewController], animated: false)
     }
 }

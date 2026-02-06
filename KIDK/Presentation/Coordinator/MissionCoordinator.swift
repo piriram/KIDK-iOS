@@ -8,19 +8,16 @@
 import UIKit
 import RxSwift
 
-final class MissionCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
+final class MissionCoordinator: BaseCoordinator {
     
     private let user: User
-    private let disposeBag = DisposeBag()
     
     init(navigationController: UINavigationController, user: User) {
-        self.navigationController = navigationController
         self.user = user
+        super.init(navigationController: navigationController)
     }
     
-    func start() {
+    override func start() {
         let viewModel = MissionViewModel(user: user)
         let viewController = MissionViewController(viewModel: viewModel)
         
@@ -38,5 +35,6 @@ final class MissionCoordinator: Coordinator {
         let viewModel = KIDKCityViewModel(user: user)
         let viewController = KIDKCityViewController(viewModel: viewModel)
         navigationController.pushViewController(viewController, animated: true)
+        debugLog("Navigated to KIDK City")
     }
 }

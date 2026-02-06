@@ -8,19 +8,16 @@
 import UIKit
 import RxSwift
 
-final class MainTabBarCoordinator: Coordinator {
-    var childCoordinators: [Coordinator] = []
-    var navigationController: UINavigationController
+final class MainTabBarCoordinator: BaseCoordinator {
     
     private let user: User
-    private let disposeBag = DisposeBag()
     
     init(navigationController: UINavigationController, user: User) {
-        self.navigationController = navigationController
         self.user = user
+        super.init(navigationController: navigationController)
     }
     
-    func start() {
+    override func start() {
         let tabBarController = MainTabBarController()
         
         let accountNav = UINavigationController()
@@ -44,5 +41,7 @@ final class MainTabBarCoordinator: Coordinator {
         tabBarController.viewControllers = [accountNav, missionNav, settingsNav]
         
         navigationController.setViewControllers([tabBarController], animated: true)
+        
+        debugSuccess("Main tab bar initialized with 3 tabs")
     }
 }
