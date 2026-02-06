@@ -44,7 +44,8 @@ extension UIFont {
     static let kidkSubtitleEn = poppins(size: 16, weight: .semibold)
     static let kidkBodyEn = poppins(size: 12, weight: .regular)
     
-    func withLineHeight(_ lineHeight: CGFloat) -> [NSAttributedString.Key: Any] {
+    func withLineHeightPercentage(_ percentage: CGFloat) -> [NSAttributedString.Key: Any] {
+        let lineHeight = pointSize * (percentage / 100)
         let paragraphStyle = NSMutableParagraphStyle()
         paragraphStyle.minimumLineHeight = lineHeight
         paragraphStyle.maximumLineHeight = lineHeight
@@ -57,8 +58,8 @@ extension UIFont {
 }
 
 extension UILabel {
-    func setTextWithLineHeight(text: String, font: UIFont, lineHeight: CGFloat) {
-        let attributes = font.withLineHeight(lineHeight)
+    func setTextWithLineHeight(text: String, font: UIFont, lineHeightPercentage: CGFloat) {
+        let attributes = font.withLineHeightPercentage(lineHeightPercentage)
         self.attributedText = NSAttributedString(string: text, attributes: attributes)
     }
 }

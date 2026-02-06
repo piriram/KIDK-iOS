@@ -39,9 +39,8 @@ final class AccountViewController: UIViewController {
     
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.text = "김시아"
-        label.font = .kidkTitle
-        label.textColor = .kidkTextWhite
+//        label.setTextWithLineHeight(text: "김시아", font: .spoqaHanSansNeo(size: 24, weight: .bold), lineHeight: 14)
+        label.setTextWithLineHeight(text: "김시아", font: .spoqaHanSansNeo(size: 24, weight: .bold), lineHeightPercentage: 140)
         return label
     }()
     
@@ -184,12 +183,13 @@ final class AccountViewController: UIViewController {
         subtitleLabel.font = .kidkBody
         subtitleLabel.textColor = .kidkGray
         
-        let button = UIButton(type: .system)
-        button.setTitle("미션 하러 가기", for: .normal)
-        button.titleLabel?.font = .kidkSubtitle
-        button.setTitleColor(.kidkTextWhite, for: .normal)
-        button.backgroundColor = .kidkPink
-        button.layer.cornerRadius = CornerRadius.small
+        let button = KIDKButton(
+            title: "미션 하러 가기",
+            backgroundColor: .kidkPink,
+            titleColor: .kidkTextWhite,
+            fontSize: 16,
+            fontWeight: .semibold
+        )
         button.isUserInteractionEnabled = false
         
         contentView.addSubview(iconImageView)
