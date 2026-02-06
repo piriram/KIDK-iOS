@@ -4,7 +4,6 @@
 //
 //  Created by 잠만보김쥬디 on 11/13/25.
 //
-
 import UIKit
 import RxSwift
 
@@ -24,7 +23,30 @@ final class AuthCoordinator: BaseCoordinator {
     }
     
     override func start() {
-        showUserTypeSelection()
+        showLogin()
+    }
+    
+    private func showLogin() {
+        let viewModel = LoginViewModel(authRepository: authRepository)
+        let viewController = LoginViewController(viewModel: viewModel)
+        
+        viewModel.loginSuccess
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] user in
+                guard let self = self else { return }
+                self.debugSuccess("Login successful")
+                self.delegate?.authCoordinatorDidFinish(self, user: user)
+            })
+            .disposed(by: disposeBag)
+        
+        viewModel.navigateToSignup
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] in
+                self?.showUserTypeSelection()
+            })
+            .disposed(by: disposeBag)
+        
+        navigationController.setViewControllers([viewController], animated: false)
     }
     
     private func showUserTypeSelection() {
@@ -40,6 +62,6 @@ final class AuthCoordinator: BaseCoordinator {
             })
             .disposed(by: disposeBag)
         
-        navigationController.setViewControllers([viewController], animated: false)
+        navigationController.pushViewController(viewController, animated: true)
     }
 }

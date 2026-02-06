@@ -18,7 +18,7 @@ final class KIDKButton: UIButton {
         title: String,
         backgroundColor: UIColor = .kidkPink,
         titleColor: UIColor = .kidkTextWhite,
-        font: UIFont = .systemFont(ofSize: 18)
+        font: UIFont = .kidkFont(.s16, .bold)
     ) {
         super.init(frame: .zero)
         
@@ -26,7 +26,7 @@ final class KIDKButton: UIButton {
         setTitleColor(titleColor, for: .normal)
         titleLabel?.font = font
         self.backgroundColor = backgroundColor
-        layer.cornerRadius = CornerRadius.small
+        layer.cornerRadius = CornerRadius.medium
         
         setupHighlightEffect()
     }

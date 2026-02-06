@@ -10,6 +10,27 @@ import RxSwift
 
 final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
     
+    func isAutoLoginEnabled() -> Bool {
+        return userDefaultsManager.loadIsAutoLoginEnabled()
+    }
+
+    func saveAutoLoginPreference(_ isEnabled: Bool) {
+        userDefaultsManager.saveIsAutoLoginEnabled(isEnabled)
+        debugLog("Auto-login preference saved: \(isEnabled)")
+    }
+
+    func saveLoginCredentials(email: String) {
+        userDefaultsManager.saveEmail(email)
+        debugLog("Login email saved")
+    }
+
+    func getLastLoginEmail() -> String? {
+        return userDefaultsManager.loadEmail()
+    }
+    
+   
+    
+    
     private let mockDataSource: MockAuthDataSource
     private let userDefaultsManager: UserDefaultsManager
     private let keychainWrapper: KeychainWrapper
@@ -135,5 +156,6 @@ final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
         userDefaultsManager.saveIsFirstLaunch(true)
         debugLog("First launch completed")
     }
+    
 }
 
