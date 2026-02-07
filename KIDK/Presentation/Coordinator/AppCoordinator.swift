@@ -50,18 +50,8 @@ final class AppCoordinator: BaseCoordinator {
             showLogin()
         }
     }
-
-    private func showLogin() {
-        let authCoordinator = AuthCoordinator(
-            navigationController: navigationController,
-            authRepository: authRepository
-        )
-        authCoordinator.delegate = self
-        addChildCoordinator(authCoordinator)
-        authCoordinator.start()
-    }
     
-    private func showUserTypeSelection() {
+    private func showLogin() {
         let authCoordinator = AuthCoordinator(
             navigationController: navigationController,
             authRepository: authRepository
@@ -73,6 +63,7 @@ final class AppCoordinator: BaseCoordinator {
     
     private func showMainFlow(user: User) {
         let mainTabBarCoordinator = MainTabBarCoordinator(navigationController: navigationController, user: user)
+        mainTabBarCoordinator.delegate = self
         addChildCoordinator(mainTabBarCoordinator)
         mainTabBarCoordinator.start()
     }
@@ -82,5 +73,13 @@ extension AppCoordinator: AuthCoordinatorDelegate {
     func authCoordinatorDidFinish(_ coordinator: AuthCoordinator, user: User) {
         removeChildCoordinator(coordinator)
         showMainFlow(user: user)
+    }
+}
+
+extension AppCoordinator: MainTabBarCoordinatorDelegate {
+    func mainTabBarCoordinatorDidLogout(_ coordinator: MainTabBarCoordinator) {
+        removeChildCoordinator(coordinator)
+        debugSuccess("Returning to login screen")
+        showLogin()
     }
 }
