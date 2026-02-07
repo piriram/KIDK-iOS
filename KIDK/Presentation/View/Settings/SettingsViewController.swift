@@ -66,7 +66,7 @@ final class SettingsViewController: BaseViewController {
         }
         
         logoutButton.snp.makeConstraints { make in
-            make.centerY.equalToSuperview()
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.lg)
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
             make.height.equalTo(56)
         }
