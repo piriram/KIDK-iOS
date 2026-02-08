@@ -61,39 +61,33 @@ final class KIDKCityViewController: BaseViewController {
     
     private let schoolInfoCardView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#3C3C40")
-        view.layer.cornerRadius = CornerRadius.medium
-        view.alpha = 0
+        view.backgroundColor = .cardBackground.withAlphaComponent(0.9)
+        view.layer.cornerRadius = CornerRadius.large
         return view
     }()
     
-    private let schoolIconImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_icon_pencil")
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
+    private let schoolIconImageView = IconContainerView("kidk_icon_pencil",
+                                                        backgroundColor: .kidkTextWhite, size: 60,
+                                                        cornerRadius: CornerRadius.medium,
+                                                        iconSize: 50, alpha: 0.1)
     
     private let schoolTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "학교"
-        label.font = .kidkTitle
-        label.textColor = .kidkTextWhite
+        label.applyTextStyle(text: "학교", size: .s24, weight: .bold, color: .kidkTextWhite)
         return label
     }()
     
     private let schoolSubtitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "학습과 관련된 미션을 할 수 있어요!"
-        label.font = .kidkBody
-        label.textColor = .kidkGray
+        label.applyTextStyle(text: "학습과 관련된 미션을 할 수 있어요!", size: .s14, weight: .medium,
+                             color: .kidkTextWhite.withAlphaComponent(0.8))
         return label
     }()
     
     private let arrowImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.image = UIImage(systemName: "chevron.right")
-        imageView.tintColor = .kidkTextWhite
+        imageView.tintColor = .chevronGray
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -209,13 +203,13 @@ final class KIDKCityViewController: BaseViewController {
         schoolInfoCardView.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
-            make.height.equalTo(80)
+            make.height.equalTo(100)
         }
         
         schoolIconImageView.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.md)
             make.centerY.equalToSuperview()
-            make.width.height.equalTo(50)
+            make.width.height.equalTo(60)
         }
         
         schoolTitleLabel.snp.makeConstraints { make in

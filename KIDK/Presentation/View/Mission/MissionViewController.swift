@@ -10,11 +10,9 @@ import RxSwift
 import RxCocoa
 import SnapKit
 
-final class MissionViewController: UIViewController {
+final class MissionViewController: BaseViewController {
     
     private let viewModel: MissionViewModel
-    private let disposeBag = DisposeBag()
-    
     private let navigationBar: UIView = {
         let view = UIView()
         view.backgroundColor = .kidkDarkBackground
@@ -23,16 +21,14 @@ final class MissionViewController: UIViewController {
     
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.text = Strings.Mission.title
-        label.font = .kidkTitle
-        label.textColor = .kidkTextWhite
+        label.applyTextStyle(text: Strings.Mission.title, size: .s24, weight: .bold, color: .kidkTextWhite)
         return label
     }()
     
     private let goToKIDKCityButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle(Strings.Mission.goToKIDKCity, for: .normal)
-        button.titleLabel?.font = .kidkSubtitle
+        button.titleLabel?.font = .kidkTitle
         button.setTitleColor(.kidkTextWhite, for: .normal)
         button.backgroundColor = .kidkPink
         button.layer.cornerRadius = CornerRadius.medium
@@ -74,7 +70,7 @@ final class MissionViewController: UIViewController {
     private let infoButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "info.circle"), for: .normal)
-        button.tintColor = .kidkGray
+        button.tintColor = .kidkTextWhite.withAlphaComponent(0.6)
         return button
     }()
     
@@ -115,8 +111,9 @@ final class MissionViewController: UIViewController {
         view.addSubview(missionCardView)
         
         navigationBar.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
-            make.height.equalTo(100)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.xl)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.height.equalTo(30)
         }
         
         titleLabel.snp.makeConstraints { make in
@@ -131,9 +128,9 @@ final class MissionViewController: UIViewController {
         }
         
         goToKIDKCityButton.snp.makeConstraints { make in
-            make.top.equalTo(navigationBar.snp.bottom).offset(Spacing.md)
+            make.top.equalTo(navigationBar.snp.bottom).offset(0)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(56)
+            make.height.equalTo(64)
         }
         
         arrowImageView.snp.makeConstraints { make in
