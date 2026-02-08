@@ -371,30 +371,32 @@ final class KIDKCityViewController: BaseViewController {
         currentSheet.dismiss(animated: true) { [weak self] in
             guard let self = self else { return }
             
-            let customMissionVC = CustomMissionViewController()
+            let repository = MissionRepository(currentUserId: "user123")
+            let viewModel = MissionCreationViewModel(missionRepository: repository)
+            let viewController = MissionCreationViewController(viewModel: viewModel)
             
-            if let sheet = customMissionVC.sheetPresentationController {
+            if let sheet = viewController.sheetPresentationController {
                 sheet.detents = [.large()]
                 sheet.prefersGrabberVisible = true
                 sheet.preferredCornerRadius = 20
             }
             
-            customMissionVC.missionCreated
-                .subscribe(onNext: {
+            viewController.missionCreated
+                .subscribe(onNext: { _ in
                     print("Mission created")
                 })
                 .disposed(by: self.disposeBag)
             
-            customMissionVC.previousTapped
+            viewController.previousTapped
                 .subscribe(onNext: { [weak self] in
-                    customMissionVC.dismiss(animated: true) {
+                    viewController.dismiss(animated: true) {
                         self?.showHalfSheet()
                     }
                 })
                 .disposed(by: self.disposeBag)
             
-            self.sheetViewController = customMissionVC
-            self.present(customMissionVC, animated: true)
+            self.sheetViewController = viewController
+            self.present(viewController, animated: true)
         }
     }
     
