@@ -26,7 +26,7 @@ final class MissionCreationViewModel: BaseViewModel {
     }
     
     private let missionRepository: MissionRepositoryProtocol
-    private let missionType: MissionType
+    let missionType: MissionType
     
     init(missionRepository: MissionRepositoryProtocol, missionType: MissionType = .video) {
         self.missionRepository = missionRepository

@@ -16,6 +16,7 @@ final class MissionCreationViewController: BaseViewController {
     let previousTapped = PublishSubject<Void>()
     
     private let viewModel: MissionCreationViewModel
+    private let missionType: MissionType
     
     private let goalTitleRelay = BehaviorRelay<String>(value: "")
     private let targetDateRelay = BehaviorRelay<Date?>(value: nil)
@@ -222,6 +223,7 @@ final class MissionCreationViewController: BaseViewController {
     
     init(viewModel: MissionCreationViewModel) {
         self.viewModel = viewModel
+        self.missionType = viewModel.missionType
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -232,6 +234,7 @@ final class MissionCreationViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        configureMissionContent()
         bindViewModel()
         bindUIActions()
     }
@@ -410,6 +413,30 @@ final class MissionCreationViewController: BaseViewController {
             make.trailing.equalToSuperview().offset(-Spacing.xl)
             make.centerY.equalTo(previousButton)
             make.height.equalTo(56)
+        }
+    }
+    
+    private func configureMissionContent() {
+        switch missionType {
+        case .video:
+            missionIconImageView.image = UIImage(named: "kidk_mission_video")
+            missionDescriptionLabel.text = "영상을 시청한 후 퀴즈를 풀어보세요"
+            
+        case .study:
+            missionIconImageView.image = UIImage(named: "kidk_mission_study")
+            missionDescriptionLabel.text = "1시간씩 수학 공부를 하기"
+            
+        case .quiz:
+            missionIconImageView.image = UIImage(named: "kidk_mission_quiz")
+            missionDescriptionLabel.text = "30개씩 영어 단어를 외우기"
+            
+        case .custom:
+            dailyMissionLabel.text = "미션 내용"
+            missionCardView.isHidden = true
+            
+        case .savings:
+            missionIconImageView.image = UIImage(named: "kidk_mission_savings")
+            missionDescriptionLabel.text = "목표 금액을 저축해보세요"
         }
     }
     
