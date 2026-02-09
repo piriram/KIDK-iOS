@@ -1,0 +1,37 @@
+/* 
+  Localizable.strings
+  KIDK
+
+  Created by 잠만보김쥬디 on 11/14/25.
+  
+*/
+
+
+// Auth
+"auth.select_user_type" = "Select User Type";
+"auth.select_user_type_subtitle" = "Choose how you want to use KIDK";
+"auth.child_button" = "I'm a Child";
+"auth.parent_button" = "I'm a Parent";
+
+// Mission
+"mission.title" = "Mission";
+"mission.go_to_kidk_city" = "Go to KIDK City";
+"mission.ongoing_saving_missions" = "Ongoing Saving Missions";
+"mission.set_goal_in_kidk_city" = "Set your goal in KIDK City";
+"mission.set_goal_with_friends" = "Set goals and achieve them with friends";
+"mission.what_mission_question" = "What missions will I do?";
+
+// TabBar
+"tab_bar.account" = "My Account";
+"tab_bar.mission" = "Mission";
+"tab_bar.settings" = "Settings";
+
+// Common
+"common.ok" = "OK";
+"common.cancel" = "Cancel";
+"common.error" = "Error";
+"common.loading" = "Loading...";
+
+// Error
+"error.user_creation_failed" = "Failed to create user";
+"error.unknown" = "Unknown error occurred";
