@@ -1,10 +1,3 @@
-//
-//  AmountLabelView.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/14/25.
-//
-
 import UIKit
 import SnapKit
 

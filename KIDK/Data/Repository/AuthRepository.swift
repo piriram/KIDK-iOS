@@ -9,7 +9,53 @@ import Foundation
 import RxSwift
 
 final class AuthRepository: BaseRepository, AuthRepositoryProtocol {
-    
+
+    // MARK: - Real API
+
+    func login(firebaseToken: String) -> Observable<Result<User, NetworkError>> {
+        debugLog("Starting login with Firebase token")
+
+        let deviceId = UIDevice.current.identifierForVendor?.uuidString
+
+        return networkService.request(AuthAPI.login(firebaseToken: firebaseToken, deviceId: deviceId))
+            .do(onNext: { [weak self] (result: Result<ApiResponse<LoginResponseData>, NetworkError>) in
+                guard let self = self else { return }
+
+                switch result {
+                case .success(let apiResponse):
+                    guard let loginData = apiResponse.data else {
+                        self.debugError("Login response data is nil", error: nil)
+                        return
+                    }
+
+                    // 토큰 저장
+                    self.tokenManager.saveAccessToken(loginData.accessToken)
+                    self.tokenManager.saveRefreshToken(loginData.refreshToken)
+
+                    // 사용자 정보 저장
+                    let user = loginData.toDomain()
+                    self.userDefaultsManager.saveMockFirebaseUID(user.firebaseUID)
+                    self.userDefaultsManager.saveUserType(user.userType.rawValue)
+                    self.userDefaultsManager.saveLastLoginDate(Date())
+
+                    self.debugSuccess("Login successful, tokens saved")
+
+                case .failure(let error):
+                    self.debugError("Login failed", error: error)
+                }
+            })
+            .map { (result: Result<ApiResponse<LoginResponseData>, NetworkError>) -> Result<User, NetworkError> in
+                return result.flatMap { apiResponse in
+                    guard let loginData = apiResponse.data else {
+                        return .failure(.decodingFailed(NSError(domain: "AuthRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Login data is nil"])))
+                    }
+                    return .success(loginData.toDomain())
+                }
+            }
+    }
+
+    // MARK: - Mock Methods
+
     func isAutoLoginEnabled() -> Bool {
         return userDefaultsManager.loadIsAutoLoginEnabled()
     }
