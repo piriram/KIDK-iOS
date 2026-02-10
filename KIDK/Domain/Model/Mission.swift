@@ -80,24 +80,17 @@ extension Mission{
     /// 포맷된 목표 날짜 (예: "6월 7일까지")
     var formattedTargetDate: String? {
         guard let targetDate = targetDate else { return nil }
-        let formatter = DateFormatter()
-        formatter.locale = Locale(identifier: "ko_KR")
-        formatter.dateFormat = "M월 d일"
-        return formatter.string(from: targetDate) + "까지"
+        return targetDate.formattedShortDate + "까지"
     }
 
     /// 포맷된 목표 금액
     var formattedTargetAmount: String? {
         guard let amount = targetAmount else { return nil }
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return (formatter.string(from: NSNumber(value: amount)) ?? "0") + "원"
+        return amount.formattedCurrency
     }
 
     /// 포맷된 현재 금액
     var formattedCurrentAmount: String {
-        let formatter = NumberFormatter()
-        formatter.numberStyle = .decimal
-        return (formatter.string(from: NSNumber(value: currentAmount)) ?? "0") + "원"
+        return currentAmount.formattedCurrency
     }
 }
