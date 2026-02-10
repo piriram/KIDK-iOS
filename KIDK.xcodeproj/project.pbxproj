@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		2102E44F2ED6D060009A1598 /* RealmSwift in Embed Frameworks */ = {isa = PBXBuildFile; productRef = 21BD66C42EC8DD3C00E15B12 /* RealmSwift */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		21BA05E22EC5CE8D001BE4DA /* .gitignore in Resources */ = {isa = PBXBuildFile; fileRef = 21BA05E12EC5CE8D001BE4DA /* .gitignore */; };
 		21BA07102EC5D369001BE4DA /* RxCocoa in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA070F2EC5D369001BE4DA /* RxCocoa */; };
 		21BA07122EC5D369001BE4DA /* RxSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA07112EC5D369001BE4DA /* RxSwift */; };
@@ -14,6 +15,20 @@
 		21BA082D2EC76A50001BE4DA /* IQKeyboardManagerSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BA082C2EC76A50001BE4DA /* IQKeyboardManagerSwift */; };
 		21BD66C52EC8DD3C00E15B12 /* RealmSwift in Frameworks */ = {isa = PBXBuildFile; productRef = 21BD66C42EC8DD3C00E15B12 /* RealmSwift */; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		2102E4502ED6D060009A1598 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				2102E44F2ED6D060009A1598 /* RealmSwift in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		21BA05C92EC5CE6D001BE4DA /* KIDK.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KIDK.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -84,6 +99,7 @@
 				21BA05C52EC5CE6D001BE4DA /* Sources */,
 				21BA05C62EC5CE6D001BE4DA /* Frameworks */,
 				21BA05C72EC5CE6D001BE4DA /* Resources */,
+				2102E4502ED6D060009A1598 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -297,7 +313,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -357,7 +373,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
