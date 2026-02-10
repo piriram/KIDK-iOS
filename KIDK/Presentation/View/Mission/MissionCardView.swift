@@ -1,10 +1,3 @@
-//
-//  MissionCardView.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/13/25.
-//
-
 import UIKit
 import SnapKit
 import RxSwift
@@ -21,7 +14,19 @@ final class MissionCardView: UIView {
         return view
     }()
     
+    private let rootStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = Spacing.xs
+        return stackView
+    }()
+    
     private let headerView: UIView = {
+        let view = UIView()
+        return view
+    }()
+    
+    private let contentContainerView: UIView = {
         let view = UIView()
         return view
     }()
@@ -36,7 +41,7 @@ final class MissionCardView: UIView {
     private let collapseButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "chevron.up"), for: .normal)
-        button.tintColor = UIColor(hex: "#636366")
+        button.tintColor = UIColor(hex: "#7F7F7F")
         return button
     }()
     
@@ -50,7 +55,7 @@ final class MissionCardView: UIView {
     
     private let participantsLabel: UILabel = {
         let label = UILabel()
-        label.font = .kidkFont(.s14, .regular)
+        label.font = .kidkFont(.s12, .regular)
         label.textColor = .kidkTextWhite.withAlphaComponent(0.8)
         return label
     }()
@@ -62,7 +67,7 @@ final class MissionCardView: UIView {
     
     private let deadlineLabel: UILabel = {
         let label = UILabel()
-        label.font = .kidkFont(.s14, .medium)
+        label.font = .kidkFont(.s14, .bold)
         label.textColor = .kidkPink
         label.textAlignment = .center
         return label
@@ -76,7 +81,7 @@ final class MissionCardView: UIView {
     private let missionTitleLabel: UILabel = {
         let label = UILabel()
         label.text = "미션"
-        label.font = .kidkFont(.s16, .bold)
+        label.font = .kidkFont(.s14, .bold)
         label.textColor = .kidkTextWhite
         return label
     }()
@@ -92,6 +97,7 @@ final class MissionCardView: UIView {
         let imageView = UIImageView()
         imageView.image = UIImage(systemName: "pencil")
         imageView.tintColor = .kidkTextWhite.withAlphaComponent(0.6)
+        imageView.backgroundColor = .kidkTextWhite.withAlphaComponent(0.1)
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -99,8 +105,8 @@ final class MissionCardView: UIView {
     private let missionPlaceholderLabel: UILabel = {
         let label = UILabel()
         label.text = "[지속적 줄거리] 영상 시청하기"
-        label.font = .kidkFont(.s14, .regular)
-        label.textColor = .kidkTextWhite.withAlphaComponent(0.6)
+        label.font = .kidkFont(.s14, .bold)
+        label.textColor = .kidkTextWhite
         return label
     }()
     
@@ -108,9 +114,9 @@ final class MissionCardView: UIView {
         let button = UIButton(type: .system)
         button.setTitle("인증하기", for: .normal)
         button.titleLabel?.font = .kidkFont(.s14, .bold)
-        button.setTitleColor(.kidkTextWhite, for: .normal)
+        button.setTitleColor(.kidkTextWhite.withAlphaComponent(0.8), for: .normal)
         button.backgroundColor = .kidkPink
-        button.layer.cornerRadius = CornerRadius.medium
+        button.layer.cornerRadius = CornerRadius.large
         return button
     }()
     
@@ -164,35 +170,42 @@ final class MissionCardView: UIView {
     
     private func setupUI() {
         addSubview(containerView)
-        containerView.addSubview(headerView)
+        containerView.addSubview(rootStackView)
+        rootStackView.addArrangedSubview(headerView)
+        rootStackView.addArrangedSubview(contentContainerView)
+        
         headerView.addSubview(titleLabel)
         headerView.addSubview(collapseButton)
         
-        containerView.addSubview(participantsStackView)
-        containerView.addSubview(participantsLabel)
+        contentContainerView.addSubview(participantsStackView)
+        contentContainerView.addSubview(participantsLabel)
+        contentContainerView.addSubview(circularProgressView)
+        contentContainerView.addSubview(deadlineLabel)
+        contentContainerView.addSubview(missionSectionView)
+        contentContainerView.addSubview(emptyStateView)
         
-        containerView.addSubview(circularProgressView)
-        containerView.addSubview(deadlineLabel)
-        
-        containerView.addSubview(missionSectionView)
         missionSectionView.addSubview(missionTitleLabel)
         missionSectionView.addSubview(missionInputContainer)
-        missionInputContainer.addSubview(missionIconView)
-        missionInputContainer.addSubview(missionPlaceholderLabel)
         missionSectionView.addSubview(verifyButton)
         
-        containerView.addSubview(emptyStateView)
+        missionInputContainer.addSubview(missionIconView)
+        missionInputContainer.addSubview(missionPlaceholderLabel)
+        
         emptyStateView.addSubview(emptySubtitleLabel)
         emptyStateView.addSubview(emptyProgressCircleView)
-        emptyProgressCircleView.addSubview(treasureIconView)
         emptyStateView.addSubview(whatMissionButton)
+        
+        emptyProgressCircleView.addSubview(treasureIconView)
         
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
         
+        rootStackView.snp.makeConstraints { make in
+            make.top.leading.trailing.bottom.equalToSuperview().inset(Spacing.md)
+        }
+        
         headerView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(24)
         }
         
@@ -206,8 +219,8 @@ final class MissionCardView: UIView {
         }
         
         participantsStackView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(Spacing.xs)
-            make.leading.equalToSuperview().offset(Spacing.md)
+            make.top.equalToSuperview().offset(Spacing.xs)
+            make.leading.equalToSuperview()
             make.height.equalTo(24)
         }
         
@@ -219,7 +232,7 @@ final class MissionCardView: UIView {
         circularProgressView.snp.makeConstraints { make in
             make.top.equalTo(participantsStackView.snp.bottom).offset(Spacing.md)
             make.centerX.equalToSuperview()
-            make.width.height.equalTo(230)
+            make.size.equalTo(310)
         }
         
         deadlineLabel.snp.makeConstraints { make in
@@ -229,8 +242,8 @@ final class MissionCardView: UIView {
         
         missionSectionView.snp.makeConstraints { make in
             make.top.equalTo(deadlineLabel.snp.bottom).offset(Spacing.xl)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.bottom.equalToSuperview().offset(-Spacing.md)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview()
         }
         
         missionTitleLabel.snp.makeConstraints { make in
@@ -263,9 +276,7 @@ final class MissionCardView: UIView {
         }
         
         emptyStateView.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.bottom.equalToSuperview().offset(-Spacing.md)
+            make.edges.equalToSuperview()
         }
         
         emptySubtitleLabel.snp.makeConstraints { make in
@@ -300,7 +311,7 @@ final class MissionCardView: UIView {
             updateCollapseState(isCollapsed: isCollapsed)
             return
         }
-
+        
         showActiveMission(mission: mission)
         updateCollapseState(isCollapsed: isCollapsed)
     }
@@ -323,18 +334,16 @@ final class MissionCardView: UIView {
         circularProgressView.isHidden = false
         deadlineLabel.isHidden = false
         missionSectionView.isHidden = false
-
+        
         setupParticipants(mission.participants)
-
-        // Configure progress view with real data
+        
         let schoolImage = UIImage(named: "kidk_city_school")
         circularProgressView.configure(
             currentAmount: mission.currentAmount,
             targetAmount: mission.targetAmount ?? 0,
             image: schoolImage
         )
-
-        // Configure deadline label with real data
+        
         if let formattedDate = mission.formattedTargetDate,
            let formattedTarget = mission.formattedTargetAmount {
             deadlineLabel.text = "\(formattedDate) \(formattedTarget) 모으기"
@@ -373,41 +382,23 @@ final class MissionCardView: UIView {
     var collapseButtonTapped: Observable<Void> {
         collapseButton.rx.tap.asObservable()
     }
-
+    
     var verifyButtonTapped: Observable<Void> {
         verifyButton.rx.tap.asObservable()
     }
-
+    
     var whatMissionButtonTapped: Observable<Void> {
         whatMissionButton.rx.tap.asObservable()
     }
-
+    
     private func updateCollapseState(isCollapsed: Bool) {
         let chevronImage = isCollapsed ? "chevron.down" : "chevron.up"
         collapseButton.setImage(UIImage(systemName: chevronImage), for: .normal)
-
-        UIView.animate(withDuration: 0.3, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
+        
+        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
             guard let self = self else { return }
-
-            if isCollapsed {
-                self.participantsStackView.alpha = 0
-                self.participantsLabel.alpha = 0
-                self.circularProgressView.alpha = 0
-                self.deadlineLabel.alpha = 0
-                self.missionSectionView.alpha = 0
-                self.emptyProgressCircleView.alpha = 0
-                self.emptySubtitleLabel.alpha = 0
-                self.whatMissionButton.alpha = 0
-            } else {
-                self.participantsStackView.alpha = 1
-                self.participantsLabel.alpha = 1
-                self.circularProgressView.alpha = 1
-                self.deadlineLabel.alpha = 1
-                self.missionSectionView.alpha = 1
-                self.emptyProgressCircleView.alpha = 1
-                self.emptySubtitleLabel.alpha = 1
-                self.whatMissionButton.alpha = 1
-            }
+            self.contentContainerView.isHidden = isCollapsed
+            self.layoutIfNeeded()
         })
     }
 }

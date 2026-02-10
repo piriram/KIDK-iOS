@@ -1,10 +1,3 @@
-//
-//  SavingsViewModel.swift
-//  KIDK
-//
-//  Created by Claude on 11/18/25.
-//
-
 import Foundation
 import RxSwift
 import RxCocoa
