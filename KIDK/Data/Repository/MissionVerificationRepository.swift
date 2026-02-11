@@ -12,8 +12,11 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
 
     static let shared = MissionVerificationRepository()
 
-    private override init() {
-        super.init()
+    private override init(
+        networkService: NetworkService = .shared,
+        tokenManager: TokenManager = .shared
+    ) {
+        super.init(networkService: networkService, tokenManager: tokenManager)
         setupMockData()
     }
 

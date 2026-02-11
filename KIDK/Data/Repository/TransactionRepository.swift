@@ -12,8 +12,11 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
 
     static let shared = TransactionRepository()
 
-    private override init() {
-        super.init()
+    private override init(
+        networkService: NetworkService = .shared,
+        tokenManager: TokenManager = .shared
+    ) {
+        super.init(networkService: networkService, tokenManager: tokenManager)
     }
 
     private let accountRepository = AccountRepository.shared

@@ -73,14 +73,14 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "이메일을 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
-        textField.text = "judy@love.net"
+        textField.text = "test@kidk.com" // Firebase 테스트 계정
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
         textField.keyboardType = .emailAddress
         textField.autocapitalizationType = .none
         textField.autocorrectionType = .no
-        
+
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
         textField.leftView = paddingView
         textField.leftViewMode = .always
@@ -105,20 +105,20 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "비밀번호를 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
-        textField.text = "judylove"
+        textField.text = "test123456" // Firebase 테스트 계정 비밀번호
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
         textField.isSecureTextEntry = true
         textField.autocapitalizationType = .none
         textField.autocorrectionType = .no
-        
+
         let paddingView = UIView(frame: CGRect(x: 0, y: 0, width: 16, height: 0))
         textField.leftView = paddingView
         textField.leftViewMode = .always
         textField.rightView = paddingView
         textField.rightViewMode = .always
-        
+
         return textField
     }()
     
