@@ -19,6 +19,14 @@ final class AccountCoordinator: BaseCoordinator {
     override func start() {
         let viewModel = AccountViewModel(user: user)
         let viewController = AccountViewController(viewModel: viewModel)
+        viewController.coordinator = self
         navigationController.setViewControllers([viewController], animated: false)
+    }
+
+    func showProfile() {
+        let profileViewModel = ProfileViewModel()
+        let profileViewController = ProfileViewController(viewModel: profileViewModel)
+        navigationController.pushViewController(profileViewController, animated: true)
+        debugLog("Navigating to profile screen")
     }
 }

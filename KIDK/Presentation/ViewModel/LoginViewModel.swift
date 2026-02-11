@@ -124,6 +124,11 @@ final class LoginViewModel: BaseViewModel {
             .do(onNext: { [weak self] user in
                 self?.authRepository.setFirstLaunchComplete()
                 self?.debugSuccess("Backend login success")
+
+                // UserProfileManager에 사용자 정보 저장
+                Task {
+                    await UserProfileManager.shared.saveProfile(user)
+                }
             })
     }
 
@@ -154,6 +159,12 @@ final class LoginViewModel: BaseViewModel {
 
                 self.authRepository.setFirstLaunchComplete()
                 self.debugSuccess("Mock login successful with mock tokens")
+
+                // UserProfileManager에 사용자 정보 저장
+                Task {
+                    await UserProfileManager.shared.saveProfile(user)
+                }
+
                 observer.onNext(user)
                 observer.onCompleted()
             }
