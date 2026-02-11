@@ -92,28 +92,54 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
     }
     
     func fetchMissions(for userId: String) -> Single<[Mission]> {
-        Single.create { [weak self] single in
+        Single.create { [weak self] (single: @escaping (SingleEvent<[Mission]>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
                 return Disposables.create()
             }
-            
-            do {
-                let realm = try Realm()
-                let missions = realm.objects(MissionEntity.self)
-                    .filter("ownerId == %@ OR creatorId == %@", userId, userId)
-                    .sorted(byKeyPath: "createdAt", ascending: false)
-                    .map { $0.toDomain() }
-                
-                self.debugLog("Fetched \(missions.count) missions for user: \(userId)")
-                single(.success(Array(missions)))
-            } catch {
-                self.debugError("Failed to fetch missions", error: error)
-                single(.failure(RepositoryError.unknown(error)))
+
+            guard let userIdInt = Int(userId) else {
+                // userId가 숫자가 아니면 Realm에서 가져옴
+                return self.fetchMissionsFromRealm(for: userId, single: single)
             }
-            
+
+            // 실제 API 호출 (owner 기준)
+            self.networkService.request(MissionAPI.getMissionsByOwner(ownerId: userIdInt))
+                .subscribe(onNext: { (result: Result<[MissionResponse], NetworkError>) in
+                    switch result {
+                    case .success(let missionResponses):
+                        let missions = missionResponses.map { $0.toDomain() }
+                        self.debugSuccess("Fetched \(missions.count) missions from API")
+                        single(.success(missions))
+
+                    case .failure(let error):
+                        self.debugError("Failed to fetch missions from API", error: error)
+                        // API 실패 시 Realm에서 가져옴
+                        _ = self.fetchMissionsFromRealm(for: userId, single: single)
+                    }
+                })
+                .disposed(by: self.disposeBag)
+
             return Disposables.create()
         }
+    }
+
+    private func fetchMissionsFromRealm(for userId: String, single: @escaping (SingleEvent<[Mission]>) -> Void) -> Disposable {
+        do {
+            let realm = try Realm()
+            let missions = realm.objects(MissionEntity.self)
+                .filter("ownerId == %@ OR creatorId == %@", userId, userId)
+                .sorted(byKeyPath: "createdAt", ascending: false)
+                .map { $0.toDomain() }
+
+            self.debugLog("Fetched \(missions.count) missions from Realm")
+            single(.success(Array(missions)))
+        } catch {
+            self.debugError("Failed to fetch missions from Realm", error: error)
+            single(.failure(RepositoryError.unknown(error)))
+        }
+
+        return Disposables.create()
     }
     
     func fetchMissionsByStatus(_ status: MissionStatus, for userId: String) -> Single<[Mission]> {

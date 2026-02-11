@@ -86,8 +86,18 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                             }
                         case .failure(let error):
                             self.debugError("Failed to fetch accounts", error: error)
-                            // 에러 시 Mock 데이터 반환
-                            single(.success(self.mockAccounts))
+                            // 서버 에러일 경우 계좌가 없을 가능성이 높으므로 자동 생성 시도
+                            self.debugWarning("Attempting to create default accounts due to server error")
+                            self.createDefaultAccounts()
+                                .subscribe(onSuccess: { defaultAccounts in
+                                    self.debugSuccess("Created \(defaultAccounts.count) default accounts after error")
+                                    single(.success(defaultAccounts))
+                                }, onFailure: { createError in
+                                    self.debugError("Failed to create default accounts", error: createError)
+                                    // 계좌 생성도 실패하면 Mock 반환
+                                    single(.success(self.mockAccounts))
+                                })
+                                .disposed(by: self.disposeBag)
                         }
                     })
                     .disposed(by: self.disposeBag)
@@ -98,7 +108,7 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
     }
 
     private func createDefaultAccounts() -> Single<[Account]> {
-        return Single.create { [weak self] single in
+        return Single.create { [weak self] (single: @escaping (SingleEvent<[Account]>) -> Void) -> Disposable in
             guard let self = self else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "AccountRepository", code: -1))))
                 return Disposables.create()

@@ -89,6 +89,7 @@ enum RepositoryError: Error {
     case unauthorized
     case serverError
     case insufficientBalance
+    case invalidParameter
     case unknown(Error)
 
     var localizedDescription: String {
@@ -105,6 +106,8 @@ enum RepositoryError: Error {
             return "Server error occurred"
         case .insufficientBalance:
             return "Insufficient balance"
+        case .invalidParameter:
+            return "Invalid parameter"
         case .unknown(let error):
             return "Unknown error: \(error.localizedDescription)"
         }

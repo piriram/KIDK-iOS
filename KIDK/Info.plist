@@ -25,9 +25,11 @@
 	<dict>
 		<key>NSExceptionDomains</key>
 		<dict>
-			<key>YOUR_DEV_API_URL</key>
+			<key>43.202.165.98</key>
 			<dict>
 				<key>NSExceptionAllowsInsecureHTTPLoads</key>
+				<true/>
+				<key>NSIncludesSubdomains</key>
 				<true/>
 			</dict>
 		</dict>
