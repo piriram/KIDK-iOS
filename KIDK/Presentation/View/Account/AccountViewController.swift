@@ -292,9 +292,19 @@ final class AccountViewController: BaseViewController {
     }
 
     private func navigateToMissionCreation() {
-        let missionCreationViewModel = MissionCreationViewModel()
-        let missionCreationVC = MissionCreationViewController(viewModel: missionCreationViewModel)
-        navigationController?.pushViewController(missionCreationVC, animated: true)
+        Task {
+            guard let user = await UserProfileManager.shared.getCurrentUser() else {
+                debugLog("Cannot navigate to mission creation: user not found")
+                return
+            }
+
+            await MainActor.run {
+                let missionRepository = MissionRepository(currentUserId: user.id)
+                let missionCreationViewModel = MissionCreationViewModel(missionRepository: missionRepository)
+                let missionCreationVC = MissionCreationViewController(viewModel: missionCreationViewModel)
+                self.navigationController?.pushViewController(missionCreationVC, animated: true)
+            }
+        }
     }
 
     private func loadUserProfile() {

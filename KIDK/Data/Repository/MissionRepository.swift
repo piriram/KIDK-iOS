@@ -23,49 +23,64 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
     }
     
     func createMission(_ request: MissionCreationRequest) -> Single<Mission> {
-        Single.create { [weak self] single in
-            guard let self = self else {
-                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
-                return Disposables.create()
-            }
-            
-            do {
-                let realm = try Realm()
-                let missionEntity = MissionEntity(
-                    from: request,
-                    creatorId: self.currentUserId,
-                    ownerId: self.currentUserId
-                )
-                
-                let leaderParticipant = MissionParticipantEntity(
-                    missionId: missionEntity.id,
-                    userId: self.currentUserId,
-                    role: .leader
-                )
-                missionEntity.participants.append(leaderParticipant)
-                
-                for participantId in request.participantIds {
-                    let participant = MissionParticipantEntity(
-                        missionId: missionEntity.id,
-                        userId: participantId,
-                        role: .member
-                    )
-                    missionEntity.participants.append(participant)
-                }
-                
-                try realm.write {
-                    realm.add(missionEntity)
-                }
-                
-                self.debugSuccess("Mission created: \(missionEntity.id)")
-                single(.success(missionEntity.toDomain()))
-            } catch {
-                self.debugError("Failed to create mission", error: error)
-                single(.failure(RepositoryError.unknown(error)))
-            }
-            
-            return Disposables.create()
+        debugLog("Creating mission via API: \(request.title)")
+
+        // creatorId와 ownerId는 currentUserId를 Int로 변환
+        guard let creatorIdInt = Int(currentUserId) else {
+            return .error(RepositoryError.invalidParameter)
         }
+
+        // ownerId는 participantIds의 첫 번째 값, 없으면 creatorId
+        let ownerIdInt = request.participantIds.compactMap { Int($0) }.first ?? creatorIdInt
+
+        // targetDate를 "yyyy-MM-dd" 형식으로 변환
+        let targetDateString: String?
+        if let targetDate = request.targetDate {
+            let dateFormatter = DateFormatter()
+            dateFormatter.dateFormat = "yyyy-MM-dd"
+            targetDateString = dateFormatter.string(from: targetDate)
+        } else {
+            targetDateString = nil
+        }
+
+        // API 호출
+        return networkService.request(
+            MissionAPI.createMission(
+                creatorId: creatorIdInt,
+                ownerId: ownerIdInt,
+                missionType: request.missionType.rawValue.uppercased(),
+                title: request.title,
+                description: request.description,
+                targetAmount: request.targetAmount.map { Double($0) },
+                rewardAmount: Double(request.rewardAmount),
+                status: "ACTIVE",
+                targetDate: targetDateString
+            )
+        )
+        .do(onNext: { [weak self] (result: Result<ApiResponseMission, NetworkError>) in
+            guard let self = self else { return }
+
+            switch result {
+            case .success(let apiResponse):
+                if let missionResponse = apiResponse.data {
+                    self.debugSuccess("Mission created via API: \(missionResponse.id)")
+                }
+            case .failure(let error):
+                self.debugError("Failed to create mission via API", error: error)
+            }
+        })
+        .map { (result: Result<ApiResponseMission, NetworkError>) -> Mission in
+            switch result {
+            case .success(let apiResponse):
+                guard let missionResponse = apiResponse.data else {
+                    throw RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mission data is nil"]))
+                }
+                return missionResponse.toDomain()
+            case .failure(let error):
+                throw error
+            }
+        }
+        .asSingle()
     }
     
     func fetchMission(by id: String) -> Single<Mission?> {
@@ -105,9 +120,14 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
             // 실제 API 호출 (owner 기준)
             self.networkService.request(MissionAPI.getMissionsByOwner(ownerId: userIdInt))
-                .subscribe(onNext: { (result: Result<[MissionResponse], NetworkError>) in
+                .subscribe(onNext: { (result: Result<ApiResponseMissionList, NetworkError>) in
                     switch result {
-                    case .success(let missionResponses):
+                    case .success(let apiResponse):
+                        guard let missionResponses = apiResponse.data else {
+                            self.debugLog("No missions found from API")
+                            single(.success([]))
+                            return
+                        }
                         let missions = missionResponses.map { $0.toDomain() }
                         self.debugSuccess("Fetched \(missions.count) missions from API")
                         single(.success(missions))
