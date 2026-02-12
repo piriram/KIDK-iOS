@@ -13,6 +13,7 @@ import RxCocoa
 final class SavingsViewController: BaseViewController {
 
     private let viewModel: SavingsViewModel
+    weak var coordinator: SavingsCoordinator?
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
