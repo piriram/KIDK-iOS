@@ -63,28 +63,16 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
                     relatedMissionId: nil
                 )
             )
-            .subscribe(onNext: { (result: Result<ApiResponseTransaction, NetworkError>) in
+            .subscribe(onNext: { (result: Result<TransactionResponse, NetworkError>) in
                 switch result {
-                case .success(let apiResponse):
-                    if let transactionResponse = apiResponse.data {
-                        let transaction = transactionResponse.toDomain()
-                        self.debugSuccess("Transaction created via API: \(type.displayName) \(amount)원")
+                case .success(let transactionResponse):
+                    let transaction = transactionResponse.toDomain()
+                    self.debugSuccess("Transaction created via API: \(type.displayName) \(amount)원")
 
-                        // Post notification for UI update
-                        NotificationCenter.default.post(name: .transactionCreated, object: transaction)
+                    // Post notification for UI update
+                    NotificationCenter.default.post(name: .transactionCreated, object: transaction)
 
-                        single(.success(transaction))
-                    } else {
-                        self.debugError("No transaction data in response", error: nil)
-                        // Fallback to mock
-                        self.createMockTransaction(accountId: accountId, type: type, amount: amount, category: category, description: description, memo: memo)
-                            .subscribe(onSuccess: { transaction in
-                                single(.success(transaction))
-                            }, onFailure: { error in
-                                single(.failure(error))
-                            })
-                            .disposed(by: self.disposeBag)
-                    }
+                    single(.success(transaction))
 
                 case .failure(let error):
                     self.debugError("Failed to create transaction", error: error)
@@ -177,17 +165,12 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
 
             // 실제 API 호출
             self.networkService.request(TransactionAPI.getAccountTransactions(accountId: accountIdInt))
-                .subscribe(onNext: { (result: Result<ApiResponseTransactionList, NetworkError>) in
+                .subscribe(onNext: { (result: Result<[TransactionResponse], NetworkError>) in
                     switch result {
-                    case .success(let apiResponse):
-                        if let transactionResponses = apiResponse.data {
-                            let transactions = transactionResponses.map { $0.toDomain() }
-                            self.debugSuccess("Fetched \(transactions.count) transactions from API")
-                            single(.success(transactions))
-                        } else {
-                            self.debugWarning("No transaction data in response, returning mock")
-                            single(.success(self.mockTransactions))
-                        }
+                    case .success(let transactionResponses):
+                        let transactions = transactionResponses.map { $0.toDomain() }
+                        self.debugSuccess("Fetched \(transactions.count) transactions from API")
+                        single(.success(transactions))
 
                     case .failure(let error):
                         self.debugError("Failed to fetch transactions", error: error)
@@ -218,5 +201,62 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
                 accounts = fetchedAccounts
             })
         return accounts
+    }
+
+    func transfer(
+        fromAccountId: String,
+        toAccountId: String,
+        amount: Int,
+        description: String
+    ) -> Single<Void> {
+        return Single.create { [weak self] (single: @escaping (SingleEvent<Void>) -> Void) -> Disposable in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "TransactionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            guard let fromAccountIdInt = Int(fromAccountId),
+                  let toAccountIdInt = Int(toAccountId) else {
+                single(.failure(RepositoryError.invalidParameter))
+                return Disposables.create()
+            }
+
+            // 실제 API 호출
+            self.networkService.request(
+                TransactionAPI.transfer(
+                    fromAccountId: fromAccountIdInt,
+                    toAccountId: toAccountIdInt,
+                    amount: Double(amount),
+                    description: description
+                )
+            )
+            .subscribe(onNext: { (result: Result<EmptyData, NetworkError>) in
+                switch result {
+                case .success:
+                    self.debugSuccess("Transfer successful: \(amount)원 from \(fromAccountId) to \(toAccountId)")
+
+                    // Post notification for UI update
+                    NotificationCenter.default.post(
+                        name: .transactionCreated,
+                        object: nil,
+                        userInfo: [
+                            "type": "transfer",
+                            "fromAccountId": fromAccountId,
+                            "toAccountId": toAccountId,
+                            "amount": amount
+                        ]
+                    )
+
+                    single(.success(()))
+
+                case .failure(let error):
+                    self.debugError("Failed to transfer", error: error)
+                    single(.failure(RepositoryError.networkError(error)))
+                }
+            })
+            .disposed(by: self.disposeBag)
+
+            return Disposables.create()
+        }
     }
 }

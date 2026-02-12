@@ -61,44 +61,42 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
                 }
 
                 // 실제 API 호출
-                self.networkService.request(AccountAPI.getUserAccounts(userId: userId))
-                    .subscribe(onNext: { (result: Result<[AccountResponse], NetworkError>) in
-                        switch result {
-                        case .success(let accountResponses):
-                            let accounts = accountResponses.map { $0.toDomain() }
+                // ⚠️ 주의: Account API는 공통 응답 포맷을 사용하지 않고 배열을 직접 반환
+                self.fetchAccountsRaw(userId: userId)
+                    .subscribe(onSuccess: { accountResponses in
+                        let accounts = accountResponses.map { $0.toDomain() }
 
-                            // 계좌가 없으면 기본 계좌 자동 생성
-                            if accounts.isEmpty {
-                                self.debugWarning("No accounts found, creating default accounts")
-                                self.createDefaultAccounts()
-                                    .subscribe(onSuccess: { defaultAccounts in
-                                        self.debugSuccess("Created \(defaultAccounts.count) default accounts")
-                                        single(.success(defaultAccounts))
-                                    }, onFailure: { error in
-                                        self.debugError("Failed to create default accounts", error: error)
-                                        // 기본 계좌 생성 실패해도 Mock 반환
-                                        single(.success(self.mockAccounts))
-                                    })
-                                    .disposed(by: self.disposeBag)
-                            } else {
-                                self.debugSuccess("Fetched \(accounts.count) accounts from API")
-                                single(.success(accounts))
-                            }
-                        case .failure(let error):
-                            self.debugError("Failed to fetch accounts", error: error)
-                            // 서버 에러일 경우 계좌가 없을 가능성이 높으므로 자동 생성 시도
-                            self.debugWarning("Attempting to create default accounts due to server error")
+                        // 계좌가 없으면 기본 계좌 자동 생성
+                        if accounts.isEmpty {
+                            self.debugWarning("No accounts found, creating default accounts")
                             self.createDefaultAccounts()
                                 .subscribe(onSuccess: { defaultAccounts in
-                                    self.debugSuccess("Created \(defaultAccounts.count) default accounts after error")
+                                    self.debugSuccess("Created \(defaultAccounts.count) default accounts")
                                     single(.success(defaultAccounts))
-                                }, onFailure: { createError in
-                                    self.debugError("Failed to create default accounts", error: createError)
-                                    // 계좌 생성도 실패하면 Mock 반환
+                                }, onFailure: { error in
+                                    self.debugError("Failed to create default accounts", error: error)
+                                    // 기본 계좌 생성 실패해도 Mock 반환
                                     single(.success(self.mockAccounts))
                                 })
                                 .disposed(by: self.disposeBag)
+                        } else {
+                            self.debugSuccess("Fetched \(accounts.count) accounts from API")
+                            single(.success(accounts))
                         }
+                    }, onFailure: { error in
+                        self.debugError("Failed to fetch accounts", error: error)
+                        // 서버 에러일 경우 계좌가 없을 가능성이 높으므로 자동 생성 시도
+                        self.debugWarning("Attempting to create default accounts due to server error")
+                        self.createDefaultAccounts()
+                            .subscribe(onSuccess: { defaultAccounts in
+                                self.debugSuccess("Created \(defaultAccounts.count) default accounts after error")
+                                single(.success(defaultAccounts))
+                            }, onFailure: { createError in
+                                self.debugError("Failed to create default accounts", error: createError)
+                                // 계좌 생성도 실패하면 Mock 반환
+                                single(.success(self.mockAccounts))
+                            })
+                            .disposed(by: self.disposeBag)
                     })
                     .disposed(by: self.disposeBag)
             }
@@ -314,6 +312,57 @@ final class AccountRepository: BaseRepository, AccountRepositoryProtocol {
             }
 
             return Disposables.create()
+        }
+    }
+
+    // MARK: - Raw Array Response Helper
+
+    /// 배열을 직접 반환하는 엔드포인트를 위한 헬퍼 메서드
+    /// ⚠️ Account API는 공통 응답 포맷({success, data})을 사용하지 않음
+    private func fetchAccountsRaw(userId: Int) -> Single<[AccountResponse]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "AccountRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/accounts/user/\(userId)") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "AccountRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Raw fetch error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "AccountRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let accounts = try JSONDecoder().decode([AccountResponse].self, from: data)
+                    single(.success(accounts))
+                } catch {
+                    self.debugError("Failed to decode accounts array", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
         }
     }
 }

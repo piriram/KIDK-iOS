@@ -9,16 +9,21 @@ import Foundation
 
 // MARK: - API Response Wrapper
 
+/// 백엔드 공통 응답 포맷
 struct ApiResponse<T: Decodable>: Decodable {
     let success: Bool
     let data: T?
-    let error: ErrorBody?
+    let error: APIErrorResponse?
 }
 
-struct ErrorBody: Decodable {
-    let code: String?
-    let message: String?
+/// 에러 응답 구조
+struct APIErrorResponse: Decodable {
+    let code: String
+    let message: String
 }
+
+/// Data가 없는 성공 응답을 위한 타입
+struct EmptyData: Decodable {}
 
 // MARK: - Login Request
 

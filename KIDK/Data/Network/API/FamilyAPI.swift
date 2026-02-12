@@ -8,9 +8,10 @@
 import Foundation
 
 enum FamilyAPI {
-    case createFamily(familyName: String, creatorId: Int, creatorRole: String)
-    case getFamiliesByUser(userId: Int)
-    case joinFamily(userId: Int, inviteCode: String, role: String)
+    case createFamily(userId: Int, familyName: String)
+    case getFamilies
+    case getFamilyById(familyId: Int)
+    case joinFamily(userId: Int, inviteCode: String)
 }
 
 extension FamilyAPI: APIEndpoint {
@@ -18,8 +19,10 @@ extension FamilyAPI: APIEndpoint {
         switch self {
         case .createFamily:
             return "/families"
-        case .getFamiliesByUser(let userId):
-            return "/families/user/\(userId)"
+        case .getFamilies:
+            return "/families"
+        case .getFamilyById(let familyId):
+            return "/families/\(familyId)"
         case .joinFamily:
             return "/families/join"
         }
@@ -29,25 +32,23 @@ extension FamilyAPI: APIEndpoint {
         switch self {
         case .createFamily, .joinFamily:
             return .post
-        case .getFamiliesByUser:
+        case .getFamilies, .getFamilyById:
             return .get
         }
     }
 
     var parameters: [String: Any]? {
         switch self {
-        case .createFamily(let familyName, let creatorId, let creatorRole):
-            return [
-                "familyName": familyName,
-                "creatorId": creatorId,
-                "creatorRole": creatorRole
-            ]
-
-        case .joinFamily(let userId, let inviteCode, let role):
+        case .createFamily(let userId, let familyName):
             return [
                 "userId": userId,
-                "inviteCode": inviteCode,
-                "role": role
+                "familyName": familyName
+            ]
+
+        case .joinFamily(let userId, let inviteCode):
+            return [
+                "userId": userId,
+                "inviteCode": inviteCode
             ]
 
         default:

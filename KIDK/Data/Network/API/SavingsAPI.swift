@@ -8,8 +8,9 @@
 import Foundation
 
 enum SavingsAPI {
-    case createSavings(userId: Int, name: String, targetAmount: Double, startDate: String, targetDate: String?, status: String)
+    case createSavings(userId: Int, goalName: String, targetAmount: Double, targetDate: String?)
     case getSavingsByUser(userId: Int)
+    case getSavingsGoal(goalId: Int)
     case deposit(savingsId: Int, amount: Double, accountId: Int)
     case withdraw(savingsId: Int, amount: Double, accountId: Int)
 }
@@ -18,13 +19,15 @@ extension SavingsAPI: APIEndpoint {
     var path: String {
         switch self {
         case .createSavings:
-            return "/savings"
+            return "/savings-goals"
         case .getSavingsByUser(let userId):
-            return "/savings/user/\(userId)"
+            return "/savings-goals/user/\(userId)"
+        case .getSavingsGoal(let goalId):
+            return "/savings-goals/\(goalId)"
         case .deposit(let savingsId, _, _):
-            return "/savings/\(savingsId)/deposit"
+            return "/savings-goals/\(savingsId)/deposit"
         case .withdraw(let savingsId, _, _):
-            return "/savings/\(savingsId)/withdraw"
+            return "/savings-goals/\(savingsId)/withdraw"
         }
     }
 
@@ -32,20 +35,18 @@ extension SavingsAPI: APIEndpoint {
         switch self {
         case .createSavings, .deposit, .withdraw:
             return .post
-        case .getSavingsByUser:
+        case .getSavingsByUser, .getSavingsGoal:
             return .get
         }
     }
 
     var parameters: [String: Any]? {
         switch self {
-        case .createSavings(let userId, let name, let targetAmount, let startDate, let targetDate, let status):
+        case .createSavings(let userId, let goalName, let targetAmount, let targetDate):
             var params: [String: Any] = [
                 "userId": userId,
-                "name": name,
-                "targetAmount": targetAmount,
-                "startDate": startDate,
-                "status": status
+                "goalName": goalName,
+                "targetAmount": targetAmount
             ]
             if let date = targetDate {
                 params["targetDate"] = date

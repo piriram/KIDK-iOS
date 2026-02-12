@@ -43,44 +43,23 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             targetDateString = nil
         }
 
-        // API 호출
-        return networkService.request(
-            MissionAPI.createMission(
-                creatorId: creatorIdInt,
-                ownerId: ownerIdInt,
-                missionType: request.missionType.rawValue.uppercased(),
-                title: request.title,
-                description: request.description,
-                targetAmount: request.targetAmount.map { Double($0) },
-                rewardAmount: Double(request.rewardAmount),
-                status: "ACTIVE",
-                targetDate: targetDateString
-            )
+        // API 호출 - Mission 생성은 공통 응답 포맷을 사용하지 않고 직접 MissionResponse 반환
+        return createMissionRaw(
+            creatorId: creatorIdInt,
+            ownerId: ownerIdInt,
+            missionType: request.missionType.rawValue.uppercased(),
+            title: request.title,
+            description: request.description,
+            targetAmount: request.targetAmount,
+            rewardAmount: request.rewardAmount,
+            targetDate: targetDateString
         )
-        .do(onNext: { [weak self] (result: Result<ApiResponseMission, NetworkError>) in
-            guard let self = self else { return }
-
-            switch result {
-            case .success(let apiResponse):
-                if let missionResponse = apiResponse.data {
-                    self.debugSuccess("Mission created via API: \(missionResponse.id)")
-                }
-            case .failure(let error):
-                self.debugError("Failed to create mission via API", error: error)
-            }
+        .do(onSuccess: { [weak self] missionResponse in
+            self?.debugSuccess("Mission created via API: \(missionResponse.id)")
+        }, onError: { [weak self] error in
+            self?.debugError("Failed to create mission via API", error: error)
         })
-        .map { (result: Result<ApiResponseMission, NetworkError>) -> Mission in
-            switch result {
-            case .success(let apiResponse):
-                guard let missionResponse = apiResponse.data else {
-                    throw RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1, userInfo: [NSLocalizedDescriptionKey: "Mission data is nil"]))
-                }
-                return missionResponse.toDomain()
-            case .failure(let error):
-                throw error
-            }
-        }
-        .asSingle()
+        .map { $0.toDomain() }
     }
     
     func fetchMission(by id: String) -> Single<Mission?> {
@@ -118,25 +97,16 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return self.fetchMissionsFromRealm(for: userId, single: single)
             }
 
-            // 실제 API 호출 (owner 기준)
-            self.networkService.request(MissionAPI.getMissionsByOwner(ownerId: userIdInt))
-                .subscribe(onNext: { (result: Result<ApiResponseMissionList, NetworkError>) in
-                    switch result {
-                    case .success(let apiResponse):
-                        guard let missionResponses = apiResponse.data else {
-                            self.debugLog("No missions found from API")
-                            single(.success([]))
-                            return
-                        }
-                        let missions = missionResponses.map { $0.toDomain() }
-                        self.debugSuccess("Fetched \(missions.count) missions from API")
-                        single(.success(missions))
-
-                    case .failure(let error):
-                        self.debugError("Failed to fetch missions from API", error: error)
-                        // API 실패 시 Realm에서 가져옴
-                        _ = self.fetchMissionsFromRealm(for: userId, single: single)
-                    }
+            // 실제 API 호출 (owner 기준) - 공통 응답 포맷 사용
+            self.fetchMissionsRaw(ownerId: userIdInt)
+                .subscribe(onSuccess: { missionResponses in
+                    let missions = missionResponses.map { $0.toDomain() }
+                    self.debugSuccess("Fetched \(missions.count) missions from API")
+                    single(.success(missions))
+                }, onFailure: { error in
+                    self.debugError("Failed to fetch missions from API", error: error)
+                    // API 실패 시 Realm에서 가져옴
+                    _ = self.fetchMissionsFromRealm(for: userId, single: single)
                 })
                 .disposed(by: self.disposeBag)
 
@@ -248,6 +218,180 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
             
             return Disposables.create()
+        }
+    }
+
+    // MARK: - Raw Response Helpers
+
+    /// Mission 생성 API는 공통 응답 포맷을 사용하지 않고 MissionResponse 객체를 직접 반환
+    private func createMissionRaw(
+        creatorId: Int,
+        ownerId: Int,
+        missionType: String,
+        title: String,
+        description: String?,
+        targetAmount: Int?,
+        rewardAmount: Int,
+        targetDate: String?
+    ) -> Single<MissionResponse> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/missions") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            // Request Body 생성
+            var params: [String: Any] = [
+                "creatorId": creatorId,
+                "ownerId": ownerId,
+                "missionType": missionType,
+                "title": title,
+                "rewardAmount": Double(rewardAmount),  // Double로 변환
+                "status": "ACTIVE"
+            ]
+
+            if let desc = description {
+                params["description"] = desc
+            }
+            if let target = targetAmount {
+                params["targetAmount"] = Double(target)  // Double로 변환
+            }
+            if let date = targetDate {
+                params["targetDate"] = date
+            }
+
+            do {
+                request.httpBody = try JSONSerialization.data(withJSONObject: params)
+            } catch {
+                single(.failure(RepositoryError.unknown(error)))
+                return Disposables.create()
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Mission creation request error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -4))))
+                    return
+                }
+
+                // 500 에러 등 서버 에러 처리
+                if httpResponse.statusCode >= 400 {
+                    self.debugError("Mission creation failed with status \(httpResponse.statusCode)", error: nil)
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        self.debugError("Response body: \(responseString)", error: nil)
+                    }
+                    single(.failure(RepositoryError.unknown(NSError(
+                        domain: "MissionRepository",
+                        code: httpResponse.statusCode,
+                        userInfo: [NSLocalizedDescriptionKey: "Server returned error \(httpResponse.statusCode)"]
+                    ))))
+                    return
+                }
+
+                // MissionResponse 직접 파싱
+                do {
+                    let missionResponse = try JSONDecoder().decode(MissionResponse.self, from: data)
+                    single(.success(missionResponse))
+                } catch {
+                    self.debugError("Failed to decode MissionResponse", error: error)
+                    if let responseString = String(data: data, encoding: .utf8) {
+                        self.debugError("Response body: \(responseString)", error: nil)
+                    }
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
+    }
+
+    /// Mission API가 배열을 직접 반환하는지, 공통 응답 포맷을 사용하는지에 따라 분기 처리
+    /// 먼저 공통 응답 포맷을 시도하고, 실패하면 직접 배열 파싱 시도
+    private func fetchMissionsRaw(ownerId: Int) -> Single<[MissionResponse]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/missions/owner/\(ownerId)") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("Raw fetch error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
+                    return
+                }
+
+                // 1차 시도: 공통 응답 포맷 파싱
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<[MissionResponse]>.self, from: data)
+                    if apiResponse.success, let missionData = apiResponse.data {
+                        single(.success(missionData))
+                        return
+                    } else {
+                        self.debugError("API returned success=false", error: nil)
+                        single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -4))))
+                        return
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode as ApiResponse, trying direct array parsing")
+                }
+
+                // 2차 시도: 직접 배열 파싱 (Account API처럼)
+                do {
+                    let missionArray = try JSONDecoder().decode([MissionResponse].self, from: data)
+                    single(.success(missionArray))
+                } catch {
+                    self.debugError("Failed to decode missions array", error: error)
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
         }
     }
 }

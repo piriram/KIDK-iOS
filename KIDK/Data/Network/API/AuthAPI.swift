@@ -9,7 +9,9 @@ import Foundation
 
 enum AuthAPI {
     case login(firebaseToken: String, deviceId: String?)
-    case logout(refreshToken: String)
+    case devLogin
+    case logout
+    case refreshToken
 }
 
 extension AuthAPI: APIEndpoint {
@@ -17,14 +19,18 @@ extension AuthAPI: APIEndpoint {
         switch self {
         case .login:
             return "/auth/login"
+        case .devLogin:
+            return "/auth/dev/login"
         case .logout:
             return "/auth/logout"
+        case .refreshToken:
+            return "/auth/refresh"
         }
     }
 
     var method: HTTPMethod {
         switch self {
-        case .login, .logout:
+        case .login, .devLogin, .logout, .refreshToken:
             return .post
         }
     }
@@ -37,26 +43,26 @@ extension AuthAPI: APIEndpoint {
                 params["deviceId"] = deviceId
             }
             return params
-        case .logout:
-            return nil
-        }
-    }
-
-    var headers: [String: String]? {
-        switch self {
-        case .logout(let refreshToken):
-            return ["Refresh-Token": refreshToken]
-        default:
+        case .devLogin, .logout, .refreshToken:
             return nil
         }
     }
 
     var requiresAuth: Bool {
         switch self {
-        case .login:
+        case .login, .devLogin:
             return false  // 로그인은 인증 불필요
-        case .logout:
-            return true
+        case .logout, .refreshToken:
+            return true   // Refresh Token 필요
+        }
+    }
+
+    var usesRefreshToken: Bool {
+        switch self {
+        case .logout, .refreshToken:
+            return true   // Refresh-Token 헤더 사용
+        case .login, .devLogin:
+            return false
         }
     }
 }

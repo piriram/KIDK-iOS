@@ -31,6 +31,4 @@ struct ProfileImageUploadResponse: Decodable {
 
 typealias ApiResponseUserResponse = ApiResponse<UserResponse>
 typealias ApiResponseString = ApiResponse<String>
-typealias ApiResponseVoid = ApiResponse<EmptyResponse>
-
-struct EmptyResponse: Decodable {}
+typealias ApiResponseVoid = ApiResponse<EmptyData>

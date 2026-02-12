@@ -233,31 +233,26 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                         parentId: parentIdInt
                     )
                 )
-                .subscribe(onNext: { (result: Result<ApiResponseMissionVerification, NetworkError>) in
+                .subscribe(onNext: { (result: Result<MissionVerificationResponse, NetworkError>) in
                     switch result {
-                    case .success(let apiResponse):
-                        if let verificationResponse = apiResponse.data {
-                            let approvedVerification = verificationResponse.toDomain()
+                    case .success(let verificationResponse):
+                        let approvedVerification = verificationResponse.toDomain()
 
-                            // Mock 데이터도 업데이트
-                            self.mockVerifications[index] = approvedVerification
+                        // Mock 데이터도 업데이트
+                        self.mockVerifications[index] = approvedVerification
 
-                            self.debugSuccess("Approved verification via API: \(id)")
+                        self.debugSuccess("Approved verification via API: \(id)")
 
-                            // Post notification for approval
-                            NotificationCenter.default.post(
-                                name: .verificationApproved,
-                                object: approvedVerification
-                            )
+                        // Post notification for approval
+                        NotificationCenter.default.post(
+                            name: .verificationApproved,
+                            object: approvedVerification
+                        )
 
-                            // Update mission progress
-                            self.updateMissionProgress(missionId: approvedVerification.missionId)
+                        // Update mission progress
+                        self.updateMissionProgress(missionId: approvedVerification.missionId)
 
-                            single(.success(approvedVerification))
-                        } else {
-                            self.debugWarning("API returned success but no data, using mock approval")
-                            self.approveMockVerification(index: index, oldVerification: oldVerification, single: single)
-                        }
+                        single(.success(approvedVerification))
 
                     case .failure(let error):
                         self.debugError("Failed to approve via API, using mock approval", error: error)
@@ -352,28 +347,23 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                         reason: reason
                     )
                 )
-                .subscribe(onNext: { (result: Result<ApiResponseMissionVerification, NetworkError>) in
+                .subscribe(onNext: { (result: Result<MissionVerificationResponse, NetworkError>) in
                     switch result {
-                    case .success(let apiResponse):
-                        if let verificationResponse = apiResponse.data {
-                            let rejectedVerification = verificationResponse.toDomain()
+                    case .success(let verificationResponse):
+                        let rejectedVerification = verificationResponse.toDomain()
 
-                            // Mock 데이터도 업데이트
-                            self.mockVerifications[index] = rejectedVerification
+                        // Mock 데이터도 업데이트
+                        self.mockVerifications[index] = rejectedVerification
 
-                            self.debugSuccess("Rejected verification via API: \(id)")
+                        self.debugSuccess("Rejected verification via API: \(id)")
 
-                            // Post notification for rejection
-                            NotificationCenter.default.post(
-                                name: .verificationRejected,
-                                object: rejectedVerification
-                            )
+                        // Post notification for rejection
+                        NotificationCenter.default.post(
+                            name: .verificationRejected,
+                            object: rejectedVerification
+                        )
 
-                            single(.success(rejectedVerification))
-                        } else {
-                            self.debugWarning("API returned success but no data, using mock rejection")
-                            self.rejectMockVerification(index: index, oldVerification: oldVerification, reason: reason, single: single)
-                        }
+                        single(.success(rejectedVerification))
 
                     case .failure(let error):
                         self.debugError("Failed to reject via API, using mock rejection", error: error)
