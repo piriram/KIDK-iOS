@@ -58,10 +58,10 @@ struct UserResponse: Decodable {
 // MARK: - DTO to Domain Model
 
 extension LoginResponseData {
-    func toDomain() -> User {
+    func toDomain(firebaseUID: String) -> User {
         return User(
             id: String(userId),
-            firebaseUID: "", // 실제 firebaseUID는 별도 API에서 가져와야 함
+            firebaseUID: firebaseUID,
             userType: UserType(rawValue: userType.lowercased()) ?? .child,
             name: name,
             nickname: nil,

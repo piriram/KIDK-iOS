@@ -53,7 +53,7 @@ final class FirebaseAuthService {
 
     // MARK: - 이메일/비밀번호 로그인
 
-    func signIn(email: String, password: String) -> Observable<String> {
+    func signIn(email: String, password: String) -> Observable<(token: String, uid: String)> {
         return Observable.create { observer in
             Auth.auth().signIn(withEmail: email, password: password) { authResult, error in
                 if let error = error {
@@ -65,6 +65,9 @@ final class FirebaseAuthService {
                     observer.onError(NSError(domain: "FirebaseAuth", code: -1, userInfo: [NSLocalizedDescriptionKey: "User is nil"]))
                     return
                 }
+
+                // Firebase UID 저장
+                let firebaseUID = user.uid
 
                 // Firebase ID Token 가져오기
                 user.getIDToken { token, error in
@@ -79,7 +82,8 @@ final class FirebaseAuthService {
                     }
 
                     print("🔑 Firebase Token: \(token)")
-                    observer.onNext(token)
+                    print("🆔 Firebase UID: \(firebaseUID)")
+                    observer.onNext((token: token, uid: firebaseUID))
                     observer.onCompleted()
                 }
             }

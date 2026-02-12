@@ -105,13 +105,13 @@ final class LoginViewModel: BaseViewModel {
 
         // 1. Firebase Authentication으로 로그인
         return FirebaseAuthService.shared.signIn(email: email, password: password)
-            .do(onNext: { [weak self] firebaseToken in
-                self?.debugLog("Firebase login success, token: \(firebaseToken.prefix(20))...")
+            .do(onNext: { [weak self] result in
+                self?.debugLog("Firebase login success, token: \(result.token.prefix(20))..., UID: \(result.uid)")
             })
-            .flatMap { [weak self] firebaseToken -> Observable<Result<User, NetworkError>> in
+            .flatMap { [weak self] result -> Observable<Result<User, NetworkError>> in
                 guard let self = self else { return .empty() }
-                // 2. 백엔드 API에 Firebase Token으로 로그인
-                return self.authRepository.login(firebaseToken: firebaseToken)
+                // 2. 백엔드 API에 Firebase Token과 UID로 로그인
+                return self.authRepository.login(firebaseToken: result.token, firebaseUID: result.uid)
             }
             .flatMap { result -> Observable<User> in
                 switch result {
@@ -123,7 +123,7 @@ final class LoginViewModel: BaseViewModel {
             }
             .do(onNext: { [weak self] user in
                 self?.authRepository.setFirstLaunchComplete()
-                self?.debugSuccess("Backend login success")
+                self?.debugSuccess("Backend login success with firebaseUID: \(user.firebaseUID)")
 
                 // UserProfileManager에 사용자 정보 저장
                 Task {
