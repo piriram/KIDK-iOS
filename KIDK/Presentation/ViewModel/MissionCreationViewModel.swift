@@ -47,15 +47,30 @@ final class MissionCreationViewModel: BaseViewModel {
             .flatMapLatest { [weak self] title, targetDate, rewardAmount, participantIds -> Observable<Mission> in
                 guard let self = self else { return .empty() }
                 
+                // missionType에 따라 기본 description 설정
+                let defaultDescription: String
+                switch self.missionType {
+                case .video:
+                    defaultDescription = "영상 미션을 완료해주세요"
+                case .quiz:
+                    defaultDescription = "퀴즈 미션을 완료해주세요"
+                case .savings:
+                    defaultDescription = "저축 목표를 달성해주세요"
+                case .study:
+                    defaultDescription = "학습 미션을 완료해주세요"
+                case .custom:
+                    defaultDescription = "미션을 완료해주세요"
+                }
+
                 let request = MissionCreationRequest(
                     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                     missionType: self.missionType,
-                    targetAmount: nil,
+                    targetAmount: self.missionType == .savings ? 10000 : 0,  // SAVING 타입은 기본 목표 금액 설정
                     currentAmount: 0,
                     rewardAmount: rewardAmount,
                     targetDate: targetDate,
                     participantIds: participantIds,
-                    description: nil
+                    description: defaultDescription
                 )
                 
                 self.startLoading()
