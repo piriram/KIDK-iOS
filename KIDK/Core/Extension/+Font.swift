@@ -1,10 +1,3 @@
-//
-//  +Font.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/15/25.
-//
-
 import UIKit
 
 // MARK: - Font Debug

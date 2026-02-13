@@ -1,10 +1,3 @@
-//
-//  AuthDTO.swift
-//  KIDK
-//
-//  Created by KIDK on 11/27/25.
-//
-
 import Foundation
 
 // MARK: - API Response Wrapper

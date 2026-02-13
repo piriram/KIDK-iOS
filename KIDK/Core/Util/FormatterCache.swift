@@ -1,10 +1,3 @@
-//
-//  FormatterCache.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/21/25.
-//
-
 import Foundation
 
 /// DateFormatter와 NumberFormatter를 캐싱하여 재사용하는 유틸리티

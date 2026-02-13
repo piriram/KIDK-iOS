@@ -1,10 +1,3 @@
-//
-//  FriendDTO.swift
-//  KIDK
-//
-//  Created by KIDK on 12/02/24.
-//
-
 import Foundation
 
 // MARK: - Friend Response

@@ -1,10 +1,3 @@
-//
-//  SavingsViewController.swift
-//  KIDK
-//
-//  Created by Claude on 11/18/25.
-//
-
 import UIKit
 import SnapKit
 import RxSwift

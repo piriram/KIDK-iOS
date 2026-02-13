@@ -1,10 +1,3 @@
-//
-//  ProfileViewController.swift
-//  KIDK
-//
-//  Created by KIDK on 12/02/24.
-//
-
 import UIKit
 import SnapKit
 import RxSwift

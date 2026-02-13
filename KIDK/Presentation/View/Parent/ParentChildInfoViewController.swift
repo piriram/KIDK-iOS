@@ -1,20 +1,16 @@
-//
-//  ParentChildInfoViewController.swift
-//  KIDK
-//
-//  Created by 잠만보김쥬디 on 11/21/25.
-//
-
 import UIKit
 import SnapKit
 import RxSwift
 import RxCocoa
 
-/// Phase 1: 간단한 아이 정보 표시 뷰
-/// Phase 2: 상세 정보 및 설정 기능 추가
 final class ParentChildInfoViewController: BaseViewController {
 
+    // MARK: - Properties
+
+    private let viewModel: ParentChildInfoViewModel
     private let authRepository: AuthRepositoryProtocol
+
+    // MARK: - UI Components
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -24,52 +20,25 @@ final class ParentChildInfoViewController: BaseViewController {
 
     private let contentView = UIView()
 
-    // MARK: - Profile Section
-
-    private let profileCard: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.large
-        return view
+    private let stackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .vertical
+        stackView.spacing = Spacing.lg
+        return stackView
     }()
 
-    private let profileImageView = ProfileImageView(
-        assetName: "kidk_profile_one",
-        size: 80,
-        bgColor: .white,
-        iconRatio: 0.7
-    )
+    private let childInfoHeaderView = ChildInfoHeaderView()
+    private let monthlyStatsSummaryView = MonthlyStatsSummaryView()
 
-    private let childNameLabel: UILabel = {
-        let label = UILabel()
-        label.text = "김시아"
-        label.font = .kidkFont(.s24, .bold)
-        label.textColor = .kidkTextWhite
-        return label
-    }()
+    private let missionsSectionHeader = SectionHeaderView()
+    private let missionCompletionBadge = MissionCompletionBadge()
 
-    private let levelBadge: UILabel = {
-        let label = UILabel()
-        label.text = "Lv. 5"
-        label.font = .kidkFont(.s16, .bold)
-        label.textColor = .white
-        label.backgroundColor = .kidkPink
-        label.textAlignment = .center
-        label.layer.cornerRadius = 12
-        label.clipsToBounds = true
-        return label
-    }()
-
-    // MARK: - Info Section
-
-    private let infoStackView: UIStackView = {
+    private let missionsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
         stackView.spacing = Spacing.sm
         return stackView
     }()
-
-    // MARK: - Logout Button
 
     private lazy var logoutButton = KIDKButton(
         title: "로그아웃",
@@ -80,7 +49,8 @@ final class ParentChildInfoViewController: BaseViewController {
 
     // MARK: - Initialization
 
-    init(authRepository: AuthRepositoryProtocol = AuthRepository()) {
+    init(viewModel: ParentChildInfoViewModel, authRepository: AuthRepositoryProtocol = AuthRepository()) {
+        self.viewModel = viewModel
         self.authRepository = authRepository
         super.init(nibName: nil, bundle: nil)
     }
@@ -89,13 +59,16 @@ final class ParentChildInfoViewController: BaseViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    // MARK: - Lifecycle
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
         setupUI()
-        loadMockData()
-        bind()
+        bindViewModel()
     }
+
+    // MARK: - Setup
 
     private func setupNavigationBar() {
         title = "아이 정보"
@@ -103,19 +76,22 @@ final class ParentChildInfoViewController: BaseViewController {
     }
 
     private func setupUI() {
-        view.backgroundColor = .kidkDarkBackground
-
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
+        contentView.addSubview(stackView)
 
-        contentView.addSubview(profileCard)
-        profileCard.addSubview(profileImageView)
-        profileCard.addSubview(childNameLabel)
-        profileCard.addSubview(levelBadge)
+        // Add views to stack
+        stackView.addArrangedSubview(childInfoHeaderView)
+        stackView.addArrangedSubview(monthlyStatsSummaryView)
+        stackView.addArrangedSubview(missionsSectionHeader)
+        stackView.addArrangedSubview(missionCompletionBadge)
+        stackView.addArrangedSubview(missionsStackView)
+        stackView.addArrangedSubview(logoutButton)
 
-        contentView.addSubview(infoStackView)
-        contentView.addSubview(logoutButton)
+        // Configure section header
+        missionsSectionHeader.configure(title: "✨ 완료한 미션")
 
+        // Layout
         scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
         }
@@ -125,49 +101,169 @@ final class ParentChildInfoViewController: BaseViewController {
             make.width.equalTo(scrollView)
         }
 
-        profileCard.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-        }
-
-        profileImageView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(Spacing.lg)
-            make.centerX.equalToSuperview()
-        }
-
-        childNameLabel.snp.makeConstraints { make in
-            make.top.equalTo(profileImageView.snp.bottom).offset(Spacing.md)
-            make.centerX.equalToSuperview()
-        }
-
-        levelBadge.snp.makeConstraints { make in
-            make.top.equalTo(childNameLabel.snp.bottom).offset(Spacing.sm)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(60)
-            make.height.equalTo(24)
-            make.bottom.equalToSuperview().offset(-Spacing.lg)
-        }
-
-        infoStackView.snp.makeConstraints { make in
-            make.top.equalTo(profileCard.snp.bottom).offset(Spacing.lg)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        stackView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.bottom.equalToSuperview().offset(-Spacing.xl)
         }
 
         logoutButton.snp.makeConstraints { make in
-            make.top.equalTo(infoStackView.snp.bottom).offset(Spacing.xl)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(56)
-            make.bottom.equalToSuperview().offset(-Spacing.xl)
         }
     }
 
-    private func bind() {
+    // MARK: - Binding
+
+    private func bindViewModel() {
+        let input = ParentChildInfoViewModel.Input(
+            viewDidLoad: Observable.just(())
+        )
+
+        let output = viewModel.transform(input: input)
+
+        // Child Info
+        output.childInfo
+            .drive(onNext: { [weak self] childInfo in
+                self?.updateChildInfo(childInfo)
+            })
+            .disposed(by: disposeBag)
+
+        // Monthly Stats
+        output.monthlyStats
+            .drive(onNext: { [weak self] stats in
+                self?.updateMonthlyStats(stats)
+            })
+            .disposed(by: disposeBag)
+
+        // Completed Missions
+        output.completedMissions
+            .drive(onNext: { [weak self] missions in
+                self?.updateCompletedMissions(missions)
+            })
+            .disposed(by: disposeBag)
+
+        // Loading
+        output.isLoading
+            .drive(onNext: { [weak self] isLoading in
+                if isLoading {
+                    self?.showLoading()
+                } else {
+                    self?.hideLoading()
+                }
+            })
+            .disposed(by: disposeBag)
+
+        // Error
+        output.error
+            .drive(onNext: { [weak self] error in
+                self?.showError(message: error.localizedDescription)
+            })
+            .disposed(by: disposeBag)
+
+        // Logout Button
         logoutButton.rx.tap
             .subscribe(onNext: { [weak self] in
                 self?.handleLogout()
             })
             .disposed(by: disposeBag)
     }
+
+    // MARK: - Update Methods
+
+    private func updateChildInfo(_ childInfo: ChildInfo) {
+        childInfoHeaderView.configure(
+            name: childInfo.user.name,
+            level: childInfo.level,
+            points: childInfo.points,
+            profileImageURL: childInfo.user.profileImageURL
+        )
+    }
+
+    private func updateMonthlyStats(_ stats: MonthlyStats) {
+        monthlyStatsSummaryView.configure(
+            totalSpending: stats.totalSpending,
+            totalSavings: stats.totalSavings,
+            dailyLimit: stats.dailyLimit,
+            usagePercentage: stats.usagePercentage
+        )
+    }
+
+    private func updateCompletedMissions(_ missions: [Mission]) {
+        missionCompletionBadge.configure(completedCount: missions.count)
+
+        // Clear existing mission views
+        missionsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+
+        // Add mission rows
+        for mission in missions.prefix(5) { // 최대 5개만 표시
+            let missionRow = createMissionRow(mission: mission)
+            missionsStackView.addArrangedSubview(missionRow)
+        }
+
+        // Show empty state if no missions
+        if missions.isEmpty {
+            let emptyLabel = UILabel()
+            emptyLabel.text = "완료한 미션이 없습니다"
+            emptyLabel.font = .kidkFont(.s14, .regular)
+            emptyLabel.textColor = .kidkGray
+            emptyLabel.textAlignment = .center
+            missionsStackView.addArrangedSubview(emptyLabel)
+
+            emptyLabel.snp.makeConstraints { make in
+                make.height.equalTo(60)
+            }
+        }
+    }
+
+    private func createMissionRow(mission: Mission) -> UIView {
+        let containerView = UIView()
+        containerView.backgroundColor = .cardBackground
+        containerView.layer.cornerRadius = CornerRadius.medium
+
+        let titleLabel = UILabel()
+        titleLabel.text = mission.title
+        titleLabel.font = .kidkFont(.s16, .bold)
+        titleLabel.textColor = .kidkTextWhite
+
+        let statusLabel = UILabel()
+        statusLabel.text = "✅ 완료"
+        statusLabel.font = .kidkFont(.s12, .medium)
+        statusLabel.textColor = .kidkGreen
+
+        let rewardLabel = UILabel()
+        rewardLabel.text = "보상: \(mission.rewardAmount.formattedCurrency)"
+        rewardLabel.font = .kidkFont(.s14, .medium)
+        rewardLabel.textColor = .kidkGray
+
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(statusLabel)
+        containerView.addSubview(rewardLabel)
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Spacing.md)
+            make.top.equalToSuperview().offset(Spacing.sm)
+            make.trailing.lessThanOrEqualTo(statusLabel.snp.leading).offset(-Spacing.xs)
+        }
+
+        statusLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().offset(-Spacing.md)
+            make.centerY.equalTo(titleLabel)
+        }
+
+        rewardLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Spacing.md)
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xxs)
+            make.trailing.equalToSuperview().offset(-Spacing.md)
+            make.bottom.equalToSuperview().offset(-Spacing.sm)
+        }
+
+        containerView.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(70)
+        }
+
+        return containerView
+    }
+
+    // MARK: - Actions
 
     private func handleLogout() {
         let alert = UIAlertController(
@@ -197,60 +293,5 @@ final class ParentChildInfoViewController: BaseViewController {
         NotificationCenter.default.post(name: .userLoggedOut, object: nil)
 
         debugSuccess("User logged out successfully")
-    }
-
-    private func loadMockData() {
-        let infoItems = [
-            ("생년월일", "2015년 6월 7일"),
-            ("나이", "9세"),
-            ("학교", "키득초등학교 3학년"),
-            ("이메일", "judy@love.net"),
-            ("가입일", "2025년 1월 15일"),
-            ("일일 지출 한도", "10,000원"),
-            ("이번 달 지출", "45,000원"),
-            ("총 미션 완료", "24개")
-        ]
-
-        for (title, value) in infoItems {
-            let infoView = createInfoRow(title: title, value: value)
-            infoStackView.addArrangedSubview(infoView)
-        }
-    }
-
-    private func createInfoRow(title: String, value: String) -> UIView {
-        let containerView = UIView()
-        containerView.backgroundColor = UIColor(hex: "#2C2C2E")
-        containerView.layer.cornerRadius = CornerRadius.medium
-
-        let titleLabel = UILabel()
-        titleLabel.text = title
-        titleLabel.font = .kidkFont(.s14, .regular)
-        titleLabel.textColor = .kidkGray
-
-        let valueLabel = UILabel()
-        valueLabel.text = value
-        valueLabel.font = .kidkFont(.s16, .medium)
-        valueLabel.textColor = .kidkTextWhite
-        valueLabel.textAlignment = .right
-
-        containerView.addSubview(titleLabel)
-        containerView.addSubview(valueLabel)
-
-        titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.md)
-            make.centerY.equalToSuperview()
-        }
-
-        valueLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.md)
-            make.leading.equalTo(titleLabel.snp.trailing).offset(Spacing.sm)
-            make.centerY.equalToSuperview()
-        }
-
-        containerView.snp.makeConstraints { make in
-            make.height.equalTo(56)
-        }
-
-        return containerView
     }
 }
