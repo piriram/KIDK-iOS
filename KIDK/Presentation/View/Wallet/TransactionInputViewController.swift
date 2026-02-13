@@ -100,6 +100,31 @@ final class TransactionInputViewController: BaseViewController {
         return textField
     }()
 
+    // 카테고리 선택 (출금 시에만 표시)
+    private let categoryLabel: UILabel = {
+        let label = UILabel()
+        label.text = "카테고리 선택"
+        label.font = .kidkFont(.s16, .medium)
+        label.textColor = .kidkGray
+        return label
+    }()
+
+    private let categoryScrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        return scrollView
+    }()
+
+    private let categoryStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = 8
+        stackView.distribution = .fillEqually
+        return stackView
+    }()
+
+    private var selectedCategory: TransactionCategory?
+
     private lazy var confirmButton = KIDKButton(
         title: inputType.title,
         backgroundColor: .kidkPink,
@@ -160,9 +185,16 @@ final class TransactionInputViewController: BaseViewController {
         contentView.addSubview(wonLabel)
         contentView.addSubview(quickAmountStackView)
         contentView.addSubview(descriptionTextField)
+        contentView.addSubview(categoryLabel)
+        contentView.addSubview(categoryScrollView)
+        categoryScrollView.addSubview(categoryStackView)
         contentView.addSubview(memoTextField)
         contentView.addSubview(confirmButton)
         contentView.addSubview(cancelButton)
+
+        // 출금이 아닐 때는 카테고리 숨김
+        categoryLabel.isHidden = (inputType != .withdraw)
+        categoryScrollView.isHidden = (inputType != .withdraw)
 
         scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
@@ -201,8 +233,25 @@ final class TransactionInputViewController: BaseViewController {
             make.height.equalTo(56)
         }
 
+        categoryLabel.snp.makeConstraints { make in
+            make.top.equalTo(descriptionTextField.snp.bottom).offset(Spacing.lg)
+            make.leading.equalToSuperview().inset(Spacing.xl)
+        }
+
+        categoryScrollView.snp.makeConstraints { make in
+            make.top.equalTo(categoryLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(80)
+        }
+
+        categoryStackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: Spacing.xl, bottom: 0, right: Spacing.xl))
+            make.height.equalTo(80)
+        }
+
         memoTextField.snp.makeConstraints { make in
-            make.top.equalTo(descriptionTextField.snp.bottom).offset(Spacing.md)
+            let topView = inputType == .withdraw ? categoryScrollView : descriptionTextField
+            make.top.equalTo(topView.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.xl)
             make.height.equalTo(56)
         }
@@ -235,6 +284,56 @@ final class TransactionInputViewController: BaseViewController {
             button.addTarget(self, action: #selector(quickAmountTapped(_:)), for: .touchUpInside)
             quickAmountStackView.addArrangedSubview(button)
         }
+
+        // 출금일 때 카테고리 버튼 생성
+        if inputType == .withdraw {
+            setupCategoryButtons()
+        }
+    }
+
+    private func setupCategoryButtons() {
+        let categories = TransactionCategory.allCases
+
+        for category in categories {
+            let button = UIButton(type: .system)
+            button.backgroundColor = UIColor(hex: "#2C2C2E")
+            button.layer.cornerRadius = CornerRadius.medium
+            button.layer.borderWidth = 2
+            button.layer.borderColor = UIColor.clear.cgColor
+
+            // 버튼 내용 구성
+            let stackView = UIStackView()
+            stackView.axis = .vertical
+            stackView.spacing = 4
+            stackView.alignment = .center
+            stackView.isUserInteractionEnabled = false
+
+            let emojiLabel = UILabel()
+            emojiLabel.text = category.emoji
+            emojiLabel.font = .systemFont(ofSize: 28)
+
+            let nameLabel = UILabel()
+            nameLabel.text = category.rawValue
+            nameLabel.font = .kidkFont(.s12, .medium)
+            nameLabel.textColor = .kidkTextWhite
+
+            stackView.addArrangedSubview(emojiLabel)
+            stackView.addArrangedSubview(nameLabel)
+
+            button.addSubview(stackView)
+            stackView.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+            }
+
+            button.tag = categories.firstIndex(of: category) ?? 0
+            button.addTarget(self, action: #selector(categoryButtonTapped(_:)), for: .touchUpInside)
+
+            button.snp.makeConstraints { make in
+                make.width.equalTo(70)
+            }
+
+            categoryStackView.addArrangedSubview(button)
+        }
     }
 
     private func bind() {
@@ -259,11 +358,30 @@ final class TransactionInputViewController: BaseViewController {
         amountTextField.text = "\(newAmount)"
     }
 
+    @objc private func categoryButtonTapped(_ sender: UIButton) {
+        let categories = TransactionCategory.allCases
+        selectedCategory = categories[sender.tag]
+
+        // 모든 버튼 초기화
+        for case let button as UIButton in categoryStackView.arrangedSubviews {
+            button.layer.borderColor = UIColor.clear.cgColor
+        }
+
+        // 선택된 버튼 강조
+        sender.layer.borderColor = UIColor.kidkPink.cgColor
+    }
+
     private func handleConfirm() {
         guard let amountText = amountTextField.text,
               let amount = Int(amountText),
               amount > 0 else {
             showAlert(title: "오류", message: "금액을 입력해주세요.")
+            return
+        }
+
+        // 출금일 때 카테고리 필수 선택 체크
+        if inputType == .withdraw && selectedCategory == nil {
+            showAlert(title: "카테고리 선택", message: "어디에 쓴 돈인지 카테고리를 선택해주세요.")
             return
         }
 
@@ -304,7 +422,7 @@ final class TransactionInputViewController: BaseViewController {
             accountId: account.id,
             type: inputType.transactionType,
             amount: amount,
-            category: nil,
+            category: selectedCategory,
             description: descriptionText ?? inputType.title,
             memo: memo
         )

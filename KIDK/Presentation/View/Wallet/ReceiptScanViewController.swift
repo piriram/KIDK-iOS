@@ -170,6 +170,33 @@ final class ReceiptScanViewController: BaseViewController {
         return textField
     }()
 
+    // 카테고리 선택
+    private let categoryLabel: UILabel = {
+        let label = UILabel()
+        label.text = "카테고리"
+        label.font = .kidkFont(.s16, .medium)
+        label.textColor = .kidkGray
+        label.isHidden = true
+        return label
+    }()
+
+    private let categoryScrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.isHidden = true
+        return scrollView
+    }()
+
+    private let categoryStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = 8
+        stackView.distribution = .fillEqually
+        return stackView
+    }()
+
+    private var selectedCategory: TransactionCategory?
+
     // 저장 버튼
     private let saveButton: UIButton = {
         let button = UIButton()
@@ -215,9 +242,10 @@ final class ReceiptScanViewController: BaseViewController {
 
         [titleLabel, instructionLabel, imagePreview, cameraButton, photoButton,
          accountLabel, accountButton, amountLabel, amountTextField, wonLabel,
-         descriptionLabel, descriptionTextField, saveButton].forEach {
+         descriptionLabel, descriptionTextField, categoryLabel, categoryScrollView, saveButton].forEach {
             contentView.addSubview($0)
         }
+        categoryScrollView.addSubview(categoryStackView)
 
         scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
@@ -296,8 +324,24 @@ final class ReceiptScanViewController: BaseViewController {
             make.height.equalTo(50)
         }
 
+        categoryLabel.snp.makeConstraints { make in
+            make.top.equalTo(descriptionTextField.snp.bottom).offset(24)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+
+        categoryScrollView.snp.makeConstraints { make in
+            make.top.equalTo(categoryLabel.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(80)
+        }
+
+        categoryStackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 0, left: 20, bottom: 0, right: 20))
+            make.height.equalTo(80)
+        }
+
         saveButton.snp.makeConstraints { make in
-            make.top.equalTo(descriptionTextField.snp.bottom).offset(40)
+            make.top.equalTo(categoryScrollView.snp.bottom).offset(40)
             make.leading.trailing.equalToSuperview().inset(20)
             make.height.equalTo(56)
             make.bottom.equalToSuperview().offset(-24)
@@ -312,6 +356,68 @@ final class ReceiptScanViewController: BaseViewController {
 
         amountTextField.addTarget(self, action: #selector(validateForm), for: .editingChanged)
         descriptionTextField.addTarget(self, action: #selector(validateForm), for: .editingChanged)
+
+        setupCategoryButtons()
+    }
+
+    private func setupCategoryButtons() {
+        let categories = TransactionCategory.allCases
+
+        for category in categories {
+            let button = UIButton(type: .system)
+            button.backgroundColor = UIColor(hex: "#2C2C2E")
+            button.layer.cornerRadius = CornerRadius.medium
+            button.layer.borderWidth = 2
+            button.layer.borderColor = UIColor.clear.cgColor
+
+            // 버튼 내용 구성
+            let stackView = UIStackView()
+            stackView.axis = .vertical
+            stackView.spacing = 4
+            stackView.alignment = .center
+            stackView.isUserInteractionEnabled = false
+
+            let emojiLabel = UILabel()
+            emojiLabel.text = category.emoji
+            emojiLabel.font = .systemFont(ofSize: 28)
+
+            let nameLabel = UILabel()
+            nameLabel.text = category.rawValue
+            nameLabel.font = .kidkFont(.s12, .medium)
+            nameLabel.textColor = .kidkTextWhite
+
+            stackView.addArrangedSubview(emojiLabel)
+            stackView.addArrangedSubview(nameLabel)
+
+            button.addSubview(stackView)
+            stackView.snp.makeConstraints { make in
+                make.center.equalToSuperview()
+            }
+
+            button.tag = categories.firstIndex(of: category) ?? 0
+            button.addTarget(self, action: #selector(categoryButtonTapped(_:)), for: .touchUpInside)
+
+            button.snp.makeConstraints { make in
+                make.width.equalTo(70)
+            }
+
+            categoryStackView.addArrangedSubview(button)
+        }
+    }
+
+    @objc private func categoryButtonTapped(_ sender: UIButton) {
+        let categories = TransactionCategory.allCases
+        selectedCategory = categories[sender.tag]
+
+        // 모든 버튼 초기화
+        for case let button as UIButton in categoryStackView.arrangedSubviews {
+            button.layer.borderColor = UIColor.clear.cgColor
+        }
+
+        // 선택된 버튼 강조
+        sender.layer.borderColor = UIColor.kidkPink.cgColor
+
+        validateForm()
     }
 
     // MARK: - Actions
@@ -379,8 +485,9 @@ final class ReceiptScanViewController: BaseViewController {
             return amount > 0
         }()
         let hasDescription = !(descriptionTextField.text?.isEmpty ?? true)
+        let hasCategory = selectedCategory != nil
 
-        let isValid = hasAccount && hasValidAmount && hasDescription
+        let isValid = hasAccount && hasValidAmount && hasDescription && hasCategory
 
         saveButton.isEnabled = isValid
         saveButton.alpha = isValid ? 1.0 : 0.5
@@ -390,7 +497,9 @@ final class ReceiptScanViewController: BaseViewController {
         guard let account = selectedAccount,
               let amountText = amountTextField.text,
               let amount = Int(amountText),
-              let description = descriptionTextField.text else {
+              let description = descriptionTextField.text,
+              let category = selectedCategory else {
+            showAlert(title: "정보 확인", message: "모든 항목을 입력해주세요.")
             return
         }
 
@@ -406,7 +515,7 @@ final class ReceiptScanViewController: BaseViewController {
             accountId: account.id,
             type: .withdrawal,
             amount: amount,
-            category: .shopping, // 기본 카테고리
+            category: category,
             description: description,
             memo: "영수증 스캔"
         )
@@ -575,6 +684,8 @@ final class ReceiptScanViewController: BaseViewController {
         wonLabel.isHidden = false
         descriptionLabel.isHidden = false
         descriptionTextField.isHidden = false
+        categoryLabel.isHidden = false
+        categoryScrollView.isHidden = false
         saveButton.isHidden = false
 
         // 추출된 데이터 채우기

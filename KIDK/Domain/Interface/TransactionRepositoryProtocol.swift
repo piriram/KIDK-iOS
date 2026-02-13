@@ -33,4 +33,16 @@ protocol TransactionRepositoryProtocol {
         amount: Int,
         description: String
     ) -> Single<Void>
+
+    // 카테고리별 거래 내역 조회
+    func fetchTransactionsByCategory(
+        for userId: String,
+        category: TransactionCategory
+    ) -> Single<[Transaction]>
+
+    // 특정 사용자의 모든 거래 내역 조회
+    func fetchAllTransactions(for userId: String) -> Single<[Transaction]>
+
+    // 카테고리별 통계 (금액 합계)
+    func fetchCategoryStatistics(for userId: String) -> Single<[TransactionCategory: Int]>
 }
