@@ -121,32 +121,62 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
-            // Create verification with PENDING status
-            let verification = MissionVerification(
-                id: "\(self.nextId)",
-                missionId: request.missionId,
-                childId: "current_user",  // Mock user ID
-                type: request.type,
-                content: request.content,
-                memo: request.memo,
-                submittedDate: Date(),
-                reviewedBy: nil,
-                reviewedDate: nil,
-                status: .pending,
-                rejectReason: nil
-            )
+            // Get current user as child
+            Task {
+                guard let user = await UserProfileManager.shared.getCurrentUser() else {
+                    self.debugWarning("No user found, using mock submission")
+                    self.submitMockVerification(request: request, single: single)
+                    return
+                }
 
-            self.nextId += 1
-            self.mockVerifications.append(verification)
+                // Convert IDs
+                guard let missionIdInt = Int(request.missionId),
+                      let childIdInt = Int(user.id) else {
+                    self.debugWarning("Invalid ID format, using mock submission")
+                    self.submitMockVerification(request: request, single: single)
+                    return
+                }
 
-            self.debugSuccess("Verification submitted: \(verification.id) for mission: \(request.missionId)")
+                // Convert VerificationType to String
+                let verificationTypeString: String
+                switch request.type {
+                case .photo:
+                    verificationTypeString = "PHOTO"
+                case .text:
+                    verificationTypeString = "TEXT"
+                case .parentCheck:
+                    verificationTypeString = "PARENT_CHECK"
+                }
 
-            // Simulate auto-approval after 3 seconds (Phase 1 demo)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
-                self?.autoApproveVerification(verification.id)
+                // API call
+                self.networkService.request(
+                    MissionVerificationAPI.submitVerification(
+                        missionId: missionIdInt,
+                        childId: childIdInt,
+                        verificationType: verificationTypeString,
+                        content: request.content.isEmpty ? nil : request.content
+                    )
+                )
+                .subscribe(onNext: { (result: Result<MissionVerificationResponse, NetworkError>) in
+                    switch result {
+                    case .success(let verificationResponse):
+                        let verification = verificationResponse.toDomain()
+
+                        // Add to mockVerifications for sync
+                        self.mockVerifications.append(verification)
+
+                        self.debugSuccess("Submitted verification via API: \(verification.id)")
+
+                        single(.success(verification))
+
+                    case .failure(let error):
+                        self.debugError("Failed to submit via API, using mock submission", error: error)
+                        self.submitMockVerification(request: request, single: single)
+                    }
+                })
+                .disposed(by: self.disposeBag)
             }
 
-            single(.success(verification))
             return Disposables.create()
         }
     }
@@ -158,9 +188,38 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 return Disposables.create()
             }
 
-            let verifications = self.mockVerifications.filter { $0.missionId == missionId }
-            self.debugLog("Fetched \(verifications.count) verifications for mission: \(missionId)")
-            single(.success(verifications))
+            // Convert String ID to Int
+            guard let missionIdInt = Int(missionId) else {
+                self.debugWarning("Invalid mission ID format, using mock verifications")
+                let verifications = self.mockVerifications.filter { $0.missionId == missionId }
+                single(.success(verifications))
+                return Disposables.create()
+            }
+
+            // API call
+            self.networkService.request(MissionVerificationAPI.getVerifications(missionId: missionIdInt))
+                .subscribe(onNext: { (result: Result<[MissionVerificationResponse], NetworkError>) in
+                    switch result {
+                    case .success(let verificationResponses):
+                        let verifications = verificationResponses.map { $0.toDomain() }
+
+                        // Sync mockVerifications with API results
+                        // Remove old verifications for this mission and add new ones
+                        self.mockVerifications.removeAll { $0.missionId == missionId }
+                        self.mockVerifications.append(contentsOf: verifications)
+
+                        self.debugSuccess("Fetched \(verifications.count) verifications via API for mission: \(missionId)")
+                        single(.success(verifications))
+
+                    case .failure(let error):
+                        self.debugError("Failed to fetch via API, using mock verifications", error: error)
+                        let verifications = self.mockVerifications.filter { $0.missionId == missionId }
+                        self.debugLog("Fetched \(verifications.count) verifications from Mock")
+                        single(.success(verifications))
+                    }
+                })
+                .disposed(by: self.disposeBag)
+
             return Disposables.create()
         }
     }
@@ -401,6 +460,38 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
         )
 
         single(.success(rejectedVerification))
+    }
+
+    private func submitMockVerification(
+        request: MissionVerificationRequest,
+        single: @escaping (SingleEvent<MissionVerification>) -> Void
+    ) {
+        // Create verification with PENDING status
+        let verification = MissionVerification(
+            id: "\(self.nextId)",
+            missionId: request.missionId,
+            childId: "current_user",  // Mock user ID
+            type: request.type,
+            content: request.content,
+            memo: request.memo,
+            submittedDate: Date(),
+            reviewedBy: nil,
+            reviewedDate: nil,
+            status: .pending,
+            rejectReason: nil
+        )
+
+        self.nextId += 1
+        self.mockVerifications.append(verification)
+
+        self.debugSuccess("Submitted verification (Mock): \(verification.id)")
+
+        // Simulate auto-approval after 3 seconds (Phase 1 demo)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3.0) { [weak self] in
+            self?.autoApproveVerification(verification.id)
+        }
+
+        single(.success(verification))
     }
 
     // MARK: - Private Helper Methods
