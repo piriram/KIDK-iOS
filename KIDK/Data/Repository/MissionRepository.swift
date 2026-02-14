@@ -387,4 +387,134 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             return Disposables.create { task.cancel() }
         }
     }
+
+    // MARK: - Mission Progress Methods
+
+    func getMissionProgress(missionId: String) -> Single<MissionProgress?> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            guard let missionIdInt = Int(missionId) else {
+                self.debugWarning("Invalid mission ID format, returning nil")
+                single(.success(nil))
+                return Disposables.create()
+            }
+
+            // Try API first
+            self.networkService.request(MissionAPI.getMissionProgress(missionId: missionIdInt))
+                .subscribe(onNext: { (result: Result<[MissionProgressResponse], NetworkError>) in
+                    switch result {
+                    case .success(let progressResponses):
+                        // Return first progress (there should be only one per mission)
+                        if let firstProgress = progressResponses.first {
+                            let progress = firstProgress.toDomain()
+                            self.debugSuccess("Fetched mission progress via API: \(progress.id)")
+                            single(.success(progress))
+                        } else {
+                            self.debugWarning("No progress found for mission")
+                            single(.success(nil))
+                        }
+
+                    case .failure(let error):
+                        self.debugError("Failed to fetch mission progress via API", error: error)
+                        // Fallback to nil (no Mock data for progress)
+                        single(.success(nil))
+                    }
+                })
+                .disposed(by: self.disposeBag)
+
+            return Disposables.create()
+        }
+    }
+
+    func getMissionProgressByUser(userId: String) -> Single<[MissionProgress]> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            guard let userIdInt = Int(userId) else {
+                self.debugWarning("Invalid user ID format, returning empty array")
+                single(.success([]))
+                return Disposables.create()
+            }
+
+            // Try API first
+            self.networkService.request(MissionAPI.getMissionProgressByUser(userId: userIdInt))
+                .subscribe(onNext: { (result: Result<[MissionProgressResponse], NetworkError>) in
+                    switch result {
+                    case .success(let progressResponses):
+                        let progressList = progressResponses.map { $0.toDomain() }
+                        self.debugSuccess("Fetched \(progressList.count) progress items via API")
+                        single(.success(progressList))
+
+                    case .failure(let error):
+                        self.debugError("Failed to fetch mission progress via API", error: error)
+                        // Fallback to empty array
+                        single(.success([]))
+                    }
+                })
+                .disposed(by: self.disposeBag)
+
+            return Disposables.create()
+        }
+    }
+
+    func updateMissionProgress(
+        missionId: String,
+        userId: String,
+        progressAmount: Double?,
+        progressPercentage: Double?
+    ) -> Single<MissionProgress> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            guard let missionIdInt = Int(missionId),
+                  let userIdInt = Int(userId) else {
+                self.debugError("Invalid ID format")
+                single(.failure(RepositoryError.invalidParameter))
+                return Disposables.create()
+            }
+
+            // Try API first
+            self.networkService.request(
+                MissionAPI.updateMissionProgress(
+                    missionId: missionIdInt,
+                    userId: userIdInt,
+                    progressAmount: progressAmount,
+                    progressPercentage: progressPercentage
+                )
+            )
+            .subscribe(onNext: { (result: Result<MissionProgressResponse, NetworkError>) in
+                switch result {
+                case .success(let progressResponse):
+                    let progress = progressResponse.toDomain()
+
+                    self.debugSuccess("Updated mission progress via API: \(progress.id)")
+
+                    // Post notification for UI updates
+                    NotificationCenter.default.post(
+                        name: .missionProgressUpdated,
+                        object: missionId
+                    )
+
+                    single(.success(progress))
+
+                case .failure(let error):
+                    self.debugError("Failed to update mission progress via API", error: error)
+                    single(.failure(RepositoryError.networkError(error)))
+                }
+            })
+            .disposed(by: self.disposeBag)
+
+            return Disposables.create()
+        }
+    }
 }

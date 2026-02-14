@@ -128,3 +128,20 @@ extension MissionResponse {
         )
     }
 }
+
+extension MissionProgressResponse {
+    func toDomain() -> MissionProgress {
+        // ISO8601 date 파싱
+        let dateFormatter = ISO8601DateFormatter()
+        let lastActivity = dateFormatter.date(from: lastActivityAt) ?? Date()
+
+        return MissionProgress(
+            id: String(id),
+            missionId: String(mission.id),
+            userId: String(user.id),
+            progressAmount: progressAmount,
+            progressPercentage: progressPercentage,
+            lastActivityAt: lastActivity
+        )
+    }
+}
