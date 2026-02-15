@@ -62,9 +62,9 @@ final class LoginViewModel: BaseViewModel {
             .flatMapLatest { [weak self] email, password, userType -> Observable<User> in
                 guard let self = self else { return .empty() }
                 // 🔥 Firebase + Backend API 로그인 활성화
-                // return self.realLogin(email: email, password: password, userType: userType)
-                // Mock 로그인 (개발용) - 백엔드 500 에러로 인해 임시 사용
-                return self.mockLogin(email: email, password: password, userType: userType)
+                return self.realLogin(email: email, password: password, userType: userType)
+                // Mock 로그인 (개발용)
+                // return self.mockLogin(email: email, password: password, userType: userType)
             }
             .do(onNext: { [weak self] user in
                 self?.stopLoading()
