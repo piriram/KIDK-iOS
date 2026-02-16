@@ -120,3 +120,6 @@ GoogleService-Info.plist
 # Backup files
 *.backup
 KIDK/GoogleService-Info.plist
+
+# Private documentation
+.docs/
