@@ -46,7 +46,9 @@ final class MissionCreationViewModel: BaseViewModel {
             .withLatestFrom(missionData)
             .flatMapLatest { [weak self] title, targetDate, rewardAmount, participantIds -> Observable<Mission> in
                 guard let self = self else { return .empty() }
-                
+
+                self.debugLog("Create button tapped - title: \(title), targetDate: \(targetDate?.description ?? "nil"), rewardAmount: \(rewardAmount), participantIds: \(participantIds)")
+
                 // missionType에 따라 기본 description 설정
                 let defaultDescription: String
                 switch self.missionType {
@@ -62,19 +64,23 @@ final class MissionCreationViewModel: BaseViewModel {
                     defaultDescription = "미션을 완료해주세요"
                 }
 
+                let targetAmount = self.missionType == .savings ? 10000 : 0
+                self.debugLog("Creating request - missionType: \(self.missionType.rawValue), targetAmount: \(targetAmount)")
+
                 let request = MissionCreationRequest(
                     title: title.trimmingCharacters(in: .whitespacesAndNewlines),
                     missionType: self.missionType,
-                    targetAmount: self.missionType == .savings ? 10000 : 0,  // SAVING 타입은 기본 목표 금액 설정
+                    targetAmount: targetAmount,  // SAVING 타입은 기본 목표 금액 설정
                     currentAmount: 0,
                     rewardAmount: rewardAmount,
                     targetDate: targetDate,
                     participantIds: participantIds,
                     description: defaultDescription
                 )
-                
+
+                self.debugLog("MissionCreationRequest created successfully")
                 self.startLoading()
-                
+
                 return self.missionRepository.createMission(request)
                     .asObservable()
                     .do(onNext: { [weak self] _ in

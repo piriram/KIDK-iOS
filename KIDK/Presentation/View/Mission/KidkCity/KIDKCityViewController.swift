@@ -4,8 +4,9 @@ import RxCocoa
 import SnapKit
 
 final class KIDKCityViewController: BaseViewController {
-    
+
     private let viewModel: KIDKCityViewModel
+    private let user: User
     private let viewDidAppearSubject = PublishSubject<Void>()
     
     private let mapBackgroundImageView: UIImageView = {
@@ -109,8 +110,9 @@ final class KIDKCityViewController: BaseViewController {
     private var walkTimer: Timer?
     private weak var currentSheetViewController: UIViewController?
     
-    init(viewModel: KIDKCityViewModel) {
+    init(viewModel: KIDKCityViewModel, user: User) {
         self.viewModel = viewModel
+        self.user = user
         super.init(nibName: nil, bundle: nil)
     }
     
@@ -385,24 +387,24 @@ final class KIDKCityViewController: BaseViewController {
             debugWarning("No selection sheet found")
             return
         }
-        
+
         guard selectionSheet.presentedViewController == nil else {
             debugWarning("Another view controller is already presented on selection sheet")
             return
         }
-        
-        let repository = MissionRepository(currentUserId: "user123")
-        let viewModel = MissionCreationViewModel(missionRepository: repository, missionType: missionType)
-        let creationVC = MissionCreationViewController(viewModel: viewModel)
-        
+
+        let repository = MissionRepository(currentUserId: user.id)
+        let creationViewModel = MissionCreationViewModel(missionRepository: repository, missionType: missionType)
+        let creationVC = MissionCreationViewController(viewModel: creationViewModel)
+
         if let sheet = creationVC.sheetPresentationController {
             sheet.detents = [.large()]
             sheet.prefersGrabberVisible = true
             sheet.preferredCornerRadius = 20
         }
-        
+
         creationVC.missionCreated
-            .subscribe(onNext: { [weak self] mission in
+            .subscribe(onNext: { [weak self] (mission: Mission) in
                 self?.debugSuccess("Mission created: \(mission.title)")
                 creationVC.dismiss(animated: true)
             })
