@@ -667,4 +667,3 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
         }
     }
 }
-}
