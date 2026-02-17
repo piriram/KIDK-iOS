@@ -5,6 +5,7 @@ final class CircularProgressView: UIView {
 
     private let backgroundCircleLayer = CAShapeLayer()
     private let progressCircleLayer = CAShapeLayer()
+    private let progressGradientLayer = CAGradientLayer()
 
     private let centerImageView: UIImageView = {
         let imageView = UIImageView()
@@ -15,21 +16,15 @@ final class CircularProgressView: UIView {
     private let amountLabel: UILabel = {
         let label = UILabel()
         label.textAlignment = .center
+        label.numberOfLines = 1
         return label
     }()
 
-    private let targetLabel: UILabel = {
-        let label = UILabel()
-        label.textAlignment = .center
-        label.font = .kidkBodyEn
-        label.textColor = .kidkGray
-        return label
-    }()
-
-    private let lineWidth: CGFloat = 16
+    private let lineWidth: CGFloat = 22
     private let progressColor: UIColor = .kidkPink
-    private let backgroundCircleColor: UIColor = .kidkGray
-    private var arcPercentage: CGFloat = 1.0 {
+    private let backgroundCircleColor: UIColor = .kidkDarkBackground.withAlphaComponent(0.85)
+    private let defaultArcPercentage: CGFloat = 0.82
+    private var arcPercentage: CGFloat = 0.82 {
         didSet {
             setNeedsLayout()
         }
@@ -51,11 +46,10 @@ final class CircularProgressView: UIView {
 
     private func setupUI() {
         layer.addSublayer(backgroundCircleLayer)
-        layer.addSublayer(progressCircleLayer)
+        layer.addSublayer(progressGradientLayer)
 
         addSubview(centerImageView)
         addSubview(amountLabel)
-        addSubview(targetLabel)
 
         backgroundCircleLayer.fillColor = UIColor.clear.cgColor
         backgroundCircleLayer.strokeColor = backgroundCircleColor.cgColor
@@ -67,26 +61,29 @@ final class CircularProgressView: UIView {
         progressCircleLayer.lineWidth = lineWidth
         progressCircleLayer.lineCap = .round
         progressCircleLayer.strokeEnd = 0
+        progressGradientLayer.mask = progressCircleLayer
+        progressGradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
+        progressGradientLayer.endPoint = CGPoint(x: 0.8, y: 1.0)
+        progressGradientLayer.colors = [
+            UIColor.kidkPinkLight.cgColor,
+            UIColor.kidkPink.cgColor
+        ]
 
         amountLabel.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(98)
-        }
-
-        targetLabel.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.xxs)
+            make.top.equalToSuperview().offset(74)
         }
 
         centerImageView.snp.makeConstraints { make in
             make.centerX.equalToSuperview()
-            make.centerY.equalToSuperview().offset(Spacing.xxl)
-            make.width.equalTo(183)
-            make.height.equalTo(124)
+            make.centerY.equalToSuperview().offset(Spacing.xl)
+            make.width.equalTo(196)
+            make.height.equalTo(132)
         }
     }
 
     private func updateCirclePaths() {
+        progressGradientLayer.frame = bounds
         let center = CGPoint(x: bounds.width / 2, y: bounds.height / 2)
         let radius = (min(bounds.width, bounds.height) - lineWidth) / 2
 
@@ -112,11 +109,10 @@ final class CircularProgressView: UIView {
         currentAmount: Int,
         targetAmount: Int,
         image: UIImage?,
-        arcPercentage: CGFloat = 1.0
+        arcPercentage: CGFloat = 0.82
     ) {
         self.arcPercentage = arcPercentage
         amountLabel.isHidden = false
-        targetLabel.isHidden = false
 
         let percentage = targetAmount > 0
             ? min(Double(currentAmount) / Double(targetAmount), 1.0)
@@ -128,8 +124,6 @@ final class CircularProgressView: UIView {
             .string(from: NSNumber(value: targetAmount)) ?? "\(targetAmount)"
 
         let amountText = "\(formattedCurrent)원"
-        let targetText = "/\(formattedTarget)원"
-
         let amountAttributedString = NSMutableAttributedString(
             string: amountText,
             attributes: [
@@ -137,18 +131,23 @@ final class CircularProgressView: UIView {
                 .foregroundColor: UIColor.kidkTextWhite
             ]
         )
-
+        let targetAttributedString = NSAttributedString(
+            string: " / \(formattedTarget)원",
+            attributes: [
+                .font: UIFont.kidkBodyEn,
+                .foregroundColor: UIColor.kidkGray
+            ]
+        )
+        amountAttributedString.append(targetAttributedString)
         amountLabel.attributedText = amountAttributedString
-        targetLabel.text = targetText
         centerImageView.image = image
 
         setProgress(to: CGFloat(percentage), animated: true)
     }
 
     func configureEmpty(image: UIImage?) {
-        arcPercentage = 1.0
+        arcPercentage = defaultArcPercentage
         amountLabel.isHidden = true
-        targetLabel.isHidden = true
         centerImageView.image = image
         setProgress(to: 0, animated: false)
     }
