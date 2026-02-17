@@ -96,8 +96,7 @@ final class MonthlyStatsSummaryView: UIView {
         progressView.configure(
             currentAmount: totalSpending,
             targetAmount: dailyLimit,
-            image: image,
-            arcPercentage: 0.7
+            image: image
         )
     }
 
