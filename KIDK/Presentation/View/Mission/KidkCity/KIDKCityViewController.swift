@@ -1,4 +1,5 @@
 import UIKit
+import SpriteKit
 import RxSwift
 import RxCocoa
 import SnapKit
@@ -8,91 +9,48 @@ final class KIDKCityViewController: BaseViewController {
     private let viewModel: KIDKCityViewModel
     private let user: User
     private let viewDidAppearSubject = PublishSubject<Void>()
-    
-    private let mapBackgroundImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_city_map_background")
-        imageView.contentMode = .scaleAspectFill
-        imageView.clipsToBounds = true
-        return imageView
-    }()
-    
-    private let mapContainerView: UIView = {
-        let view = UIView()
+
+    private let gameView: SKView = {
+        let view = SKView()
+        view.ignoresSiblingOrder = true
+        view.showsFPS = false
+        view.showsNodeCount = false
         view.backgroundColor = .clear
         return view
     }()
-    
-    private let schoolBuildingImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_city_school")
-        imageView.contentMode = .scaleAspectFit
-        imageView.isUserInteractionEnabled = true
-        return imageView
-    }()
-    
-    private let martBuildingImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_city_mart")
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
-    private let characterImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_character_side_walk_1")
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-    
-    private let exclamationImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_icon_exclamation")
-        imageView.contentMode = .scaleAspectFit
-        imageView.alpha = 0
-        return imageView
-    }()
-    
-    private let dimmedView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        view.alpha = 0
-        return view
-    }()
-    
-    private let schoolInfoCardView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .cardBackground.withAlphaComponent(0.9)
-        view.layer.cornerRadius = CornerRadius.large
-        return view
-    }()
-    
-    private let schoolIconImageView = IconContainerView("kidk_icon_pencil",
-                                                        backgroundColor: .kidkTextWhite, size: 60,
-                                                        cornerRadius: CornerRadius.medium,
-                                                        iconSize: 50, alpha: 0.1)
-    
-    private let schoolTitleLabel: UILabel = {
+
+    private let hudContainerView = UIView()
+
+    private let gaugeTitleLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "학교", size: .s24, weight: .bold, color: .kidkTextWhite)
+        label.applyTextStyle(text: "미션 게이지", size: .s14, weight: .bold, color: .kidkTextWhite)
         return label
     }()
-    
-    private let schoolSubtitleLabel: UILabel = {
+
+    private let gaugeValueLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "학습과 관련된 미션을 할 수 있어요!", size: .s14, weight: .medium,
-                             color: .kidkTextWhite.withAlphaComponent(0.8))
+        label.applyTextStyle(text: "0%", size: .s14, weight: .bold, color: .kidkPink)
         return label
     }()
-    
-    private let arrowImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "chevron.right")
-        imageView.tintColor = .chevronGray
-        imageView.contentMode = .scaleAspectFit
-        return imageView
+
+    private let gaugeProgressView: UIProgressView = {
+        let progress = UIProgressView(progressViewStyle: .default)
+        progress.progressTintColor = .kidkPink
+        progress.trackTintColor = UIColor.white.withAlphaComponent(0.2)
+        progress.layer.cornerRadius = 4
+        progress.clipsToBounds = true
+        return progress
     }()
-    
+
+    private let schoolMissionButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("학교 미션 시작", for: .normal)
+        button.setTitleColor(.kidkTextWhite, for: .normal)
+        button.backgroundColor = .kidkPink
+        button.layer.cornerRadius = CornerRadius.medium
+        return button
+    }()
+
     private let homeButton: IconContainerView = {
         let button = IconContainerView(
             "kidk_icon_home",
@@ -105,245 +63,154 @@ final class KIDKCityViewController: BaseViewController {
         button.isUserInteractionEnabled = true
         return button
     }()
-    
-    private var isWalking = false
-    private var walkTimer: Timer?
+
     private weak var currentSheetViewController: UIViewController?
-    
+    private var cityScene: KidkCityScene?
+
     init(viewModel: KIDKCityViewModel, user: User) {
         self.viewModel = viewModel
         self.user = user
         super.init(nibName: nil, bundle: nil)
     }
-    
+
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-    
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.edgesForExtendedLayout = .all
         self.extendedLayoutIncludesOpaqueBars = true
         setupUI()
         bind()
-        checkAndShowSchoolCard()
+        configureSceneIfNeeded()
     }
-    
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        configureSceneIfNeeded()
+    }
+
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         viewDidAppearSubject.onNext(())
     }
-    
+
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
         navigationController?.setNavigationBarHidden(true, animated: animated)
         tabBarController?.tabBar.isHidden = true
     }
-    
+
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
         navigationController?.setNavigationBarHidden(false, animated: animated)
         tabBarController?.tabBar.isHidden = false
     }
-    
+
     private func setupUI() {
         view.backgroundColor = .kidkDarkBackground
-        
-        view.addSubview(mapBackgroundImageView)
-        view.addSubview(mapContainerView)
-        mapContainerView.addSubview(schoolBuildingImageView)
-        mapContainerView.addSubview(martBuildingImageView)
-        mapContainerView.addSubview(characterImageView)
-        mapContainerView.addSubview(exclamationImageView)
-        view.addSubview(dimmedView)
-        view.addSubview(schoolInfoCardView)
+
+        view.addSubview(gameView)
+        view.addSubview(hudContainerView)
         view.addSubview(homeButton)
-        
-        schoolInfoCardView.addSubview(schoolIconImageView)
-        schoolInfoCardView.addSubview(schoolTitleLabel)
-        schoolInfoCardView.addSubview(schoolSubtitleLabel)
-        schoolInfoCardView.addSubview(arrowImageView)
-        
-        mapBackgroundImageView.snp.makeConstraints { make in
+
+        hudContainerView.addSubview(gaugeTitleLabel)
+        hudContainerView.addSubview(gaugeValueLabel)
+        hudContainerView.addSubview(gaugeProgressView)
+        hudContainerView.addSubview(schoolMissionButton)
+
+        gameView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
-        
-        mapContainerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        
-        schoolBuildingImageView.snp.makeConstraints { make in
-            make.centerX.equalToSuperview()
-            make.top.equalToSuperview().offset(100)
-            make.width.equalTo(300)
-            make.height.equalTo(250)
-        }
-        
-        martBuildingImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-40)
-            make.bottom.equalToSuperview().offset(-200)
-            make.width.equalTo(200)
-            make.height.equalTo(180)
-        }
-        
-        characterImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(80)
-            make.top.equalToSuperview().offset(200)
-            make.width.height.equalTo(80)
-        }
-        
-        exclamationImageView.snp.makeConstraints { make in
-            make.centerX.equalTo(characterImageView)
-            make.bottom.equalTo(characterImageView.snp.top).offset(-5)
-            make.width.height.equalTo(40)
-        }
-        
-        dimmedView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-        
-        schoolInfoCardView.snp.makeConstraints { make in
+
+        hudContainerView.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
-            make.height.equalTo(100)
         }
-        
-        schoolIconImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.md)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(60)
+
+        gaugeTitleLabel.snp.makeConstraints { make in
+            make.leading.top.equalToSuperview()
         }
-        
-        schoolTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(schoolIconImageView.snp.trailing).offset(Spacing.md)
-            make.top.equalToSuperview().offset(Spacing.md)
+
+        gaugeValueLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview()
+            make.centerY.equalTo(gaugeTitleLabel)
         }
-        
-        schoolSubtitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(schoolTitleLabel)
-            make.top.equalTo(schoolTitleLabel.snp.bottom).offset(4)
+
+        gaugeProgressView.snp.makeConstraints { make in
+            make.top.equalTo(gaugeTitleLabel.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(8)
         }
-        
-        arrowImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.md)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(20)
+
+        schoolMissionButton.snp.makeConstraints { make in
+            make.top.equalTo(gaugeProgressView.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(44)
+            make.bottom.equalToSuperview()
         }
-        
+
         homeButton.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.md)
             make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.md)
             make.width.height.equalTo(48)
         }
-        
-        let schoolTapGesture = UITapGestureRecognizer(target: self, action: #selector(schoolBuildingTapped))
-        schoolBuildingImageView.addGestureRecognizer(schoolTapGesture)
-        
-        let cardTapGesture = UITapGestureRecognizer(target: self, action: #selector(schoolCardTapped))
-        schoolInfoCardView.addGestureRecognizer(cardTapGesture)
-        
+
         let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
         homeButton.addGestureRecognizer(homeTapGesture)
+
+        schoolMissionButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.showMissionSelectionSheet()
+            })
+            .disposed(by: disposeBag)
     }
-    
+
     private func bind() {
         let locationTapped = PublishSubject<KIDKCityLocationType>()
-        
+
         let input = KIDKCityViewModel.Input(
             viewDidAppear: viewDidAppearSubject.asObservable(),
             locationTapped: locationTapped.asObservable()
         )
-        
-        let output = viewModel.transform(input: input)
+
+        _ = viewModel.transform(input: input)
+
+        // MVP 샘플: 미션 게이지 고정값(추후 ViewModel/API 연동)
+        updateGauge(progress: 0.3)
     }
-    
-    private func checkAndShowSchoolCard() {
-        let hasActiveMission = false
-        
-        if !hasActiveMission {
-            UIView.animate(withDuration: 0.4, delay: 0.5, options: .curveEaseOut) {
-                self.schoolInfoCardView.alpha = 1
-            }
+
+    private func configureSceneIfNeeded() {
+        guard cityScene == nil, gameView.bounds.size.width > 0 else { return }
+
+        let scene = KidkCityScene(size: gameView.bounds.size)
+        scene.scaleMode = .resizeFill
+        scene.onSchoolTapped = { [weak self] in
+            self?.showMissionSelectionSheet()
         }
+        gameView.presentScene(scene)
+        cityScene = scene
     }
-    
-    @objc private func schoolBuildingTapped() {
-        showExclamationAndWalk()
+
+    private func updateGauge(progress: Float) {
+        let clamped = max(0, min(progress, 1))
+        gaugeProgressView.setProgress(clamped, animated: true)
+        gaugeValueLabel.text = "\(Int(clamped * 100))%"
     }
-    
-    @objc private func schoolCardTapped() {
-        showExclamationAndWalk()
-    }
-    
+
     @objc private func homeButtonTapped() {
         navigationController?.popViewController(animated: true)
     }
-    
-    private func showExclamationAndWalk() {
-        UIView.animate(withDuration: 0.3, delay: 0.3) {
-            self.exclamationImageView.alpha = 1
-        } completion: { _ in
-            UIView.animate(withDuration: 0.3, delay: 0.5) {
-                self.exclamationImageView.alpha = 0
-            } completion: { _ in
-                self.startWalkingAnimation()
-            }
-        }
-    }
-    
-    private func startWalkingAnimation() {
-        isWalking = true
-        
-        var walkFrame = 1
-        walkTimer = Timer.scheduledTimer(withTimeInterval: 0.2, repeats: true) { [weak self] _ in
-            guard let self = self else { return }
-            walkFrame = walkFrame == 1 ? 2 : 1
-            self.characterImageView.image = UIImage(named: "kidk_character_side_walk_\(walkFrame)")
-        }
-        
-        let schoolEntranceX = view.bounds.width / 2
-        let schoolEntranceY = schoolBuildingImageView.frame.maxY - 40
-        
-        UIView.animate(withDuration: 3.0, delay: 0, options: .curveLinear) {
-            self.characterImageView.frame.origin.x = schoolEntranceX - 40
-            self.characterImageView.frame.origin.y = schoolEntranceY
-        } completion: { [weak self] _ in
-            self?.stopWalkingAnimation()
-            self?.characterEntersSchool()
-        }
-    }
-    
-    private func stopWalkingAnimation() {
-        isWalking = false
-        walkTimer?.invalidate()
-        walkTimer = nil
-    }
-    
-    private func characterEntersSchool() {
-        UIView.animate(withDuration: 0.5) {
-            self.characterImageView.alpha = 0
-            self.schoolInfoCardView.alpha = 0
-        } completion: { _ in
-            self.showDimmedOverlay()
-        }
-    }
-    
-    private func showDimmedOverlay() {
-        UIView.animate(withDuration: 0.3) {
-            self.dimmedView.alpha = 1
-        } completion: { _ in
-            self.showMissionSelectionSheet()
-        }
-    }
-    
+
     private func showMissionSelectionSheet() {
         guard currentSheetViewController == nil else {
             debugWarning("Sheet already presented")
             return
         }
-        
+
         let sheetVC = MissionSelectionSheetViewController()
-        
+
         if let sheet = sheetVC.sheetPresentationController {
             let customDetent = UISheetPresentationController.Detent.custom { context in
                 return context.maximumDetentValue * 0.6
@@ -351,37 +218,29 @@ final class KIDKCityViewController: BaseViewController {
             sheet.detents = [customDetent]
             sheet.prefersGrabberVisible = false
         }
-        
+
         sheetVC.missionSelected
             .subscribe(onNext: { [weak self] missionType in
-                self?.handleMissionTypeSelected(missionType)
+                self?.showMissionCreationSheet(missionType: missionType)
             })
             .disposed(by: disposeBag)
-        
+
         sheetVC.customMissionTapped
             .subscribe(onNext: { [weak self] in
-                self?.handleCustomMissionTapped()
+                self?.showMissionCreationSheet(missionType: .custom)
             })
             .disposed(by: disposeBag)
-        
+
         sheetVC.previousMissionTapped
             .subscribe(onNext: { [weak self] in
                 self?.dismissCurrentSheet()
             })
             .disposed(by: disposeBag)
-        
+
         currentSheetViewController = sheetVC
         present(sheetVC, animated: true)
     }
-    
-    private func handleMissionTypeSelected(_ missionType: MissionType) {
-        showMissionCreationSheet(missionType: missionType)
-    }
-    
-    private func handleCustomMissionTapped() {
-        showMissionCreationSheet(missionType: .custom)
-    }
-    
+
     private func showMissionCreationSheet(missionType: MissionType) {
         guard let selectionSheet = currentSheetViewController else {
             debugWarning("No selection sheet found")
@@ -404,42 +263,103 @@ final class KIDKCityViewController: BaseViewController {
         }
 
         creationVC.missionCreated
-            .subscribe(onNext: { [weak self] (mission: Mission) in
-                self?.debugSuccess("Mission created: \(mission.title)")
+            .subscribe(onNext: { [weak self] (_: Mission) in
+                self?.updateGauge(progress: min((self?.gaugeProgressView.progress ?? 0) + 0.1, 1.0))
                 creationVC.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
-        
+
         creationVC.previousTapped
             .subscribe(onNext: {
                 creationVC.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
-        
+
         selectionSheet.present(creationVC, animated: true)
     }
-    
+
     private func dismissCurrentSheet() {
         currentSheetViewController?.dismiss(animated: true) { [weak self] in
             self?.currentSheetViewController = nil
-            UIView.animate(withDuration: 0.3) {
-                self?.dimmedView.alpha = 0
-            } completion: { _ in
-                UIView.animate(withDuration: 0.3) {
-                    self?.schoolInfoCardView.alpha = 1
-                }
-                self?.resetCharacterPosition()
-            }
         }
     }
-    
-    private func resetCharacterPosition() {
-        self.characterImageView.alpha = 1
-        self.characterImageView.snp.remakeConstraints { make in
-            make.leading.equalToSuperview().offset(80)
-            make.top.equalToSuperview().offset(200)
-            make.width.height.equalTo(80)
+}
+
+private final class KidkCityScene: SKScene {
+
+    var onSchoolTapped: (() -> Void)?
+
+    private let backgroundNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_map_background")
+        node.zPosition = 0
+        return node
+    }()
+
+    private let schoolNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school")
+        node.name = "school"
+        node.zPosition = 2
+        return node
+    }()
+
+    private let martNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_mart")
+        node.zPosition = 2
+        return node
+    }()
+
+    private let characterNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_character_side_walk_1")
+        node.zPosition = 3
+        return node
+    }()
+
+    override func didMove(to view: SKView) {
+        backgroundColor = .clear
+        addChild(backgroundNode)
+        addChild(schoolNode)
+        addChild(martNode)
+        addChild(characterNode)
+        layoutScene()
+        startIdleAnimation()
+    }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        super.didChangeSize(oldSize)
+        layoutScene()
+    }
+
+    private func layoutScene() {
+        guard size.width > 0, size.height > 0 else { return }
+
+        backgroundNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        backgroundNode.size = size
+
+        schoolNode.position = CGPoint(x: size.width * 0.5, y: size.height * 0.62)
+        schoolNode.size = CGSize(width: size.width * 0.5, height: size.height * 0.25)
+
+        martNode.position = CGPoint(x: size.width * 0.8, y: size.height * 0.33)
+        martNode.size = CGSize(width: size.width * 0.24, height: size.height * 0.16)
+
+        characterNode.position = CGPoint(x: size.width * 0.2, y: size.height * 0.38)
+        characterNode.size = CGSize(width: 72, height: 72)
+    }
+
+    private func startIdleAnimation() {
+        let frame1 = SKTexture(imageNamed: "kidk_character_side_walk_1")
+        let frame2 = SKTexture(imageNamed: "kidk_character_side_walk_2")
+        let animate = SKAction.animate(with: [frame1, frame2], timePerFrame: 0.2)
+        let forever = SKAction.repeatForever(animate)
+        characterNode.run(forever, withKey: "walk")
+    }
+
+    override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
+        guard let touch = touches.first else { return }
+        let location = touch.location(in: self)
+        let node = atPoint(location)
+
+        if node.name == "school" || node.parent?.name == "school" {
+            onSchoolTapped?()
         }
-        self.view.layoutIfNeeded()
     }
 }
