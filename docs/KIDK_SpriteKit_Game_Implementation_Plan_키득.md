@@ -8,6 +8,48 @@
 - 미션 상태 전이, 보상 적립/정산, 승인 처리, 에러 코드, 재시도 정책 등 **서버 계약이 필요한 항목은 서버 API 문서를 단일 기준(Source of Truth)으로 확인**한다.
 - 문서와 서버 API 문서가 충돌할 경우, **서버 API 문서를 우선**한다.
 
+## 0-2. 서버 연동 기준선 (Backend Team 가이드 반영, 2026-02-15)
+- Base URL: `http://43.202.165.98:8080` (개발 단계 HTTP)
+- Health Check: `GET /actuator/health`
+- Swagger UI: `https://kidk.kro.kr/swagger-ui/index.html`
+- 앱(개발 빌드)에서 ATS 예외 설정 필요 여부를 확인한다 (`NSAppTransportSecurity`).
+
+### 인증 규칙
+- 로그인/회원가입 제외 모든 API는 `Authorization: Bearer {Access_Token}` 필수
+- 요청 기본 헤더: `Content-Type: application/json`
+- 인증 에러 코드 기준:
+  - `AUTH_001` (401): 토큰 누락/무효
+  - `AUTH_003` (403): 권한 없음
+
+### 주요 엔드포인트 기준
+- Auth
+  - `POST /api/v1/auth/login`
+  - `POST /api/v1/auth/register`
+  - `POST /api/v1/auth/refresh`
+- User
+  - `GET /api/v1/users/me`
+  - `PUT /api/v1/users/me`
+- Family
+  - `GET /api/v1/families/me`
+  - `POST /api/v1/families`
+- Mission
+  - `GET /api/v1/missions`
+  - `POST /api/v1/missions`
+- Transaction
+  - `GET /api/v1/transactions` (필터링 지원)
+
+### 표준 에러 응답 파싱 기준
+```json
+{
+  "success": false,
+  "error": {
+    "code": "AUTH_001",
+    "message": "유효하지 않은 토큰입니다."
+  }
+}
+```
+- iOS 클라이언트는 `success == false`일 때 `error.code`, `error.message`를 단일 에러 처리 경로로 전달한다.
+
 ---
 
 ## 1. 기획 기능 → 구현 모듈 매핑
