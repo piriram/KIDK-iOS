@@ -38,22 +38,32 @@ final class NetworkService {
             var request = URLRequest(url: url)
             request.httpMethod = endpoint.method.rawValue
 
-            // Body 설정
+            // Query / Body 설정
             if let parameters = endpoint.parameters {
-                do {
-                    #if DEBUG
-                    // 파라미터 타입 검증
-                    print("📋 [Parameter Types]")
-                    for (key, value) in parameters {
-                        print("  - \(key): \(type(of: value)) = \(value)")
-                    }
-                    #endif
+                #if DEBUG
+                print("📋 [Parameter Types]")
+                for (key, value) in parameters {
+                    print("  - \(key): \(type(of: value)) = \(value)")
+                }
+                #endif
 
-                    request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
-                } catch {
-                    observer.onNext(.failure(.encodingFailed(error)))
-                    observer.onCompleted()
-                    return Disposables.create()
+                switch endpoint.method {
+                case .get, .delete:
+                    // GET/DELETE는 query string 사용
+                    if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
+                        components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
+                        if let updatedURL = components.url {
+                            request.url = updatedURL
+                        }
+                    }
+                default:
+                    do {
+                        request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
+                    } catch {
+                        observer.onNext(.failure(.encodingFailed(error)))
+                        observer.onCompleted()
+                        return Disposables.create()
+                    }
                 }
             }
 
