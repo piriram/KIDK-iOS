@@ -9,7 +9,7 @@ final class KIDKCityViewController: BaseViewController {
     private let viewModel: KIDKCityViewModel
     private let user: User
     private let viewDidAppearSubject = PublishSubject<Void>()
-    private let missionCompletedSubject = PublishSubject<Void>()
+    private let missionCompletedSubject = PublishSubject<String>()
 
     private let gameView: SKView = {
         let view = SKView()
@@ -302,7 +302,8 @@ final class KIDKCityViewController: BaseViewController {
 
         creationVC.missionCreated
             .subscribe(onNext: { [weak self] (_: Mission) in
-                self?.missionCompletedSubject.onNext(())
+                let eventId = UUID().uuidString
+                self?.missionCompletedSubject.onNext(eventId)
                 creationVC.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
