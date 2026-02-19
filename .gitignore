@@ -87,6 +87,10 @@ Temporary Items
 # API Keys & Secrets
 Config/Secrets.plist
 Config/API-Keys.plist
+KIDK/Config/Secrets.plist
+KIDK/Config/API-Keys.plist
+**/Secrets.plist
+**/API-Keys.plist
 *.env
 .env
 
