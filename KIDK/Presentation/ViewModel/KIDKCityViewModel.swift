@@ -7,7 +7,7 @@ final class KIDKCityViewModel: BaseViewModel {
     struct Input {
         let viewDidAppear: Observable<Void>
         let locationTapped: Observable<KIDKCityLocationType>
-        let missionCompleted: Observable<Void>
+        let missionCompleted: Observable<String> // eventId
     }
 
     struct Output {
@@ -24,6 +24,7 @@ final class KIDKCityViewModel: BaseViewModel {
     private let user: User
 
     private let gameStateRelay = BehaviorRelay<GameState>(value: .initial)
+    private var processedEventIds = Set<String>()
 
     init(user: User) {
         self.user = user
@@ -55,8 +56,8 @@ final class KIDKCityViewModel: BaseViewModel {
             .disposed(by: disposeBag)
 
         input.missionCompleted
-            .subscribe(onNext: { [weak self] in
-                self?.applyMissionCompletionReward()
+            .subscribe(onNext: { [weak self] eventId in
+                self?.applyMissionCompletionReward(eventId: eventId)
             })
             .disposed(by: disposeBag)
 
@@ -88,7 +89,17 @@ final class KIDKCityViewModel: BaseViewModel {
         )
     }
 
-    private func applyMissionCompletionReward() {
+    private func applyMissionCompletionReward(eventId: String) {
+        guard !processedEventIds.contains(eventId) else {
+            debugWarning("Skip duplicated mission completion event: \(eventId)")
+            return
+        }
+        processedEventIds.insert(eventId)
+
+        // TODO: 서버 API 문서 기준으로 mission completion 확정 API 연동
+        // 서버 연동 전 MVP 단계에서는 로컬 상태를 선반영한다.
+        syncMissionCompletionIfNeeded(eventId: eventId)
+
         var state = gameStateRelay.value
         state.gaugePoint += GaugeSystem.rewardPerMission
         state.level = GaugeSystem.level(points: state.gaugePoint)
@@ -97,7 +108,15 @@ final class KIDKCityViewModel: BaseViewModel {
         state.unlockedLocations = unlocked
 
         gameStateRelay.accept(state)
-        debugSuccess("Mission reward applied - level: \(state.level), point: \(state.gaugePoint)")
+        debugSuccess("Mission reward applied - eventId: \(eventId), level: \(state.level), point: \(state.gaugePoint)")
+    }
+
+    private func syncMissionCompletionIfNeeded(eventId: String) {
+        // NOTE:
+        // - endpoint/path: 서버 API 문서 기준
+        // - payload/status/에러코드: 서버 API 문서 기준
+        // - idempotency key: eventId 사용
+        debugLog("Mission completion sync placeholder. eventId=\(eventId)")
     }
 
     private func createLocations(from state: GameState) -> [KIDKCityLocation] {
