@@ -10,9 +10,9 @@ extension FriendAPI: APIEndpoint {
     var path: String {
         switch self {
         case .sendFriendRequest:
-            return "/friends"
-        case .getFriends(let userId):
-            return "/friends/user/\(userId)"
+            return "/friends/request"
+        case .getFriends:
+            return "/friends/me"
         case .deleteFriend(let friendId):
             return "/friends/\(friendId)"
         }
@@ -31,10 +31,9 @@ extension FriendAPI: APIEndpoint {
 
     var parameters: [String: Any]? {
         switch self {
-        case .sendFriendRequest(let requesterId, let addresseeId):
+        case .sendFriendRequest(_, let addresseeId):
             return [
-                "requesterId": requesterId,
-                "addresseeId": addresseeId
+                "friendUserId": addresseeId
             ]
 
         default:

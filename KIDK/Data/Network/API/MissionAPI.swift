@@ -22,11 +22,11 @@ extension MissionAPI: APIEndpoint {
         case .getMissionsByCreator(let creatorId):
             return "/missions/creator/\(creatorId)"
         case .getMissionProgress(let missionId):
-            return "/mission-progress/\(missionId)"
+            return "/missions/\(missionId)/progress"
         case .getMissionProgressByUser(let userId):
-            return "/mission-progress/user/\(userId)"
+            return "/missions/progress/user/\(userId)"
         case .updateMissionProgress(let missionId, _, _, _):
-            return "/mission-progress/\(missionId)"
+            return "/missions/\(missionId)/progress"
         }
     }
 
@@ -39,7 +39,7 @@ extension MissionAPI: APIEndpoint {
         case .getMissionsByOwner, .getMissionsByCreator, .getMissionProgress, .getMissionProgressByUser:
             return .get
         case .updateMissionProgress:
-            return .post
+            return .patch
         }
     }
 
@@ -65,10 +65,8 @@ extension MissionAPI: APIEndpoint {
             }
             return params
 
-        case .updateMissionProgress(_, let userId, let progressAmount, let progressPercentage):
-            var params: [String: Any] = [
-                "userId": userId
-            ]
+        case .updateMissionProgress(_, _, let progressAmount, let progressPercentage):
+            var params: [String: Any] = [:]
             if let amount = progressAmount {
                 params["progressAmount"] = amount
             }
