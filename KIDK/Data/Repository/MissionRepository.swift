@@ -466,7 +466,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
     // MARK: - Raw Response Helpers
 
-    /// Mission 생성 API는 공통 응답 포맷을 사용하지 않고 MissionResponse 객체를 직접 반환
+    /// Mission 생성 API 응답(ApiResponse<MissionResponse>)을 파싱
     private func createMissionRaw(
         creatorId: Int,
         ownerId: Int,
@@ -573,7 +573,20 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                     return
                 }
 
-                // MissionResponse 직접 파싱
+                // ApiResponse<MissionResponse> 파싱 (호환용 direct 파싱 fallback 포함)
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<MissionResponse>.self, from: data)
+                    if apiResponse.success, let missionResponse = apiResponse.data {
+                        single(.success(missionResponse))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("Mission create api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode create response as ApiResponse, trying direct MissionResponse")
+                }
+
                 do {
                     let missionResponse = try JSONDecoder().decode(MissionResponse.self, from: data)
                     single(.success(missionResponse))
@@ -671,7 +684,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Mission Progress API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            // Mission Progress API 응답 파싱 (ApiResponse 우선 + direct fallback)
             self.getMissionProgressRaw(missionId: missionIdInt)
                 .subscribe(onSuccess: { progressResponses in
                     // Return first progress (there should be only one per mission)
@@ -707,7 +720,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Mission Progress API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            // Mission Progress API 응답 파싱 (ApiResponse 우선 + direct fallback)
             self.getMissionProgressByUserRaw(userId: userIdInt)
                 .subscribe(onSuccess: { progressResponses in
                     let progressList = progressResponses.map { $0.toDomain() }
@@ -743,7 +756,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Mission Progress API는 객체를 직접 반환 (ApiResponse 래퍼 없음)
+            // Mission Progress API 응답 파싱 (ApiResponse 우선 + direct fallback)
             self.updateMissionProgressRaw(
                 missionId: missionIdInt,
                 userId: userIdInt,
@@ -808,6 +821,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 }
 
                 do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<[MissionProgressResponse]>.self, from: data)
+                    if apiResponse.success, let progressList = apiResponse.data {
+                        single(.success(progressList))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("Mission progress api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode mission progress as ApiResponse, trying direct array")
+                }
+
+                do {
                     let progressList = try JSONDecoder().decode([MissionProgressResponse].self, from: data)
                     single(.success(progressList))
                 } catch {
@@ -852,6 +878,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 guard let data = data else {
                     single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
                     return
+                }
+
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<[MissionProgressResponse]>.self, from: data)
+                    if apiResponse.success, let progressList = apiResponse.data {
+                        single(.success(progressList))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("User mission progress api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode user mission progress as ApiResponse, trying direct array")
                 }
 
                 do {
@@ -919,6 +958,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 guard let data = data else {
                     single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
                     return
+                }
+
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<MissionProgressResponse>.self, from: data)
+                    if apiResponse.success, let progress = apiResponse.data {
+                        single(.success(progress))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("Update mission progress api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode mission progress update as ApiResponse, trying direct object")
                 }
 
                 do {

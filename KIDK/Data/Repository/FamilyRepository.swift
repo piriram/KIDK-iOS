@@ -49,15 +49,16 @@ final class FamilyRepository: BaseRepository, FamilyRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Family 목록 조회 API는 공통 응답 포맷을 사용하지 않고 직접 배열 반환
-            self.getFamiliesRaw()
-                .subscribe(onSuccess: { familyResponses in
-                    let families = familyResponses.map { $0.toDomain() }
-                    self.debugSuccess("Fetched \(families.count) families from API")
-                    single(.success(families))
+            _ = userId // 시그니처 호환용
+
+            // 가이드 기준: /families/me
+            self.getMyFamilyRaw()
+                .subscribe(onSuccess: { familyResponse in
+                    let family = familyResponse.toDomain()
+                    self.debugSuccess("Fetched my family from API")
+                    single(.success([family]))
                 }, onFailure: { error in
-                    self.debugError("Failed to fetch families from API", error: error)
-                    // API 실패 시 빈 배열 반환
+                    self.debugError("Failed to fetch my family from API", error: error)
                     single(.success([]))
                 })
                 .disposed(by: self.disposeBag)
@@ -78,22 +79,15 @@ final class FamilyRepository: BaseRepository, FamilyRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Family 가입 API는 FamilyMember 객체를 직접 반환
-            // 하지만 도메인 모델은 Family를 기대하므로, 가입 후 가족 목록을 다시 조회
+            // Family 가입 후 /families/me 재조회
             self.joinFamilyRaw(userId: dto.userId, inviteCode: dto.inviteCode)
-                .flatMap { _ -> Single<[FamilyResponse]> in
-                    // 가입 성공 후 가족 목록 조회
-                    return self.getFamiliesRaw()
+                .flatMap { _ -> Single<FamilyResponse> in
+                    return self.getMyFamilyRaw()
                 }
-                .subscribe(onSuccess: { familyResponses in
-                    // 가장 최근에 가입한 가족 (마지막 항목)
-                    if let lastFamily = familyResponses.last {
-                        let family = lastFamily.toDomain()
-                        self.debugSuccess("Joined family via API: \(family.familyName)")
-                        single(.success(family))
-                    } else {
-                        single(.failure(RepositoryError.notFound))
-                    }
+                .subscribe(onSuccess: { familyResponse in
+                    let family = familyResponse.toDomain()
+                    self.debugSuccess("Joined family via API: \(family.familyName)")
+                    single(.success(family))
                 }, onFailure: { error in
                     self.debugError("Failed to join family via API", error: error)
                     single(.failure(RepositoryError.networkError(error as? NetworkError ?? NetworkError.unknown(error))))
@@ -227,6 +221,67 @@ final class FamilyRepository: BaseRepository, FamilyRepositoryProtocol {
                     if let responseString = String(data: data, encoding: .utf8) {
                         self.debugError("Response body: \(responseString)", error: nil)
                     }
+                    single(.failure(RepositoryError.decodingError(error)))
+                }
+            }
+
+            task.resume()
+            return Disposables.create { task.cancel() }
+        }
+    }
+
+    /// 내 가족 조회 API (/families/me)
+    private func getMyFamilyRaw() -> Single<FamilyResponse> {
+        return Single.create { [weak self] single in
+            guard let self = self else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "FamilyRepository", code: -1))))
+                return Disposables.create()
+            }
+
+            let baseURL = Environment.current.baseURL
+            guard let url = URL(string: "\(baseURL)/families/me") else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "FamilyRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var request = URLRequest(url: url)
+            request.httpMethod = "GET"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+
+            if let accessToken = self.tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                if let error = error {
+                    self.debugError("My family request error", error: error)
+                    single(.failure(RepositoryError.unknown(error)))
+                    return
+                }
+
+                guard let data = data else {
+                    single(.failure(RepositoryError.unknown(NSError(domain: "FamilyRepository", code: -3))))
+                    return
+                }
+
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<FamilyResponse>.self, from: data)
+                    if apiResponse.success, let family = apiResponse.data {
+                        single(.success(family))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("My family api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode my family as ApiResponse, trying direct object")
+                }
+
+                do {
+                    let family = try JSONDecoder().decode(FamilyResponse.self, from: data)
+                    single(.success(family))
+                } catch {
+                    self.debugError("Failed to decode my family response", error: error)
                     single(.failure(RepositoryError.decodingError(error)))
                 }
             }
