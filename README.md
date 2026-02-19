@@ -189,6 +189,11 @@ KIDK/
 - `Secrets.plist.example` 파일로 필요한 설정 항목 안내
 - Keychain을 통한 안전한 토큰 저장
 
+## 문서 (Docs)
+
+- SpriteKit 구현 계획서: `docs/KIDK_SpriteKit_Game_Implementation_Plan_키득.md`
+- SpriteKit 가이드: `SpriteKit-Complete-Guide.md`
+
 ## 라이선스
 
 이 프로젝트는 포트폴리오 목적으로 작성됨
