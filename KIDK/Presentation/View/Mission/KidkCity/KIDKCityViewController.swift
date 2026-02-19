@@ -73,6 +73,7 @@ final class KIDKCityViewController: BaseViewController {
 
     private weak var currentSheetViewController: UIViewController?
     private var cityScene: KidkCityScene?
+    private var latestUnlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
 
     init(viewModel: KIDKCityViewModel, user: User) {
         self.viewModel = viewModel
@@ -204,6 +205,14 @@ final class KIDKCityViewController: BaseViewController {
         output.levelText
             .drive(levelLabel.rx.text)
             .disposed(by: disposeBag)
+
+        output.locations
+            .drive(onNext: { [weak self] locations in
+                guard let self = self else { return }
+                self.latestUnlockedLocations = Set(locations.filter { $0.isUnlocked }.map { $0.type })
+                self.cityScene?.setUnlockedLocations(self.latestUnlockedLocations)
+            })
+            .disposed(by: disposeBag)
     }
 
     private func configureSceneIfNeeded() {
@@ -211,8 +220,12 @@ final class KIDKCityViewController: BaseViewController {
 
         let scene = KidkCityScene(size: gameView.bounds.size)
         scene.scaleMode = .resizeFill
+        scene.setUnlockedLocations(latestUnlockedLocations)
         scene.onSchoolTapped = { [weak self] in
             self?.showMissionSelectionSheet()
+        }
+        scene.onLockedLocationTapped = { [weak self] location in
+            self?.showLockedLocationToast(location: location)
         }
         gameView.presentScene(scene)
         cityScene = scene
@@ -308,11 +321,48 @@ final class KIDKCityViewController: BaseViewController {
             self?.currentSheetViewController = nil
         }
     }
+
+    private func showLockedLocationToast(location: KIDKCityLocationType) {
+        let message: String
+        switch location {
+        case .mart:
+            message = "마트는 레벨 2에서 열려요"
+        case .home, .school:
+            message = "아직 잠겨 있어요"
+        }
+
+        let alert = UILabel()
+        alert.applyTextStyle(text: message, size: .s12, weight: .medium, color: .kidkTextWhite)
+        alert.backgroundColor = UIColor.black.withAlphaComponent(0.7)
+        alert.textAlignment = .center
+        alert.layer.cornerRadius = 12
+        alert.clipsToBounds = true
+        alert.alpha = 0
+
+        view.addSubview(alert)
+        alert.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(hudContainerView.snp.top).offset(-12)
+            make.height.equalTo(32)
+            make.width.greaterThanOrEqualTo(150)
+        }
+
+        UIView.animate(withDuration: 0.2, animations: {
+            alert.alpha = 1
+        }, completion: { _ in
+            UIView.animate(withDuration: 0.2, delay: 1.0, options: .curveEaseInOut, animations: {
+                alert.alpha = 0
+            }, completion: { _ in
+                alert.removeFromSuperview()
+            })
+        })
+    }
 }
 
 private final class KidkCityScene: SKScene {
 
     var onSchoolTapped: (() -> Void)?
+    var onLockedLocationTapped: ((KIDKCityLocationType) -> Void)?
 
     private let backgroundNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_city_map_background")
@@ -329,7 +379,16 @@ private final class KidkCityScene: SKScene {
 
     private let martNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_city_mart")
+        node.name = "mart"
         node.zPosition = 2
+        return node
+    }()
+
+    private let martLockNode: SKLabelNode = {
+        let node = SKLabelNode(text: "🔒")
+        node.fontSize = 24
+        node.zPosition = 4
+        node.alpha = 0
         return node
     }()
 
@@ -339,19 +398,24 @@ private final class KidkCityScene: SKScene {
         return node
     }()
 
+    private var unlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
+
     override func didMove(to view: SKView) {
         backgroundColor = .clear
         addChild(backgroundNode)
         addChild(schoolNode)
         addChild(martNode)
+        addChild(martLockNode)
         addChild(characterNode)
         layoutScene()
+        applyUnlockState()
         startIdleAnimation()
     }
 
     override func didChangeSize(_ oldSize: CGSize) {
         super.didChangeSize(oldSize)
         layoutScene()
+        applyUnlockState()
     }
 
     private func layoutScene() {
@@ -365,9 +429,21 @@ private final class KidkCityScene: SKScene {
 
         martNode.position = CGPoint(x: size.width * 0.8, y: size.height * 0.33)
         martNode.size = CGSize(width: size.width * 0.24, height: size.height * 0.16)
+        martLockNode.position = CGPoint(x: martNode.position.x, y: martNode.position.y + martNode.size.height * 0.28)
 
         characterNode.position = CGPoint(x: size.width * 0.2, y: size.height * 0.38)
         characterNode.size = CGSize(width: 72, height: 72)
+    }
+
+    func setUnlockedLocations(_ locations: Set<KIDKCityLocationType>) {
+        unlockedLocations = locations
+        applyUnlockState()
+    }
+
+    private func applyUnlockState() {
+        let martUnlocked = unlockedLocations.contains(.mart)
+        martNode.alpha = martUnlocked ? 1.0 : 0.6
+        martLockNode.alpha = martUnlocked ? 0.0 : 1.0
     }
 
     private func startIdleAnimation() {
@@ -385,6 +461,15 @@ private final class KidkCityScene: SKScene {
 
         if node.name == "school" || node.parent?.name == "school" {
             onSchoolTapped?()
+            return
+        }
+
+        if node.name == "mart" || node.parent?.name == "mart" {
+            if unlockedLocations.contains(.mart) {
+                // TODO: 마트 컨텐츠 연결(서버 API 문서 기준)
+            } else {
+                onLockedLocationTapped?(.mart)
+            }
         }
     }
 }
