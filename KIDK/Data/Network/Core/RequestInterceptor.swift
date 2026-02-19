@@ -14,12 +14,13 @@ final class AuthRequestInterceptor: RequestInterceptor {
         // Content-Type 설정
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // 인증이 필요한 경우 토큰 헤더 추가
+        // 인증이 필요한 경우 Bearer 헤더 추가
+        // - 로그인/회원가입 제외 모든 API는 Authorization: Bearer {token} 규칙 적용
         if endpoint.requiresAuth {
             if endpoint.usesRefreshToken {
-                // Refresh Token 사용 (로그아웃/재발급 등)
+                // Refresh Token 사용 (토큰 재발급 등)
                 if let refreshToken = tokenManager.refreshToken {
-                    request.setValue(refreshToken, forHTTPHeaderField: "Refresh-Token")
+                    request.setValue("Bearer \(refreshToken)", forHTTPHeaderField: "Authorization")
                 }
             } else {
                 // Access Token 사용 (일반 API)
