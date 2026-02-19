@@ -9,6 +9,7 @@ final class KIDKCityViewController: BaseViewController {
     private let viewModel: KIDKCityViewModel
     private let user: User
     private let viewDidAppearSubject = PublishSubject<Void>()
+    private let missionCompletedSubject = PublishSubject<Void>()
 
     private let gameView: SKView = {
         let view = SKView()
@@ -30,6 +31,12 @@ final class KIDKCityViewController: BaseViewController {
     private let gaugeValueLabel: UILabel = {
         let label = UILabel()
         label.applyTextStyle(text: "0%", size: .s14, weight: .bold, color: .kidkPink)
+        return label
+    }()
+
+    private let levelLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(text: "Lv.1", size: .s12, weight: .medium, color: .kidkTextWhite.withAlphaComponent(0.8))
         return label
     }()
 
@@ -117,6 +124,7 @@ final class KIDKCityViewController: BaseViewController {
 
         hudContainerView.addSubview(gaugeTitleLabel)
         hudContainerView.addSubview(gaugeValueLabel)
+        hudContainerView.addSubview(levelLabel)
         hudContainerView.addSubview(gaugeProgressView)
         hudContainerView.addSubview(schoolMissionButton)
 
@@ -138,8 +146,13 @@ final class KIDKCityViewController: BaseViewController {
             make.centerY.equalTo(gaugeTitleLabel)
         }
 
+        levelLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.top.equalTo(gaugeTitleLabel.snp.bottom).offset(4)
+        }
+
         gaugeProgressView.snp.makeConstraints { make in
-            make.top.equalTo(gaugeTitleLabel.snp.bottom).offset(8)
+            make.top.equalTo(levelLabel.snp.bottom).offset(8)
             make.leading.trailing.equalToSuperview()
             make.height.equalTo(8)
         }
@@ -172,13 +185,25 @@ final class KIDKCityViewController: BaseViewController {
 
         let input = KIDKCityViewModel.Input(
             viewDidAppear: viewDidAppearSubject.asObservable(),
-            locationTapped: locationTapped.asObservable()
+            locationTapped: locationTapped.asObservable(),
+            missionCompleted: missionCompletedSubject.asObservable()
         )
 
-        _ = viewModel.transform(input: input)
+        let output = viewModel.transform(input: input)
 
-        // MVP 샘플: 미션 게이지 고정값(추후 ViewModel/API 연동)
-        updateGauge(progress: 0.3)
+        output.gaugeProgress
+            .drive(onNext: { [weak self] progress in
+                self?.updateGauge(progress: progress)
+            })
+            .disposed(by: disposeBag)
+
+        output.gaugeText
+            .drive(gaugeValueLabel.rx.text)
+            .disposed(by: disposeBag)
+
+        output.levelText
+            .drive(levelLabel.rx.text)
+            .disposed(by: disposeBag)
     }
 
     private func configureSceneIfNeeded() {
@@ -264,7 +289,7 @@ final class KIDKCityViewController: BaseViewController {
 
         creationVC.missionCreated
             .subscribe(onNext: { [weak self] (_: Mission) in
-                self?.updateGauge(progress: min((self?.gaugeProgressView.progress ?? 0) + 0.1, 1.0))
+                self?.missionCompletedSubject.onNext(())
                 creationVC.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
