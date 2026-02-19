@@ -1,8 +1,8 @@
 import Foundation
 
 enum FriendAPI {
-    case sendFriendRequest(requesterId: Int, addresseeId: Int)
-    case getFriends(userId: Int)
+    case sendFriendRequest(addresseeId: Int)
+    case getFriends
     case deleteFriend(friendId: Int)
 }
 
@@ -31,11 +31,10 @@ extension FriendAPI: APIEndpoint {
 
     var parameters: [String: Any]? {
         switch self {
-        case .sendFriendRequest(_, let addresseeId):
+        case .sendFriendRequest(let addresseeId):
             return [
                 "friendUserId": addresseeId
             ]
-
         default:
             return nil
         }
