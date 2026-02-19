@@ -127,3 +127,8 @@ KIDK/GoogleService-Info.plist
 
 # Private documentation
 .docs/
+
+# Local API docs / server spec snapshots (do not commit)
+kidk_api_documentation.md
+*api*_documentation*.md
+*api*_spec*.json

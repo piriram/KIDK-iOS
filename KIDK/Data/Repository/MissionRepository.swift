@@ -498,6 +498,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             // Request Body 생성
+            // NOTE: 미션 생성은 POST
             var params: [String: Any] = [
                 "creatorId": creatorId,
                 "ownerId": ownerId,
@@ -781,7 +782,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/mission-progress/\(missionId)") else {
+            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/progress") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
                 return Disposables.create()
             }
@@ -828,7 +829,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/mission-progress/user/\(userId)") else {
+            guard let url = URL(string: "\(baseURL)/missions/progress/user/\(userId)") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
                 return Disposables.create()
             }
@@ -869,7 +870,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
     private func updateMissionProgressRaw(
         missionId: Int,
-        userId: Int,
+        userId _: Int,
         progressAmount: Double?,
         progressPercentage: Double?
     ) -> Single<MissionProgressResponse> {
@@ -880,20 +881,20 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/mission-progress/\(missionId)") else {
+            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/progress") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
                 return Disposables.create()
             }
 
             var request = URLRequest(url: url)
-            request.httpMethod = "POST"
+            request.httpMethod = "PATCH"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
             if let accessToken = self.tokenManager.accessToken {
                 request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
             }
 
-            var params: [String: Any] = ["userId": userId]
+            var params: [String: Any] = [:]
             if let amount = progressAmount {
                 params["progressAmount"] = amount
             }
