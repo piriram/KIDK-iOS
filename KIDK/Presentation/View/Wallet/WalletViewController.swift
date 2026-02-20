@@ -401,7 +401,7 @@ extension WalletViewController: UITableViewDelegate {
 
         switch sectionType {
         case .summary:
-            return 236
+            return 252
         case .accounts:
             return viewModel.accounts.value.isEmpty ? 72 : 92
         case .quickActions:
@@ -526,6 +526,7 @@ private final class WalletSummaryCell: UITableViewCell {
         label.font = .kidkFont(.s14, .medium)
         label.textColor = UIColor.white.withAlphaComponent(0.78)
         label.text = "주 계좌 없음"
+        label.numberOfLines = 1
         return label
     }()
 
@@ -581,6 +582,10 @@ private final class WalletSummaryCell: UITableViewCell {
         infoStackView.addArrangedSubview(dailyLimitView)
         infoStackView.addArrangedSubview(levelView)
 
+        subtitleLabel.setContentCompressionResistancePriority(.required, for: .vertical)
+        subtitleLabel.setContentHuggingPriority(.required, for: .vertical)
+        amountLabel.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
         }
@@ -606,14 +611,14 @@ private final class WalletSummaryCell: UITableViewCell {
         }
 
         subtitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.xs)
+            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.xxs)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
         infoStackView.snp.makeConstraints { make in
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.md)
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.sm)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.bottom.equalToSuperview().inset(Spacing.md)
+            make.bottom.equalToSuperview().inset(Spacing.sm)
             make.height.equalTo(70)
         }
     }
