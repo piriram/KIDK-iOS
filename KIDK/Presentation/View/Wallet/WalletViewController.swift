@@ -179,8 +179,8 @@ final class WalletViewController: BaseViewController {
         navigationController?.pushViewController(receiptScanVC, animated: true)
     }
 
-    private func makePlaceholderCell(_ tableView: UITableView, text: String) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "PlaceholderCell", for: IndexPath(row: 0, section: 0))
+    private func makePlaceholderCell(_ tableView: UITableView, indexPath: IndexPath, text: String) -> UITableViewCell {
+        let cell = tableView.dequeueReusableCell(withIdentifier: "PlaceholderCell", for: indexPath)
         cell.backgroundColor = .clear
         cell.selectionStyle = .none
         cell.contentView.subviews.forEach { $0.removeFromSuperview() }
@@ -283,7 +283,7 @@ extension WalletViewController: UITableViewDataSource {
 
     private func makeAccountCell(_ tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
         guard !viewModel.accounts.value.isEmpty else {
-            return makePlaceholderCell(tableView, text: "등록된 계좌가 없어요")
+            return makePlaceholderCell(tableView, indexPath: indexPath, text: "등록된 계좌가 없어요")
         }
 
         guard let cell = tableView.dequeueReusableCell(
@@ -314,7 +314,7 @@ extension WalletViewController: UITableViewDataSource {
 
     private func makeSavingsGoalCell(_ tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
         guard !viewModel.savingsGoals.value.isEmpty else {
-            return makePlaceholderCell(tableView, text: "저축 목표를 추가해보세요")
+            return makePlaceholderCell(tableView, indexPath: indexPath, text: "저축 목표를 추가해보세요")
         }
 
         guard let cell = tableView.dequeueReusableCell(
@@ -332,7 +332,7 @@ extension WalletViewController: UITableViewDataSource {
 
     private func makeTransactionCell(_ tableView: UITableView, indexPath: IndexPath) -> UITableViewCell {
         guard !viewModel.transactions.value.isEmpty else {
-            return makePlaceholderCell(tableView, text: "아직 거래 내역이 없어요")
+            return makePlaceholderCell(tableView, indexPath: indexPath, text: "아직 거래 내역이 없어요")
         }
 
         guard let cell = tableView.dequeueReusableCell(
