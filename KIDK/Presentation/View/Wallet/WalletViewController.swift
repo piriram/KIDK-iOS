@@ -401,13 +401,34 @@ extension WalletViewController: UITableViewDelegate {
 
         switch sectionType {
         case .summary:
-            return 252
+            return UITableView.automaticDimension
         case .accounts:
             return viewModel.accounts.value.isEmpty ? 72 : 92
         case .quickActions:
             return 144
         case .savingsGoals:
             return viewModel.savingsGoals.value.isEmpty ? 72 : UITableView.automaticDimension
+        case .transactions:
+            return viewModel.transactions.value.isEmpty ? 72 : 84
+        case .card:
+            return 148
+        }
+    }
+
+    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        guard let sectionType = Section(rawValue: indexPath.section) else {
+            return 100
+        }
+
+        switch sectionType {
+        case .summary:
+            return 252
+        case .accounts:
+            return viewModel.accounts.value.isEmpty ? 72 : 92
+        case .quickActions:
+            return 144
+        case .savingsGoals:
+            return viewModel.savingsGoals.value.isEmpty ? 72 : 110
         case .transactions:
             return viewModel.transactions.value.isEmpty ? 72 : 84
         case .card:
