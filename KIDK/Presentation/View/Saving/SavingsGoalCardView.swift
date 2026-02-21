@@ -9,6 +9,7 @@ final class SavingsGoalCardView: UIView {
 
     private var goal: SavingsGoal?
     private let disposeBag = DisposeBag()
+    private var displayStyle: SavingsDisplayStyle = .neoBankClean
 
     private let containerView: UIView = {
         let view = UIView()
@@ -243,6 +244,13 @@ final class SavingsGoalCardView: UIView {
             .disposed(by: disposeBag)
     }
 
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        displayStyle = style
+        if let goal {
+            configure(with: goal)
+        }
+    }
+
     func configure(with goal: SavingsGoal) {
         self.goal = goal
 
@@ -254,6 +262,11 @@ final class SavingsGoalCardView: UIView {
             iconImageView.image = UIImage(systemName: "banknote.fill")
         }
 
+        containerView.backgroundColor = displayStyle.goalCardBackgroundColor
+        progressBar.trackTintColor = displayStyle.goalCardTrackColor
+        chevronImageView.tintColor = displayStyle.goalCardSecondaryTextColor
+        remainingAmountView.configure(title: "남은", value: goal.formattedRemainingAmount, color: displayStyle.goalCardSecondaryTextColor)
+
         let progressPercentage = goal.progressPercentage
         progressLabel.text = goal.status == .completed
             ? "목표 달성! \(goal.formattedTargetAmount) 모았어요"
@@ -261,31 +274,24 @@ final class SavingsGoalCardView: UIView {
         progressBadge.text = String(format: "%.1f%%", progressPercentage)
         progressBar.setProgress(Float(progressPercentage / 100), animated: true)
 
-        currentAmountView.configure(title: "현재", value: goal.formattedCurrentAmount, color: .kidkGreen)
-        remainingAmountView.configure(title: "남은", value: goal.formattedRemainingAmount, color: .kidkTextWhite)
-        targetAmountView.configure(title: "목표", value: goal.formattedTargetAmount, color: .kidkPink)
+        currentAmountView.configure(title: "현재", value: goal.formattedCurrentAmount, color: displayStyle.secondaryAccentColor)
+        targetAmountView.configure(title: "목표", value: goal.formattedTargetAmount, color: displayStyle.primaryAccentColor)
 
-        let accentColor: UIColor
+        let accentColor = displayStyle.accentColor(for: goal.status)
         switch goal.status {
         case .inProgress:
-            accentColor = .kidkPink
             statusBadge.isHidden = false
             statusBadge.text = "진행 중"
-            statusBadge.backgroundColor = .kidkGreen.withAlphaComponent(0.2)
-            statusBadge.textColor = .kidkGreen
         case .completed:
-            accentColor = .kidkGreen
             statusBadge.isHidden = false
             statusBadge.text = "달성"
-            statusBadge.backgroundColor = .kidkGreen.withAlphaComponent(0.2)
-            statusBadge.textColor = .kidkGreen
         case .cancelled:
-            accentColor = .kidkGray
             statusBadge.isHidden = false
             statusBadge.text = "취소"
-            statusBadge.backgroundColor = .kidkGray.withAlphaComponent(0.2)
-            statusBadge.textColor = .kidkGray
         }
+
+        statusBadge.backgroundColor = displayStyle.statusBadgeBackground(for: goal.status)
+        statusBadge.textColor = displayStyle.statusBadgeColor(for: goal.status)
 
         accentBarView.backgroundColor = accentColor
         progressBar.progressTintColor = accentColor
@@ -299,17 +305,13 @@ final class SavingsGoalCardView: UIView {
             dDayLabel.isHidden = false
             if daysRemaining > 0 {
                 dDayLabel.text = "D-\(daysRemaining)"
-                dDayLabel.backgroundColor = .kidkBlue.withAlphaComponent(0.2)
-                dDayLabel.textColor = .kidkBlue
             } else if daysRemaining == 0 {
                 dDayLabel.text = "D-Day"
-                dDayLabel.backgroundColor = .kidkPink.withAlphaComponent(0.22)
-                dDayLabel.textColor = .kidkPink
             } else {
                 dDayLabel.text = "D+\(-daysRemaining)"
-                dDayLabel.backgroundColor = .kidkGray.withAlphaComponent(0.2)
-                dDayLabel.textColor = .kidkGray
             }
+            dDayLabel.backgroundColor = displayStyle.dDayBackground(daysRemaining: daysRemaining)
+            dDayLabel.textColor = displayStyle.dDayColor(daysRemaining: daysRemaining)
         } else {
             dDayLabel.isHidden = true
         }
