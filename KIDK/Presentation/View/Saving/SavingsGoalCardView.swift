@@ -16,6 +16,13 @@ final class SavingsGoalCardView: UIView {
         view.layer.cornerRadius = CornerRadius.large
         view.layer.borderWidth = 1
         view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let accentBarView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkPink
         return view
     }()
 
@@ -113,9 +120,19 @@ final class SavingsGoalCardView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.2
+        layer.shadowRadius = 12
+        layer.shadowOffset = CGSize(width: 0, height: 6)
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: CornerRadius.large).cgPath
+    }
+
     private func setupUI() {
         addSubview(containerView)
 
+        containerView.addSubview(accentBarView)
         containerView.addSubview(iconContainerView)
         iconContainerView.addSubview(iconImageView)
 
@@ -141,8 +158,14 @@ final class SavingsGoalCardView: UIView {
             make.edges.equalToSuperview()
         }
 
+        accentBarView.snp.makeConstraints { make in
+            make.top.bottom.leading.equalToSuperview()
+            make.width.equalTo(4)
+        }
+
         iconContainerView.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(Spacing.md)
+            make.top.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(accentBarView.snp.trailing).offset(Spacing.md)
             make.width.height.equalTo(56)
         }
 
@@ -171,7 +194,7 @@ final class SavingsGoalCardView: UIView {
 
         progressLabel.snp.makeConstraints { make in
             make.top.equalTo(iconContainerView.snp.bottom).offset(Spacing.md)
-            make.leading.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(iconContainerView.snp.leading)
             make.trailing.lessThanOrEqualTo(progressBadge.snp.leading).offset(-Spacing.sm)
         }
 
@@ -183,13 +206,15 @@ final class SavingsGoalCardView: UIView {
 
         progressBar.snp.makeConstraints { make in
             make.top.equalTo(progressLabel.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(iconContainerView.snp.leading)
+            make.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(8)
         }
 
         amountStackView.snp.makeConstraints { make in
             make.top.equalTo(progressBar.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(iconContainerView.snp.leading)
+            make.trailing.equalToSuperview().inset(Spacing.md)
             make.bottom.equalToSuperview().inset(Spacing.md)
         }
 
@@ -230,7 +255,9 @@ final class SavingsGoalCardView: UIView {
         }
 
         let progressPercentage = goal.progressPercentage
-        progressLabel.text = "\(goal.formattedCurrentAmount) / \(goal.formattedTargetAmount)"
+        progressLabel.text = goal.status == .completed
+            ? "목표 달성! \(goal.formattedTargetAmount) 모았어요"
+            : "남은 \(goal.formattedRemainingAmount) · 목표 \(goal.formattedTargetAmount)"
         progressBadge.text = String(format: "%.1f%%", progressPercentage)
         progressBar.setProgress(Float(progressPercentage / 100), animated: true)
 
@@ -238,32 +265,35 @@ final class SavingsGoalCardView: UIView {
         remainingAmountView.configure(title: "남은", value: goal.formattedRemainingAmount, color: .kidkTextWhite)
         targetAmountView.configure(title: "목표", value: goal.formattedTargetAmount, color: .kidkPink)
 
+        let accentColor: UIColor
         switch goal.status {
         case .inProgress:
+            accentColor = .kidkPink
             statusBadge.isHidden = false
             statusBadge.text = "진행 중"
             statusBadge.backgroundColor = .kidkGreen.withAlphaComponent(0.2)
             statusBadge.textColor = .kidkGreen
-            progressBar.progressTintColor = .kidkPink
-            iconContainerView.backgroundColor = .kidkPink.withAlphaComponent(0.18)
-            iconImageView.tintColor = .kidkPink
         case .completed:
+            accentColor = .kidkGreen
             statusBadge.isHidden = false
             statusBadge.text = "달성"
             statusBadge.backgroundColor = .kidkGreen.withAlphaComponent(0.2)
             statusBadge.textColor = .kidkGreen
-            progressBar.progressTintColor = .kidkGreen
-            iconContainerView.backgroundColor = .kidkGreen.withAlphaComponent(0.18)
-            iconImageView.tintColor = .kidkGreen
         case .cancelled:
+            accentColor = .kidkGray
             statusBadge.isHidden = false
             statusBadge.text = "취소"
             statusBadge.backgroundColor = .kidkGray.withAlphaComponent(0.2)
             statusBadge.textColor = .kidkGray
-            progressBar.progressTintColor = .kidkGray
-            iconContainerView.backgroundColor = .kidkGray.withAlphaComponent(0.2)
-            iconImageView.tintColor = .kidkGray
         }
+
+        accentBarView.backgroundColor = accentColor
+        progressBar.progressTintColor = accentColor
+        progressBadge.backgroundColor = accentColor.withAlphaComponent(0.2)
+        progressBadge.textColor = accentColor
+        iconContainerView.backgroundColor = accentColor.withAlphaComponent(0.18)
+        iconImageView.tintColor = accentColor
+        containerView.layer.borderColor = accentColor.withAlphaComponent(0.35).cgColor
 
         if let daysRemaining = goal.daysRemaining {
             dDayLabel.isHidden = false
