@@ -77,11 +77,25 @@ final class SavingsGoalCardView: UIView {
         let label = UILabel()
         label.applyTextStyle(
             text: "",
-            size: .s14,
+            size: .s12,
             weight: .medium,
-            color: .kidkTextWhite,
-            lineHeight: 140
+            color: .kidkGray,
+            lineHeight: 130
         )
+        return label
+    }()
+
+    private let remainingHighlightLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(
+            text: "",
+            size: .s22,
+            weight: .bold,
+            color: .kidkTextWhite,
+            lineHeight: 125
+        )
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.75
         return label
     }()
 
@@ -140,6 +154,7 @@ final class SavingsGoalCardView: UIView {
         containerView.addSubview(nameLabel)
         containerView.addSubview(chevronImageView)
         containerView.addSubview(badgeStackView)
+        containerView.addSubview(remainingHighlightLabel)
         containerView.addSubview(progressLabel)
         containerView.addSubview(progressBadge)
         containerView.addSubview(progressBar)
@@ -149,8 +164,8 @@ final class SavingsGoalCardView: UIView {
         amountStackView.addArrangedSubview(remainingAmountView)
         amountStackView.addArrangedSubview(targetAmountView)
 
-        badgeStackView.addArrangedSubview(statusBadge)
         badgeStackView.addArrangedSubview(dDayLabel)
+        badgeStackView.addArrangedSubview(statusBadge)
 
         statusBadge.isHidden = true
         dDayLabel.isHidden = true
@@ -161,7 +176,7 @@ final class SavingsGoalCardView: UIView {
 
         accentBarView.snp.makeConstraints { make in
             make.top.bottom.leading.equalToSuperview()
-            make.width.equalTo(4)
+            make.width.equalTo(6)
         }
 
         iconContainerView.snp.makeConstraints { make in
@@ -193,23 +208,29 @@ final class SavingsGoalCardView: UIView {
             make.leading.equalTo(iconContainerView.snp.trailing).offset(Spacing.sm)
         }
 
+        remainingHighlightLabel.snp.makeConstraints { make in
+            make.top.equalTo(badgeStackView.snp.bottom).offset(Spacing.sm)
+            make.leading.equalTo(iconContainerView.snp.trailing).offset(Spacing.sm)
+            make.trailing.lessThanOrEqualTo(progressBadge.snp.leading).offset(-Spacing.sm)
+        }
+
         progressLabel.snp.makeConstraints { make in
-            make.top.equalTo(iconContainerView.snp.bottom).offset(Spacing.md)
-            make.leading.equalTo(iconContainerView.snp.leading)
+            make.top.equalTo(remainingHighlightLabel.snp.bottom).offset(Spacing.xxs)
+            make.leading.equalTo(remainingHighlightLabel)
             make.trailing.lessThanOrEqualTo(progressBadge.snp.leading).offset(-Spacing.sm)
         }
 
         progressBadge.snp.makeConstraints { make in
-            make.centerY.equalTo(progressLabel)
+            make.centerY.equalTo(remainingHighlightLabel)
             make.trailing.equalToSuperview().inset(Spacing.md)
             make.height.greaterThanOrEqualTo(24)
         }
 
         progressBar.snp.makeConstraints { make in
-            make.top.equalTo(progressLabel.snp.bottom).offset(Spacing.xs)
+            make.top.equalTo(progressLabel.snp.bottom).offset(Spacing.sm)
             make.leading.equalTo(iconContainerView.snp.leading)
             make.trailing.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(8)
+            make.height.equalTo(9)
         }
 
         amountStackView.snp.makeConstraints { make in
@@ -265,17 +286,18 @@ final class SavingsGoalCardView: UIView {
         containerView.backgroundColor = displayStyle.goalCardBackgroundColor
         progressBar.trackTintColor = displayStyle.goalCardTrackColor
         chevronImageView.tintColor = displayStyle.goalCardSecondaryTextColor
-        remainingAmountView.configure(title: "남은", value: goal.formattedRemainingAmount, color: displayStyle.goalCardSecondaryTextColor)
 
         let progressPercentage = goal.progressPercentage
-        progressLabel.text = goal.status == .completed
-            ? "목표 달성! \(goal.formattedTargetAmount) 모았어요"
-            : "남은 \(goal.formattedRemainingAmount) · 목표 \(goal.formattedTargetAmount)"
+        remainingHighlightLabel.text = goal.status == .completed
+            ? "목표 달성 완료"
+            : "남은 금액 \(goal.formattedRemainingAmount)"
+        progressLabel.text = "현재 \(goal.formattedCurrentAmount) · 목표 \(goal.formattedTargetAmount)"
         progressBadge.text = String(format: "%.1f%%", progressPercentage)
         progressBar.setProgress(Float(progressPercentage / 100), animated: true)
 
-        currentAmountView.configure(title: "현재", value: goal.formattedCurrentAmount, color: displayStyle.secondaryAccentColor)
-        targetAmountView.configure(title: "목표", value: goal.formattedTargetAmount, color: displayStyle.primaryAccentColor)
+        currentAmountView.configure(title: "현재 금액", value: goal.formattedCurrentAmount, color: displayStyle.secondaryAccentColor)
+        remainingAmountView.isHidden = true
+        targetAmountView.configure(title: "목표 금액", value: goal.formattedTargetAmount, color: displayStyle.primaryAccentColor)
 
         let accentColor = displayStyle.accentColor(for: goal.status)
         switch goal.status {
