@@ -19,6 +19,8 @@ final class SavingsViewController: BaseViewController {
 
     private let headerView = SavingsHeaderView()
     private let quickStatsView = SavingsQuickStatsView()
+    private let bentoOverviewView = SavingsBentoOverviewView()
+    private let warmHeroView = SavingsWarmHeroView()
 
     private let inProgressSection = SectionHeaderView()
     private let inProgressStackView: UIStackView = {
@@ -137,6 +139,8 @@ final class SavingsViewController: BaseViewController {
         contentView.addSubview(styleSegmentedControl)
         contentView.addSubview(headerView)
         contentView.addSubview(quickStatsView)
+        contentView.addSubview(bentoOverviewView)
+        contentView.addSubview(warmHeroView)
         contentView.addSubview(inProgressSection)
         contentView.addSubview(inProgressStackView)
         contentView.addSubview(completedSection)
@@ -173,6 +177,16 @@ final class SavingsViewController: BaseViewController {
 
         quickStatsView.snp.makeConstraints { make in
             make.top.equalTo(headerView.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        bentoOverviewView.snp.makeConstraints { make in
+            make.top.equalTo(styleSegmentedControl.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        warmHeroView.snp.makeConstraints { make in
+            make.top.equalTo(styleSegmentedControl.snp.bottom).offset(Spacing.sm)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
@@ -272,6 +286,8 @@ final class SavingsViewController: BaseViewController {
                     weeklyAverage: stats.averageWeeklySavings.formattedCurrency,
                     monthlyAverage: stats.averageMonthlySavings.formattedCurrency
                 )
+                self?.bentoOverviewView.configure(with: stats)
+                self?.warmHeroView.configure(with: stats)
             })
             .disposed(by: disposeBag)
 
@@ -330,6 +346,8 @@ final class SavingsViewController: BaseViewController {
 
         headerView.applyStyle(style)
         quickStatsView.applyStyle(style)
+        bentoOverviewView.applyStyle(style)
+        warmHeroView.applyStyle(style)
         inProgressSection.applyStyle(titleColor: style.sectionTitleColor, subtitleColor: style.sectionSubtitleColor)
         completedSection.applyStyle(titleColor: style.sectionTitleColor, subtitleColor: style.sectionSubtitleColor)
 
@@ -339,6 +357,42 @@ final class SavingsViewController: BaseViewController {
         emptyImageView.tintColor = style.primaryAccentColor
         emptyMessageLabel.textColor = style.sectionSubtitleColor
         addGoalButton.backgroundColor = style.primaryButtonColor
+
+        switch style {
+        case .neoBankClean:
+            headerView.isHidden = false
+            quickStatsView.isHidden = false
+            bentoOverviewView.isHidden = true
+            warmHeroView.isHidden = true
+            inProgressStackView.spacing = Spacing.md
+            completedStackView.spacing = Spacing.md
+            inProgressSection.snp.remakeConstraints { make in
+                make.top.equalTo(quickStatsView.snp.bottom).offset(Spacing.lg)
+                make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            }
+        case .bentoDashboard:
+            headerView.isHidden = true
+            quickStatsView.isHidden = true
+            bentoOverviewView.isHidden = false
+            warmHeroView.isHidden = true
+            inProgressStackView.spacing = Spacing.sm
+            completedStackView.spacing = Spacing.sm
+            inProgressSection.snp.remakeConstraints { make in
+                make.top.equalTo(bentoOverviewView.snp.bottom).offset(Spacing.lg)
+                make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            }
+        case .warmKids:
+            headerView.isHidden = true
+            quickStatsView.isHidden = true
+            bentoOverviewView.isHidden = true
+            warmHeroView.isHidden = false
+            inProgressStackView.spacing = Spacing.lg
+            completedStackView.spacing = Spacing.md
+            inProgressSection.snp.remakeConstraints { make in
+                make.top.equalTo(warmHeroView.snp.bottom).offset(Spacing.lg)
+                make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            }
+        }
 
         inProgressStackView.arrangedSubviews.forEach {
             if let card = $0 as? SavingsGoalCardView {
@@ -360,7 +414,8 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func updateInProgressGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
-        inProgressSection.configure(title: "진행 중인 목표", subtitle: goals.isEmpty ? "현재 목표가 없어요" : "\(goals.count)개 진행 중")
+        let inProgressTitle = currentStyle == .warmKids ? "지금 모으는 목표" : "진행 중인 목표"
+        inProgressSection.configure(title: inProgressTitle, subtitle: goals.isEmpty ? "현재 목표가 없어요" : "\(goals.count)개 진행 중")
 
         inProgressStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
@@ -380,7 +435,8 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func updateCompletedGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
-        completedSection.configure(title: "달성한 목표", subtitle: goals.isEmpty ? "아직 달성된 목표가 없어요" : "\(goals.count)개 달성")
+        let completedTitle = currentStyle == .warmKids ? "달성한 목표 스티커" : "달성한 목표"
+        completedSection.configure(title: completedTitle, subtitle: goals.isEmpty ? "아직 달성된 목표가 없어요" : "\(goals.count)개 달성")
 
         completedStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
@@ -537,6 +593,169 @@ private final class SavingsQuickStatsView: UIView {
     }
 }
 
+private final class SavingsBentoOverviewView: UIView {
+
+    private let stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = Spacing.sm
+        return stack
+    }()
+
+    private let topRow: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.sm
+        stack.distribution = .fillEqually
+        return stack
+    }()
+
+    private let bottomRow: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.sm
+        stack.distribution = .fillEqually
+        return stack
+    }()
+
+    private let totalItem = SavingsQuickStatItemView()
+    private let monthItem = SavingsQuickStatItemView()
+    private let rateItem = SavingsQuickStatItemView()
+    private let completedItem = SavingsQuickStatItemView()
+
+    private var currentStyle: SavingsDisplayStyle = .bentoDashboard
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(stackView)
+        stackView.addArrangedSubview(topRow)
+        stackView.addArrangedSubview(bottomRow)
+
+        topRow.addArrangedSubview(totalItem)
+        topRow.addArrangedSubview(monthItem)
+        bottomRow.addArrangedSubview(rateItem)
+        bottomRow.addArrangedSubview(completedItem)
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        applyStyle(.bentoDashboard)
+    }
+
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        currentStyle = style
+        [totalItem, monthItem, rateItem, completedItem].forEach {
+            $0.applyStyle(
+                backgroundColor: style.statCardBackgroundColor,
+                borderColor: style.statCardBorderColor,
+                titleColor: style.statTitleColor
+            )
+        }
+    }
+
+    func configure(with stats: SavingsStats) {
+        totalItem.configure(title: "총 저축", value: stats.formattedTotalSavings, iconName: "banknote", tintColor: currentStyle.primaryAccentColor)
+        monthItem.configure(title: "이번 달", value: stats.formattedThisMonthSavings, iconName: "calendar", tintColor: currentStyle.secondaryAccentColor)
+        rateItem.configure(title: "저축률", value: stats.formattedSavingsRate, iconName: "chart.line.uptrend.xyaxis", tintColor: currentStyle.accentColor(for: .inProgress))
+        completedItem.configure(title: "달성", value: "\(stats.completedGoalsCount)개", iconName: "checkmark.seal.fill", tintColor: currentStyle.accentColor(for: .completed))
+    }
+}
+
+private final class SavingsWarmHeroView: UIView {
+
+    private let containerView = UIView()
+    private let mascotBubble = UIView()
+    private let mascotIcon = UIImageView(image: UIImage(systemName: "heart.fill"))
+    private let titleLabel = UILabel()
+    private let subtitleLabel = UILabel()
+    private let infoBadge = PaddingBadgeLabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(containerView)
+        containerView.addSubview(mascotBubble)
+        mascotBubble.addSubview(mascotIcon)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(subtitleLabel)
+        containerView.addSubview(infoBadge)
+
+        containerView.layer.cornerRadius = CornerRadius.large
+        containerView.layer.borderWidth = 1
+
+        mascotBubble.layer.cornerRadius = 22
+        mascotIcon.tintColor = .white
+        mascotIcon.contentMode = .scaleAspectFit
+
+        titleLabel.applyTextStyle(text: "저축 모험 진행 중!", size: .s18, weight: .bold, color: .kidkTextWhite, lineHeight: 130)
+        subtitleLabel.applyTextStyle(text: "오늘도 목표에 한 걸음 가까워졌어요", size: .s14, weight: .medium, color: .kidkTextWhite, lineHeight: 140)
+        infoBadge.applyTextStyle(text: "0일 연속", size: .s12, weight: .bold, color: .kidkTextWhite, lineHeight: 120)
+
+        containerView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        mascotBubble.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(Spacing.md)
+            make.width.height.equalTo(44)
+        }
+
+        mascotIcon.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(18)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(mascotBubble.snp.trailing).offset(Spacing.sm)
+            make.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        subtitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.equalTo(titleLabel)
+            make.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        infoBadge.snp.makeConstraints { make in
+            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.equalTo(titleLabel)
+            make.bottom.equalToSuperview().inset(Spacing.md)
+        }
+    }
+
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        containerView.backgroundColor = style.goalCardBackgroundColor
+        containerView.layer.borderColor = style.emptyCardBorderColor.cgColor
+        mascotBubble.backgroundColor = style.primaryAccentColor.withAlphaComponent(0.24)
+        infoBadge.backgroundColor = style.secondaryAccentColor.withAlphaComponent(0.24)
+        infoBadge.textColor = style.secondaryAccentColor
+        subtitleLabel.textColor = style.sectionSubtitleColor
+    }
+
+    func configure(with stats: SavingsStats) {
+        titleLabel.text = "저축 모험 진행 중!"
+        subtitleLabel.text = "이번 달에 \(stats.formattedThisMonthSavings) 모았어요"
+        infoBadge.text = "\(stats.currentStreak)일 연속"
+    }
+}
+
 private final class SavingsQuickStatItemView: UIView {
 
     private let iconView = UIImageView()
@@ -616,5 +835,24 @@ private final class SavingsQuickStatItemView: UIView {
         self.backgroundColor = backgroundColor
         layer.borderColor = borderColor.cgColor
         titleLabel.textColor = titleColor
+    }
+}
+
+private final class PaddingBadgeLabel: UILabel {
+
+    private let horizontalPadding: CGFloat = 10
+    private let verticalPadding: CGFloat = 5
+
+    override func drawText(in rect: CGRect) {
+        let insets = UIEdgeInsets(top: verticalPadding, left: horizontalPadding, bottom: verticalPadding, right: horizontalPadding)
+        super.drawText(in: rect.inset(by: insets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + horizontalPadding * 2,
+            height: size.height + verticalPadding * 2
+        )
     }
 }
