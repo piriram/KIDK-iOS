@@ -226,10 +226,16 @@ final class MissionCreationViewController: BaseViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        setupNavigationBar()
         setupUI()
         configureMissionContent()
         bindViewModel()
         bindUIActions()
+    }
+
+    private func setupNavigationBar() {
+        title = "미션 만들기"
+        navigationItem.largeTitleDisplayMode = .never
     }
     
     private func setupUI() {
@@ -269,7 +275,8 @@ final class MissionCreationViewController: BaseViewController {
         view.addSubview(nextButton)
         
         scrollView.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
             make.bottom.equalTo(previousButton.snp.top).offset(-Spacing.md)
         }
         

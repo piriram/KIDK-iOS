@@ -3,21 +3,12 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class SettingsViewController: BaseViewController {
+final class SettingsViewController: BaseViewController, NavigationChromeConfigurable {
     
     private let authRepository: AuthRepositoryProtocol
     weak var coordinator: SettingsCoordinator?
     
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "설정",
-            size: .s24,
-            weight: .bold,
-            color: .kidkTextWhite
-        )
-        return label
-    }()
+    private let navigationHeaderView = KIDKNavigationHeaderView(title: "설정")
     
     // 🔧 개발용 - 가족 생성 버튼
     private lazy var createFamilyButton = KIDKButton(
@@ -50,6 +41,8 @@ final class SettingsViewController: BaseViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    var prefersNavigationBarHidden: Bool { true }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -58,12 +51,13 @@ final class SettingsViewController: BaseViewController {
     }
     
     private func setupUI() {
-        view.addSubview(titleLabel)
+        view.addSubview(navigationHeaderView)
         view.addSubview(logoutButton)
 
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.lg)
-            make.leading.trailing.equalToSuperview().inset(Spacing.lg)
+        navigationHeaderView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(KIDKNavigationHeaderView.height)
         }
 
         // 🔧 개발용 버튼은 DEV 빌드에서만 표시
@@ -72,7 +66,7 @@ final class SettingsViewController: BaseViewController {
             view.addSubview(joinFamilyButton)
 
             createFamilyButton.snp.makeConstraints { make in
-                make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xl)
+                make.top.equalTo(navigationHeaderView.snp.bottom).offset(Spacing.lg)
                 make.leading.trailing.equalToSuperview().inset(Spacing.lg)
                 make.height.equalTo(48)
             }

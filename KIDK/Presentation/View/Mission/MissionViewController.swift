@@ -3,7 +3,7 @@ import RxSwift
 import RxCocoa
 import SnapKit
 
-final class MissionViewController: BaseViewController {
+final class MissionViewController: BaseViewController, NavigationChromeConfigurable {
 
     private let viewModel: MissionViewModel
 
@@ -23,26 +23,10 @@ final class MissionViewController: BaseViewController {
         return tableView
     }()
     
-    private let navigationBar: UIView = {
-        let view = UIView()
-        view.backgroundColor = .kidkDarkBackground
-        return view
-    }()
-    
-    private let titleLabel: UILabel = {
-        let label = UILabel()
-        label.font = .kidkTitle
-        label.textColor = .kidkTextWhite
-        label.text = Strings.Mission.title
-        return label
-    }()
-    
-    private let menuButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "line.3.horizontal"), for: .normal)
-        button.tintColor = .kidkTextWhite
-        return button
-    }()
+    private lazy var navigationHeaderView = KIDKNavigationHeaderView(
+        title: Strings.Mission.title,
+        rightButton: .init(systemImageName: "line.3.horizontal", accessibilityLabel: "메뉴", action: {})
+    )
     
     private let goToKIDKCityButton: UIButton = {
         let button = UIButton(type: .system)
@@ -93,6 +77,8 @@ final class MissionViewController: BaseViewController {
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
+
+    var prefersNavigationBarHidden: Bool { true }
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -103,10 +89,7 @@ final class MissionViewController: BaseViewController {
     private func setupUI() {
         view.backgroundColor = .kidkDarkBackground
 
-        view.addSubview(navigationBar)
-        navigationBar.addSubview(titleLabel)
-        navigationBar.addSubview(menuButton)
-
+        view.addSubview(navigationHeaderView)
         view.addSubview(goToKIDKCityButton)
         goToKIDKCityButton.addSubview(arrowImageView)
 
@@ -116,25 +99,14 @@ final class MissionViewController: BaseViewController {
 
         view.addSubview(tableView)
 
-        navigationBar.snp.makeConstraints { make in
-            make.top.equalToSuperview()
+        navigationHeaderView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
-            make.height.equalTo(88)
-        }
-
-        titleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.lg)
-            make.centerY.equalToSuperview()
-        }
-
-        menuButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.md)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(44)
+            make.height.equalTo(KIDKNavigationHeaderView.height)
         }
 
         goToKIDKCityButton.snp.makeConstraints { make in
-            make.top.equalTo(navigationBar.snp.bottom).offset(Spacing.xxl)
+            make.top.equalTo(navigationHeaderView.snp.bottom).offset(Spacing.lg)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(64)
         }
