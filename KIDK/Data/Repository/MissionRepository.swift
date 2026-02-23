@@ -920,8 +920,22 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/progress") else {
+            guard var components = URLComponents(string: "\(baseURL)/missions/\(missionId)/progress") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var queryItems: [URLQueryItem] = []
+            if let amount = progressAmount {
+                queryItems.append(URLQueryItem(name: "progressAmount", value: "\(amount)"))
+            }
+            if let percentage = progressPercentage {
+                queryItems.append(URLQueryItem(name: "progressPercentage", value: "\(percentage)"))
+            }
+            components.queryItems = queryItems.isEmpty ? nil : queryItems
+
+            guard let url = components.url else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -5))))
                 return Disposables.create()
             }
 
@@ -931,21 +945,6 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
             if let accessToken = self.tokenManager.accessToken {
                 request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
-
-            var params: [String: Any] = [:]
-            if let amount = progressAmount {
-                params["progressAmount"] = amount
-            }
-            if let percentage = progressPercentage {
-                params["progressPercentage"] = percentage
-            }
-
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: params)
-            } catch {
-                single(.failure(RepositoryError.unknown(error)))
-                return Disposables.create()
             }
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in

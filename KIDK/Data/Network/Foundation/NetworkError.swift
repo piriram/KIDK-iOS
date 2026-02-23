@@ -1,6 +1,6 @@
 import Foundation
 
-enum NetworkError: Error {
+enum NetworkError: Error, LocalizedError {
     case invalidURL
     case noInternetConnection
     case timeout
@@ -13,7 +13,7 @@ enum NetworkError: Error {
     case encodingFailed(Error)
     case unknown(Error?)
 
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
         case .invalidURL:
             return "잘못된 URL입니다."
