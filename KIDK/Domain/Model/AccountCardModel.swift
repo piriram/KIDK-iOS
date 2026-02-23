@@ -7,12 +7,32 @@ struct MissionCardData {
     let buttonTitle: String
 }
 
+struct SavingsGoalSummary {
+    let dDayText: String
+    let title: String
+}
+
 struct AccountCardData {
     let iconName: String
     let title: String
     let amount: Int
     let message: String?
-    
+    let goalSummary: SavingsGoalSummary?
+
+    init(
+        iconName: String,
+        title: String,
+        amount: Int,
+        message: String?,
+        goalSummary: SavingsGoalSummary? = nil
+    ) {
+        self.iconName = iconName
+        self.title = title
+        self.amount = amount
+        self.message = message
+        self.goalSummary = goalSummary
+    }
+
     var formattedAmount: String {
         let formatter = NumberFormatter()
         formatter.numberStyle = .decimal

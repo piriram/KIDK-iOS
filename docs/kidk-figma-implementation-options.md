@@ -138,16 +138,19 @@
 
 ## 5) 사용자 요청용 에셋 체크리스트 (바로 전달용)
 
+> 2026-03-01 하이브리드 구현 기준: 아래 누락 항목은 코드에서 **placeholder(Fallback)** 처리되어 화면 깨짐은 없고,
+> 실제 시안 품질 맞춤을 위해 원본 에셋 전달이 필요합니다.
+
 아래 에셋들을 보내주세요 (가능하면 **1x/2x/3x PNG 세트** 또는 벡터 PDF/SVG + 가이드 포함):
 
 - [ ] 미션 아이콘 4종
-  - `kidk_mission_video`
-  - `kidk_mission_study`
-  - `kidk_mission_quiz`
-  - `kidk_mission_savings` (현재 원본 미확인)
+  - `kidk_mission_video` *(fallback: SF Symbol `play.rectangle.fill`)*
+  - `kidk_mission_study` *(fallback: SF Symbol `pencil`)*
+  - `kidk_mission_quiz` *(fallback: SF Symbol `character.book.closed`)*
+  - `kidk_mission_savings` *(fallback: SF Symbol `wallet.pass.fill`)*
 - [ ] 친구 아바타 3종 + 추가 아이콘
-  - `kidk_friend_avatar_1`, `kidk_friend_avatar_2`, `kidk_friend_avatar_3`
-  - `kidk_friend_add_icon`
+  - `kidk_friend_avatar_1`, `kidk_friend_avatar_2`, `kidk_friend_avatar_3` *(fallback: SF Symbol `person.fill`)*
+  - `kidk_friend_add_icon` *(fallback: SF Symbol `person.badge.plus`)*
 - [ ] 하단 탭 아이콘 선택/비선택 세트
   - account: selected/unselected
   - mission: selected/unselected
@@ -167,12 +170,69 @@
 
 ---
 
-## 6) 결론 요약
-- 현재 KIDK-iOS는 **기본 흐름(내계좌/미션탭/키득시티/미션생성)**은 이미 갖춰져 있어, 완전 신규 구축은 불필요.
-- 다만 “시안과 거의 동일” 목표 관점에서는
-  1) 미션 상태별 디테일 UI(특히 완료 상태),
-  2) 건물1 미션 상세 화면,
-  3) 에셋 키 누락/불일치 정리
-  가 핵심 갭.
-- 일정/리스크 균형상 **옵션 B(하이브리드)**를 권장.
+## 6) Phase 3~4 반영 메모 (2026-03-01)
+- ✅ 키득시티 맵 오버레이 UI 가이드 요소를 추가함
+  - 가이드 버블 + 화살표
+  - 오늘 추천 미션 배지(시계)
+  - 마트 레벨 오픈 배지(잠금/오픈 상태 텍스트)
+- ✅ 건물1(학교) 탭 시 **경량 모달/오버레이** 형태의 미션 상세 UI를 추가함
+  - 보상 배지, 미션 설명, 참여자 영역, `미션 선택하기` CTA
+  - 기존 미션 선택/생성 시트 흐름은 유지 (CTA 통해 기존 시트 진입)
+- ✅ 하단 탭 아이콘 정합 보정
+  - `tab_*_selected22` / `tab_*_unselected22` 레거시 키를 alias로 허용
+  - 누락 시 SF Symbol fallback 적용으로 기능/시인성 유지
+- ✅ 누락 에셋은 placeholder 유지
+  - 미션/친구/맵 오버레이/탭 아이콘 모두 fallback 경로 유지
+
+## 7) 현재 남은 에셋 요청 핵심
+- `kidk_mission_video`, `kidk_mission_study`, `kidk_mission_quiz`, `kidk_mission_savings`
+- `kidk_friend_avatar_1`, `kidk_friend_avatar_2`, `kidk_friend_avatar_3`, `kidk_friend_add_icon`
+- `tab_account_selected`, `tab_mission_selected`, `tab_settings_unselected`, `tab_settings_selected`
+- `kidk_game_clock`, `kidk_game_mart_icon`, `kidk_game_bubble_arrow`
+- 건물1 미션 상세 전용(배경/배지/참여자 일러스트)
+
+## 8) Cycle 2 정규화 비교 후 업데이트 (2026-03-01)
+
+### 8-1. 반영 상태
+- `contains + padding` 정규화 기준으로 iPhone 16 Pro(1206x2622) 비교 파이프라인 확정
+- 누락 친구 아바타는 `kidk_profile_one` fallback을 우선 적용해 SF Symbol 대비 시안 톤을 보정
+- 건물1 상세 오버레이 보상 텍스트를 `보상 2000원`으로 Figma 문구와 정합
+
+### 8-2. 요청 우선순위 재정렬 (P0/P1)
+- **P0 (시안 유사도에 즉시 영향)**
+  - `kidk_mission_video`, `kidk_mission_study`, `kidk_mission_quiz`
+  - `kidk_friend_avatar_1`, `kidk_friend_avatar_2`, `kidk_friend_avatar_3`
+  - `kidk_game_bubble_arrow`
+  - 건물1 미션 상세 전용 일러스트(완료 팝업 선물박스 포함)
+- **P1 (품질 고도화)**
+  - `kidk_mission_savings`
+  - `kidk_friend_add_icon`
+  - `kidk_game_clock`, `kidk_game_mart_icon`
+  - 하단 탭 아이콘 selected/unselected 정식 세트
+
+## 9) Cycle 3 에셋 요청 최신화 (2026-03-01)
+
+### 9-1. Cycle3에서 반영 완료
+- ✅ 실에셋 적용 완료
+  - `kidk_mission_video`, `kidk_mission_study`, `kidk_mission_quiz`
+  - `kidk_friend_avatar_1`, `kidk_friend_avatar_2`, `kidk_friend_avatar_3`
+  - `kidk_friend_add_icon`
+  - `kidk_game_clock`, `kidk_game_mart_icon`, `kidk_game_bubble_arrow`
+- ✅ 완료 팝업용 임시 에셋 추가
+  - `kidk_mission_completed_gift` (Figma 완료 화면 crop 기반 임시)
+- ✅ 캐릭터 에셋 매핑 오류 보정
+  - `kidk_character_side_walk_1`가 마트 이미지를 참조하던 상태 수정
+
+### 9-2. 아직 요청 필요한 항목 (Cycle3 기준)
+- ⚠️ 탭 아이콘 정식 세트
+  - `tab_account_selected`, `tab_mission_selected`, `tab_settings_unselected`, `tab_settings_selected`
+- ⚠️ `kidk_mission_savings` 정식 원본
+  - 현재는 `kidk_icon_wallet` 기반 임시 매핑
+- ⚠️ 완료 팝업 선물박스 정식 원본
+  - 현재 crop 이미지라 비율/코인 배치가 Figma와 완전 일치하지 않음
+- ⚠️ 건물1 상세 전용 배경/배지 일러스트(고해상도 원본)
+
+### 9-3. 우선순위
+- **P0**: 탭 아이콘 정식 세트, 완료 팝업 선물박스 원본
+- **P1**: `kidk_mission_savings` 원본, 건물1 상세 전용 고해상도 리소스
 
