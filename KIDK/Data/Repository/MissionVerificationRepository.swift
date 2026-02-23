@@ -131,7 +131,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
 
                 // Convert IDs
                 guard let missionIdInt = Int(request.missionId),
-                      let childIdInt = Int(user.id) else {
+                      Int(user.id) != nil else {
                     self.debugWarning("Invalid ID format, using mock submission")
                     self.submitMockVerification(request: request, single: single)
                     return
@@ -151,7 +151,6 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 // Mission Verification API는 객체를 직접 반환 (ApiResponse 래퍼 없음)
                 self.submitVerificationRaw(
                     missionId: missionIdInt,
-                    childId: childIdInt,
                     verificationType: verificationTypeString,
                     content: request.content.isEmpty ? nil : request.content
                 )
@@ -261,7 +260,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 // API 호출 시도
                 guard let verificationIdInt = Int(id),
                       let missionIdInt = Int(oldVerification.missionId),
-                      let parentIdInt = Int(user.id) else {
+                      Int(user.id) != nil else {
                     self.debugWarning("Invalid ID format, using mock approval")
                     self.approveMockVerification(index: index, oldVerification: oldVerification, single: single)
                     return
@@ -271,8 +270,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 self.networkService.request(
                     MissionVerificationAPI.approveVerification(
                         missionId: missionIdInt,
-                        verificationId: verificationIdInt,
-                        parentId: parentIdInt
+                        verificationId: verificationIdInt
                     )
                 )
                 .subscribe(onNext: { (result: Result<MissionVerificationResponse, NetworkError>) in
@@ -374,7 +372,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                 // API 호출 시도
                 guard let verificationIdInt = Int(id),
                       let missionIdInt = Int(oldVerification.missionId),
-                      let parentIdInt = Int(user.id) else {
+                      Int(user.id) != nil else {
                     self.debugWarning("Invalid ID format, using mock rejection")
                     self.rejectMockVerification(index: index, oldVerification: oldVerification, reason: reason, single: single)
                     return
@@ -385,7 +383,6 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
                     MissionVerificationAPI.rejectVerification(
                         missionId: missionIdInt,
                         verificationId: verificationIdInt,
-                        parentId: parentIdInt,
                         reason: reason
                     )
                 )
@@ -537,7 +534,6 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
 
     private func submitVerificationRaw(
         missionId: Int,
-        childId: Int,
         verificationType: String,
         content: String?
     ) -> Single<MissionVerificationResponse> {
@@ -548,8 +544,21 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/verifications") else {
+            guard var components = URLComponents(string: "\(baseURL)/missions/\(missionId)/verifications") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -2))))
+                return Disposables.create()
+            }
+
+            var queryItems: [URLQueryItem] = [
+                URLQueryItem(name: "verificationType", value: verificationType)
+            ]
+            if let text = content, !text.isEmpty {
+                queryItems.append(URLQueryItem(name: "content", value: text))
+            }
+            components.queryItems = queryItems
+
+            guard let url = components.url else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionVerificationRepository", code: -4))))
                 return Disposables.create()
             }
 
@@ -559,21 +568,6 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
 
             if let accessToken = self.tokenManager.accessToken {
                 request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
-
-            var params: [String: Any] = [
-                "childId": childId,
-                "verificationType": verificationType
-            ]
-            if let text = content {
-                params["content"] = text
-            }
-
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: params)
-            } catch {
-                single(.failure(RepositoryError.unknown(error)))
-                return Disposables.create()
             }
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in

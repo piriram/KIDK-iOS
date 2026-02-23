@@ -3,64 +3,68 @@ import SnapKit
 
 final class VerificationCardView: UIView {
 
-    private let containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.large
-        return view
-    }()
-
-    private let headerStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.spacing = Spacing.xs
-        stackView.alignment = .center
-        return stackView
-    }()
-
-    private let typeIconLabel: UILabel = {
+    private let dateLabel: UILabel = {
         let label = UILabel()
-        label.font = .systemFont(ofSize: 24)
+        label.font = UIFont.kidkFont(.s12, .bold)
+        label.textColor = .kidkGray
+        label.textAlignment = .center
         return label
     }()
 
-    private let infoStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.spacing = Spacing.xxs
-        return stackView
+    private let timeLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s10, .regular)
+        label.textColor = .kidkGray
+        label.textAlignment = .center
+        return label
     }()
+
+    private let timelineDotView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkPink
+        view.layer.cornerRadius = 5
+        return view
+    }()
+
+    private let timelineLineView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkDarkBackground
+        return view
+    }()
+
+    private let containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .cardBackground
+        view.layer.cornerRadius = CornerRadius.large
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.kidkTextWhite.withAlphaComponent(0.06).cgColor
+        return view
+    }()
+
+    private let typeBadgeView = ParentTimelineStatusBadgeView()
+    private let statusBadgeView = ParentTimelineStatusBadgeView()
 
     private let missionTitleLabel: UILabel = {
         let label = UILabel()
-        label.font = .kidkFont(.s16, .bold)
+        label.font = UIFont.kidkFont(.s18, .bold)
         label.textColor = .kidkTextWhite
-        label.numberOfLines = 1
+        label.numberOfLines = 2
         return label
     }()
 
     private let childNameLabel: UILabel = {
         let label = UILabel()
-        label.font = .kidkFont(.s14, .regular)
+        label.font = UIFont.kidkFont(.s14, .medium)
         label.textColor = .kidkGray
-        return label
-    }()
-
-    private let statusBadge: UILabel = {
-        let label = UILabel()
-        label.font = .kidkFont(.s12, .bold)
-        label.textAlignment = .center
-        label.layer.cornerRadius = 8
-        label.clipsToBounds = true
-        label.textColor = .white
+        label.numberOfLines = 1
         return label
     }()
 
     private let submittedDateLabel: UILabel = {
         let label = UILabel()
-        label.font = .kidkFont(.s12, .regular)
+        label.font = UIFont.kidkFont(.s12, .regular)
         label.textColor = .kidkGray
-        label.textAlignment = .right
+        label.numberOfLines = 1
         return label
     }()
 
@@ -74,6 +78,9 @@ final class VerificationCardView: UIView {
         return imageView
     }()
 
+    private var thumbnailBottomConstraint: Constraint?
+    private var submittedBottomConstraint: Constraint?
+
     override init(frame: CGRect) {
         super.init(frame: frame)
         setupUI()
@@ -86,97 +93,119 @@ final class VerificationCardView: UIView {
     private func setupUI() {
         backgroundColor = .clear
 
+        addSubview(dateLabel)
+        addSubview(timeLabel)
+        addSubview(timelineDotView)
+        addSubview(timelineLineView)
         addSubview(containerView)
-        containerView.addSubview(headerStackView)
+
+        containerView.addSubview(typeBadgeView)
+        containerView.addSubview(statusBadgeView)
+        containerView.addSubview(missionTitleLabel)
+        containerView.addSubview(childNameLabel)
         containerView.addSubview(submittedDateLabel)
         containerView.addSubview(thumbnailImageView)
 
-        headerStackView.addArrangedSubview(typeIconLabel)
-        headerStackView.addArrangedSubview(infoStackView)
-        headerStackView.addArrangedSubview(statusBadge)
+        dateLabel.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Spacing.sm)
+            make.leading.equalToSuperview().offset(Spacing.sm)
+            make.width.equalTo(58)
+        }
 
-        infoStackView.addArrangedSubview(missionTitleLabel)
-        infoStackView.addArrangedSubview(childNameLabel)
+        timeLabel.snp.makeConstraints { make in
+            make.top.equalTo(dateLabel.snp.bottom).offset(2)
+            make.leading.trailing.equalTo(dateLabel)
+        }
+
+        timelineDotView.snp.makeConstraints { make in
+            make.top.equalTo(timeLabel.snp.bottom).offset(Spacing.xxs)
+            make.centerX.equalTo(dateLabel)
+            make.size.equalTo(10)
+        }
+
+        timelineLineView.snp.makeConstraints { make in
+            make.top.equalTo(timelineDotView.snp.bottom).offset(2)
+            make.centerX.equalTo(timelineDotView)
+            make.width.equalTo(2)
+            make.bottom.equalToSuperview()
+        }
 
         containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
+            make.top.equalToSuperview().offset(Spacing.xs)
+            make.leading.equalTo(dateLabel.snp.trailing).offset(Spacing.xs)
+            make.trailing.bottom.equalToSuperview()
         }
 
-        headerStackView.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().offset(Spacing.md)
-            make.trailing.equalToSuperview().offset(-Spacing.md)
+        typeBadgeView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Spacing.sm)
+            make.leading.equalToSuperview().offset(Spacing.sm)
         }
 
-        typeIconLabel.snp.makeConstraints { make in
-            make.width.equalTo(32)
+        statusBadgeView.snp.makeConstraints { make in
+            make.top.equalTo(typeBadgeView)
+            make.trailing.equalToSuperview().offset(-Spacing.sm)
+            make.leading.greaterThanOrEqualTo(typeBadgeView.snp.trailing).offset(Spacing.xs)
         }
 
-        statusBadge.snp.makeConstraints { make in
-            make.width.equalTo(60)
-            make.height.equalTo(24)
+        missionTitleLabel.snp.makeConstraints { make in
+            make.top.equalTo(typeBadgeView.snp.bottom).offset(Spacing.xs)
+            make.leading.equalToSuperview().offset(Spacing.sm)
+            make.trailing.equalToSuperview().offset(-Spacing.sm)
+        }
+
+        childNameLabel.snp.makeConstraints { make in
+            make.top.equalTo(missionTitleLabel.snp.bottom).offset(4)
+            make.leading.equalTo(missionTitleLabel)
+            make.trailing.equalToSuperview().offset(-Spacing.sm)
         }
 
         submittedDateLabel.snp.makeConstraints { make in
-            make.top.equalTo(headerStackView.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.top.equalTo(childNameLabel.snp.bottom).offset(Spacing.xxs)
+            make.leading.trailing.equalTo(missionTitleLabel)
+            submittedBottomConstraint = make.bottom.equalToSuperview().offset(-Spacing.sm).constraint
         }
 
         thumbnailImageView.snp.makeConstraints { make in
-            make.top.equalTo(submittedDateLabel.snp.bottom).offset(Spacing.sm)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.top.equalTo(submittedDateLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalTo(missionTitleLabel)
             make.height.equalTo(120)
-            make.bottom.equalToSuperview().offset(-Spacing.md)
+            thumbnailBottomConstraint = make.bottom.equalToSuperview().offset(-Spacing.sm).constraint
         }
 
-        // Default constraint when thumbnail is hidden
-        headerStackView.snp.makeConstraints { make in
-            make.bottom.lessThanOrEqualToSuperview().offset(-Spacing.md).priority(.high)
-        }
+        thumbnailBottomConstraint?.deactivate()
     }
 
-    func configure(with verification: MissionVerification, missionTitle: String) {
-        // Type icon
-        typeIconLabel.text = verification.type.icon
-
-        // Mission title
+    func configure(with verification: MissionVerification, missionTitle: String, showsConnector: Bool = true) {
         missionTitleLabel.text = missionTitle
-
-        // Child name (hardcoded for Phase 1)
         childNameLabel.text = "김시아"
 
-        // Status badge
-        statusBadge.text = verification.status.displayName
-        statusBadge.backgroundColor = verification.status.color
+        dateLabel.text = verification.submittedDate.formattedMonthDay
+        timeLabel.text = verification.submittedDate.formattedTime
+        submittedDateLabel.text = "제출: \(verification.formattedSubmittedDate)"
 
-        // Submitted date
-        submittedDateLabel.text = verification.formattedSubmittedDate
+        typeBadgeView.configure(text: verification.type.displayName, tone: .blue)
 
-        // Thumbnail for photo verifications
+        switch verification.status {
+        case .pending:
+            statusBadgeView.configure(text: "대기", tone: .pink)
+        case .approved:
+            statusBadgeView.configure(text: "승인", tone: .green)
+        case .rejected:
+            statusBadgeView.configure(text: "거절", tone: .red)
+        }
+
+        timelineDotView.backgroundColor = verification.status.color
+        timelineLineView.isHidden = !showsConnector
+
         if verification.type == .photo, let photoPath = verification.content {
             thumbnailImageView.isHidden = false
             loadPhoto(from: photoPath)
-
-            // Adjust constraints when thumbnail is visible
-            submittedDateLabel.snp.remakeConstraints { make in
-                make.top.equalTo(headerStackView.snp.bottom).offset(Spacing.xs)
-                make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            }
-
-            thumbnailImageView.snp.remakeConstraints { make in
-                make.top.equalTo(submittedDateLabel.snp.bottom).offset(Spacing.sm)
-                make.leading.trailing.equalToSuperview().inset(Spacing.md)
-                make.height.equalTo(120)
-                make.bottom.equalToSuperview().offset(-Spacing.md)
-            }
+            submittedBottomConstraint?.deactivate()
+            thumbnailBottomConstraint?.activate()
         } else {
             thumbnailImageView.isHidden = true
-
-            // Adjust constraints when thumbnail is hidden
-            submittedDateLabel.snp.remakeConstraints { make in
-                make.top.equalTo(headerStackView.snp.bottom).offset(Spacing.xs)
-                make.leading.trailing.equalToSuperview().inset(Spacing.md)
-                make.bottom.equalToSuperview().offset(-Spacing.md)
-            }
+            submittedBottomConstraint?.activate()
+            thumbnailBottomConstraint?.deactivate()
         }
     }
 
@@ -186,7 +215,6 @@ final class VerificationCardView: UIView {
            let image = UIImage(data: imageData) {
             thumbnailImageView.image = image
         } else {
-            // Fallback placeholder
             thumbnailImageView.image = UIImage(systemName: "photo")
             thumbnailImageView.tintColor = .kidkGray
         }

@@ -26,10 +26,7 @@ final class FriendRepository: BaseRepository, FriendRepositoryProtocol {
 
             // 실제 API 호출
             self.networkService.request(
-                FriendAPI.sendFriendRequest(
-                    requesterId: dto.requesterId,
-                    addresseeId: dto.addresseeId
-                )
+                FriendAPI.sendFriendRequest(addresseeId: dto.addresseeId)
             )
             .subscribe(onNext: { (result: Result<FriendResponse, NetworkError>) in
                 switch result {
@@ -56,14 +53,10 @@ final class FriendRepository: BaseRepository, FriendRepositoryProtocol {
                 return Disposables.create()
             }
 
-            guard let userIdInt = Int(userId) else {
-                self.debugWarning("Invalid userId, returning empty friends")
-                single(.success([]))
-                return Disposables.create()
-            }
+            _ = userId // /friends/me 사용으로 userId 파라미터는 호환성 유지용
 
             // 실제 API 호출
-            self.networkService.request(FriendAPI.getFriends(userId: userIdInt))
+            self.networkService.request(FriendAPI.getFriends)
                 .subscribe(onNext: { (result: Result<[FriendResponse], NetworkError>) in
                     switch result {
                     case .success(let friendResponses):
