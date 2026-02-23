@@ -72,13 +72,21 @@ final class MissionViewModel: BaseViewModel {
                     self.debugLog("No missions found, creating sample missions")
                     self.createSampleMissionsOnce()
                 } else {
-                let ongoingSavings = missions.filter { mission in
-                    mission.missionType == .savings && mission.status == .inProgress
+                let savingsMissions = missions.filter { mission in
+                    mission.missionType == .savings && (mission.status == .inProgress || mission.status == .completed)
                 }
-                self.missionsRelay.accept(ongoingSavings)
+
+                let sortedMissions = savingsMissions.sorted { lhs, rhs in
+                    if lhs.status != rhs.status {
+                        return lhs.status == .inProgress
+                    }
+                    return lhs.createdAt > rhs.createdAt
+                }
+
+                self.missionsRelay.accept(sortedMissions)
 
                 // Initialize collapse states (all expanded by default)
-                let initialStates = Array(repeating: false, count: ongoingSavings.count)
+                let initialStates = Array(repeating: false, count: sortedMissions.count)
                 self.collapseStatesRelay.accept(initialStates)
 
                     self.isLoading.accept(false)
