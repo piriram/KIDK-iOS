@@ -37,14 +37,25 @@ final class SavingsViewController: BaseViewController {
 
     private let emptyStateView: UIView = {
         let view = UIView()
+        view.backgroundColor = .cardBackground
+        view.layer.cornerRadius = CornerRadius.extraLarge
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         view.isHidden = true
+        return view
+    }()
+
+    private let emptyImageBackgroundView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkPink.withAlphaComponent(0.18)
+        view.layer.cornerRadius = 44
         return view
     }()
 
     private let emptyImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(systemName: "banknote")
-        imageView.tintColor = .kidkGray
+        imageView.image = UIImage(systemName: "banknote.fill")
+        imageView.tintColor = .kidkPink
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -65,12 +76,13 @@ final class SavingsViewController: BaseViewController {
     private let emptyMessageLabel: UILabel = {
         let label = UILabel()
         label.applyTextStyle(
-            text: "첫 저축 목표를 만들어보세요!",
+            text: "첫 저축 목표를 만들고 차곡차곡 모아봐요",
             size: .s16,
             weight: .regular,
             color: .kidkGray,
             lineHeight: 140
         )
+        label.numberOfLines = 2
         label.textAlignment = .center
         return label
     }()
@@ -78,10 +90,10 @@ final class SavingsViewController: BaseViewController {
     private let addGoalButton: UIButton = {
         let button = UIButton(type: .system)
         button.setTitle("저축 목표 만들기", for: .normal)
-        button.titleLabel?.font = UIFont.systemFont(ofSize: 16, weight: .bold)
+        button.titleLabel?.font = UIFont.kidkFont(.s16, .bold)
         button.setTitleColor(.white, for: .normal)
         button.backgroundColor = .kidkPink
-        button.layer.cornerRadius = 12
+        button.layer.cornerRadius = CornerRadius.medium
         return button
     }()
 
@@ -104,7 +116,8 @@ final class SavingsViewController: BaseViewController {
 
     private func setupUI() {
         title = "내 저금통"
-        view.backgroundColor = UIColor(hex: "#1C1C1E")
+        view.backgroundColor = .kidkDarkBackground
+        refreshControl.tintColor = .kidkPink
 
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
@@ -116,7 +129,8 @@ final class SavingsViewController: BaseViewController {
         contentView.addSubview(completedStackView)
         contentView.addSubview(emptyStateView)
 
-        emptyStateView.addSubview(emptyImageView)
+        emptyStateView.addSubview(emptyImageBackgroundView)
+        emptyImageBackgroundView.addSubview(emptyImageView)
         emptyStateView.addSubview(emptyTitleLabel)
         emptyStateView.addSubview(emptyMessageLabel)
         emptyStateView.addSubview(addGoalButton)
@@ -155,7 +169,7 @@ final class SavingsViewController: BaseViewController {
         completedStackView.snp.makeConstraints { make in
             make.top.equalTo(completedSection.snp.bottom).offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.bottom.equalToSuperview().offset(-Spacing.md)
+            make.bottom.equalToSuperview().offset(-Spacing.xl)
         }
 
         emptyStateView.snp.makeConstraints { make in
@@ -164,28 +178,33 @@ final class SavingsViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(Spacing.lg)
         }
 
-        emptyImageView.snp.makeConstraints { make in
-            make.top.equalToSuperview()
+        emptyImageBackgroundView.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(Spacing.xl)
             make.centerX.equalToSuperview()
-            make.width.height.equalTo(100)
+            make.width.height.equalTo(88)
+        }
+
+        emptyImageView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.height.equalTo(48)
         }
 
         emptyTitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(emptyImageView.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview()
+            make.top.equalTo(emptyImageBackgroundView.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
         emptyMessageLabel.snp.makeConstraints { make in
-            make.top.equalTo(emptyTitleLabel.snp.bottom).offset(Spacing.sm)
-            make.leading.trailing.equalToSuperview()
+            make.top.equalTo(emptyTitleLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
         addGoalButton.snp.makeConstraints { make in
             make.top.equalTo(emptyMessageLabel.snp.bottom).offset(Spacing.lg)
             make.centerX.equalToSuperview()
-            make.width.equalTo(200)
-            make.height.equalTo(48)
-            make.bottom.equalToSuperview()
+            make.width.equalTo(220)
+            make.height.equalTo(52)
+            make.bottom.equalToSuperview().inset(Spacing.xl)
         }
 
         inProgressSection.configure(title: "진행 중인 목표", subtitle: nil)
@@ -245,6 +264,8 @@ final class SavingsViewController: BaseViewController {
             self?.emptyStateView.isHidden = !isEmpty
             self?.inProgressSection.isHidden = isEmpty
             self?.completedSection.isHidden = isEmpty
+            self?.inProgressStackView.isHidden = isEmpty
+            self?.completedStackView.isHidden = isEmpty
         })
         .disposed(by: disposeBag)
 
@@ -262,13 +283,15 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func updateInProgressGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
+        inProgressSection.configure(title: "진행 중인 목표", subtitle: goals.isEmpty ? "현재 목표가 없어요" : "\(goals.count)개 진행 중")
+
         inProgressStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         if goals.isEmpty {
             let emptyLabel = UILabel()
             emptyLabel.applyTextStyle(
                 text: "진행 중인 저축 목표가 없습니다",
-                size: .s16,
+                size: .s14,
                 weight: .regular,
                 color: .kidkGray,
                 lineHeight: 140
@@ -276,7 +299,7 @@ final class SavingsViewController: BaseViewController {
             emptyLabel.textAlignment = .center
             inProgressStackView.addArrangedSubview(emptyLabel)
             emptyLabel.snp.makeConstraints { make in
-                make.height.equalTo(60)
+                make.height.equalTo(48)
             }
         } else {
             goals.forEach { goal in
@@ -291,13 +314,15 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func updateCompletedGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
+        completedSection.configure(title: "달성한 목표", subtitle: goals.isEmpty ? "아직 달성된 목표가 없어요" : "\(goals.count)개 달성")
+
         completedStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         if goals.isEmpty {
             let emptyLabel = UILabel()
             emptyLabel.applyTextStyle(
                 text: "달성한 저축 목표가 없습니다",
-                size: .s16,
+                size: .s14,
                 weight: .regular,
                 color: .kidkGray,
                 lineHeight: 140
@@ -305,7 +330,7 @@ final class SavingsViewController: BaseViewController {
             emptyLabel.textAlignment = .center
             completedStackView.addArrangedSubview(emptyLabel)
             emptyLabel.snp.makeConstraints { make in
-                make.height.equalTo(60)
+                make.height.equalTo(48)
             }
         } else {
             goals.forEach { goal in
