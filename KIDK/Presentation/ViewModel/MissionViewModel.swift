@@ -12,7 +12,7 @@ final class MissionViewModel: BaseViewModel {
 
     struct Output {
         let missions: Driver<[Mission]>
-        let collapseStates: Driver<[Bool]>
+        let expandedIndex: Driver<Int?>
         let isLoading: Driver<Bool>
     }
 
@@ -22,7 +22,7 @@ final class MissionViewModel: BaseViewModel {
     private let missionRepository: MissionRepositoryProtocol
 
     private let missionsRelay = BehaviorRelay<[Mission]>(value: [])
-    private let collapseStatesRelay = BehaviorRelay<[Bool]>(value: [])
+    private let expandedIndexRelay = BehaviorRelay<Int?>(value: nil)
     private var hasSampleMissionsCreated = false
 
     init(user: User, missionRepository: MissionRepositoryProtocol) {
@@ -43,13 +43,13 @@ final class MissionViewModel: BaseViewModel {
 
         input.collapseButtonTapped
             .subscribe(onNext: { [weak self] index in
-                self?.toggleCollapseState(at: index)
+                self?.setExpandedIndex(at: index)
             })
             .disposed(by: disposeBag)
 
         return Output(
             missions: missionsRelay.asDriver(),
-            collapseStates: collapseStatesRelay.asDriver(),
+            expandedIndex: expandedIndexRelay.asDriver(),
             isLoading: isLoading.asDriver()
         )
     }
@@ -85,9 +85,7 @@ final class MissionViewModel: BaseViewModel {
 
                 self.missionsRelay.accept(sortedMissions)
 
-                // Initialize collapse states (all expanded by default)
-                let initialStates = Array(repeating: false, count: sortedMissions.count)
-                self.collapseStatesRelay.accept(initialStates)
+                self.expandedIndexRelay.accept(sortedMissions.isEmpty ? nil : 0)
 
                     self.isLoading.accept(false)
                 }
@@ -206,12 +204,17 @@ final class MissionViewModel: BaseViewModel {
         }
     }
 
-    private func toggleCollapseState(at index: Int) {
-        var currentStates = collapseStatesRelay.value
-        guard index < currentStates.count else { return }
+    private func setExpandedIndex(at index: Int) {
+        let missionsCount = missionsRelay.value.count
+        guard index < missionsCount else { return }
 
-        currentStates[index].toggle()
-        collapseStatesRelay.accept(currentStates)
-        debugLog("Toggled collapse state at index \(index): \(currentStates[index])")
+        if expandedIndexRelay.value == index {
+            expandedIndexRelay.accept(nil)
+            debugLog("Collapsed mission index: \(index)")
+            return
+        }
+
+        expandedIndexRelay.accept(index)
+        debugLog("Expanded mission index updated to \(index)")
     }
 }
