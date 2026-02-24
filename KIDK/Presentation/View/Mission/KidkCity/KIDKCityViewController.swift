@@ -423,17 +423,39 @@ private final class KidkCityScene: SKScene {
         guard size.width > 0, size.height > 0 else { return }
 
         backgroundNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        backgroundNode.size = size
+        backgroundNode.size = aspectFillSize(for: backgroundNode, in: size)
 
         schoolNode.position = CGPoint(x: size.width * 0.5, y: size.height * 0.62)
-        schoolNode.size = CGSize(width: size.width * 0.5, height: size.height * 0.25)
+        schoolNode.size = aspectFitSize(for: schoolNode, in: CGSize(width: size.width * 0.5, height: size.height * 0.25))
 
         martNode.position = CGPoint(x: size.width * 0.8, y: size.height * 0.33)
-        martNode.size = CGSize(width: size.width * 0.24, height: size.height * 0.16)
+        martNode.size = aspectFitSize(for: martNode, in: CGSize(width: size.width * 0.24, height: size.height * 0.16))
         martLockNode.position = CGPoint(x: martNode.position.x, y: martNode.position.y + martNode.size.height * 0.28)
 
         characterNode.position = CGPoint(x: size.width * 0.2, y: size.height * 0.38)
-        characterNode.size = CGSize(width: 72, height: 72)
+        characterNode.size = aspectFitSize(for: characterNode, in: CGSize(width: 72, height: 72))
+    }
+
+    private func aspectFitSize(for node: SKSpriteNode, in maxSize: CGSize) -> CGSize {
+        guard maxSize.width > 0, maxSize.height > 0,
+              let texture = node.texture else { return maxSize }
+
+        let textureSize = texture.size()
+        guard textureSize.width > 0, textureSize.height > 0 else { return maxSize }
+
+        let scale = min(maxSize.width / textureSize.width, maxSize.height / textureSize.height)
+        return CGSize(width: textureSize.width * scale, height: textureSize.height * scale)
+    }
+
+    private func aspectFillSize(for node: SKSpriteNode, in targetSize: CGSize) -> CGSize {
+        guard targetSize.width > 0, targetSize.height > 0,
+              let texture = node.texture else { return targetSize }
+
+        let textureSize = texture.size()
+        guard textureSize.width > 0, textureSize.height > 0 else { return targetSize }
+
+        let scale = max(targetSize.width / textureSize.width, targetSize.height / textureSize.height)
+        return CGSize(width: textureSize.width * scale, height: textureSize.height * scale)
     }
 
     func setUnlockedLocations(_ locations: Set<KIDKCityLocationType>) {
