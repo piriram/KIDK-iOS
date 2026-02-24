@@ -118,12 +118,8 @@ KIDK/Config/API-Keys.plist
 .vscode/
 .idea/
 
-# Firebase
-GoogleService-Info.plist
-
 # Backup files
 *.backup
-KIDK/GoogleService-Info.plist
 
 # Private documentation
 .docs/

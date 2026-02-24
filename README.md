@@ -13,7 +13,7 @@
 
 ## 주요 기능
 
-- Firebase 인증 기반 로그인 (어린이/부모 계정)
+- 백엔드 토큰 기반 로그인 (어린이/부모 계정)
 - 지갑 및 저금통 계좌 관리
 - 거래 내역 조회 및 분석
 - 미션 수행 및 보상 시스템
@@ -24,7 +24,7 @@
 - Swift 5.x
 - UIKit + SnapKit
 - RxSwift/RxCocoa (MVVM)
-- Firebase Authentication
+- Backend JWT Authentication
 - Realm Database
 - Moya (네트워킹)
 
@@ -81,27 +81,15 @@ cp Secrets.plist.example Secrets.plist
 
 **주의:** `Secrets.plist` 파일은 `.gitignore`에 포함되어 있어 Git에 커밋되지 않음
 
-### 5. Firebase 설정
+### 5. 인증 설정 (Firebase 미사용)
 
-#### 5-1. Firebase 프로젝트 생성
+이 브랜치는 Firebase 없이 **백엔드 토큰 인증**만 사용함.
 
-1. [Firebase Console](https://console.firebase.google.com)에서 새 프로젝트 생성
-2. iOS 앱 추가 (Bundle ID: `com.yourcompany.KIDK`)
-3. `GoogleService-Info.plist` 파일 다운로드
+- 로그인: `POST /auth/dev/login` (개발), `POST /auth/login` (운영)
+- 토큰 저장: Keychain (`access/refresh token`)
+- 요청 인증: `Authorization: Bearer <accessToken>`
 
-#### 5-2. GoogleService-Info.plist 설치
-
-다운로드한 `GoogleService-Info.plist` 파일을 `KIDK/` 디렉토리에 복사:
-
-```bash
-cp ~/Downloads/GoogleService-Info.plist KIDK/
-```
-
-**주의:** 이 파일도 `.gitignore`에 포함되어 Git에 커밋되지 않음
-
-#### 5-3. Firebase Authentication 활성화
-
-Firebase Console에서 Authentication → Sign-in method → 이메일/비밀번호 활성화
+> Firebase `GoogleService-Info.plist`는 현재 필요하지 않음.
 
 ### 6. 빌드 환경 선택
 
@@ -135,7 +123,7 @@ Cmd + < (Scheme 선택 메뉴)
 
 ### 7. 빌드 및 실행
 
-1. Xcode에서 `KIDK.xcworkspace` 열기 (`.xcodeproj`가 아님)
+1. Xcode에서 `KIDK.xcodeproj` 열기
 2. 빌드 환경 선택 (Debug/Release)
 3. 시뮬레이터 또는 실제 기기 선택
 4. `Cmd + R`로 빌드 및 실행
@@ -185,7 +173,7 @@ KIDK/
 
 ## 보안
 
-- API URL과 Firebase 설정 파일은 `.gitignore`로 Git 저장소에서 제외
+- API URL 및 민감 설정 파일은 `.gitignore`로 Git 저장소에서 제외
 - `Secrets.plist.example` 파일로 필요한 설정 항목 안내
 - Keychain을 통한 안전한 토큰 저장
 
