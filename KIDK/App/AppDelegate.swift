@@ -1,7 +1,6 @@
 import UIKit
 import IQKeyboardManagerSwift
 import RealmSwift
-import FirebaseCore
 
 @main
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -11,16 +10,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // 앱 빌드 환경 설정 정보 출력
         AppConfiguration.printConfiguration()
 
-        configureFirebase()
         configureRealm()
         configureIQKeyboardManager()
 
         return true
-    }
-
-    private func configureFirebase() {
-        FirebaseApp.configure()
-        print("✅ Firebase initialized successfully")
     }
 
     private func configureRealm() {
