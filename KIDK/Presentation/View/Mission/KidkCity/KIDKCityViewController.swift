@@ -71,303 +71,23 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         return button
     }()
 
-    // MARK: - Map guide overlays
-
-    private let mapGuideBubbleView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#1F1F22").withAlphaComponent(0.88)
-        view.layer.cornerRadius = 16
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        return view
-    }()
-
-    private let mapGuideIconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let mapGuideTitleLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "키득시티 가이드", size: .s12, weight: .bold, color: .kidkPink)
-        return label
-    }()
-
-    private let mapGuideDescriptionLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "건물1(학교)을 눌러\n첫 미션을 시작해요",
-            size: .s12,
-            weight: .medium,
-            color: .kidkTextWhite,
-            lineHeight: 128
-        )
-        label.numberOfLines = 2
-        return label
-    }()
-
-    private let mapGuideArrowImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let missionClockBadgeView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#1F1F22").withAlphaComponent(0.9)
-        view.layer.cornerRadius = 14
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        return view
-    }()
-
-    private let missionClockIconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let missionClockLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "오늘 추천 미션 3개", size: .s12, weight: .medium, color: .kidkTextWhite)
-        return label
-    }()
-
-    private let martGuideBadgeView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#1F1F22").withAlphaComponent(0.9)
-        view.layer.cornerRadius = 12
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        return view
-    }()
-
-    private let martGuideIconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let martGuideLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "마트 Lv.2 오픈", size: .s10, weight: .medium, color: .kidkTextWhite)
-        return label
-    }()
-
-    // MARK: - Building mission detail overlay
-
-    private let missionDetailDimButton: UIButton = {
-        let button = UIButton(type: .custom)
-        button.backgroundColor = UIColor.black.withAlphaComponent(0.5)
-        button.alpha = 0
-        button.isHidden = true
-        return button
-    }()
-
-    private let buildingMissionCardView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#1A1B20")
-        view.layer.cornerRadius = 28
-        view.layer.maskedCorners = [.layerMinXMinYCorner, .layerMaxXMinYCorner]
-        view.clipsToBounds = true
-        view.alpha = 0
-        view.isHidden = true
-        return view
-    }()
-
-    private let buildingMissionGrabberView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.7)
-        view.layer.cornerRadius = 2.5
-        return view
-    }()
-
-    private let buildingMissionBackgroundImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleToFill
-        imageView.isHidden = true
-        return imageView
-    }()
-
-    private let buildingMissionTitleLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "미션", size: .s26, weight: .bold, color: .kidkTextWhite)
-        return label
-    }()
-
-    private let buildingMissionRewardLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "2000원", size: .s36, weight: .bold, color: .kidkTextWhite)
-        return label
-    }()
-
-    private let buildingMissionCloseButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setImage(UIImage(systemName: "xmark"), for: .normal)
-        button.tintColor = .kidkGray
-        button.isHidden = true
-        return button
-    }()
-
-    private let buildingMissionMainCardView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2A2C35")
-        view.layer.cornerRadius = 24
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.04).cgColor
-        return view
-    }()
-
-    private let buildingMissionTagStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.alignment = .center
-        stackView.spacing = 10
-        return stackView
-    }()
-
-    private let buildingMissionVideoTagLabel: CityMissionChipLabel = {
-        let label = CityMissionChipLabel()
-        label.applyFilledStyle(text: "영상 시청", fillColor: UIColor(hex: "#E965A5"), textColor: .kidkTextWhite)
-        return label
-    }()
-
-    private let buildingMissionQuizTagLabel: CityMissionChipLabel = {
-        let label = CityMissionChipLabel()
-        label.applyFilledStyle(text: "퀴즈 풀기", fillColor: UIColor(hex: "#84DDCD"), textColor: .kidkTextWhite)
-        return label
-    }()
-
-    private let buildingMissionDescriptionLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "[저축의 즐거움]\n매일 영상 시청 후 퀴즈를 풀기",
-            size: .s16,
-            weight: .bold,
-            color: .kidkTextWhite,
-            lineHeight: 122
-        )
-        label.numberOfLines = 2
-        label.textAlignment = .center
-        return label
-    }()
-
-    private let buildingMissionItemView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .kidkDarkBackground
-        view.layer.cornerRadius = 14
-        return view
-    }()
-
-    private let buildingMissionItemIconContainer: UIView = {
-        let view = UIView()
-        view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = 10
-        return view
-    }()
-
-    private let buildingMissionItemIconView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let buildingMissionItemTitleLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "내가 몰랐던 저축의 즐거움을 알아보아요!", size: .s12, weight: .medium, color: .kidkTextWhite)
-        return label
-    }()
-
-    private let buildingMissionParticipantsStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.spacing = -8
-        stackView.alignment = .center
-        return stackView
-    }()
-
-    private let buildingMissionParticipantsLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "가 이 미션에 참여했어요", size: .s12, weight: .medium, color: .kidkGray)
-        return label
-    }()
-
-    private let buildingMissionOtherButton = KIDKButton(
-        title: "다른 미션",
-        backgroundColor: UIColor(hex: "#2F313A"),
-        titleColor: .kidkTextWhite
-    )
-
-    private let buildingMissionStartButton = KIDKButton(
-        title: "미션 수락하기",
-        backgroundColor: .kidkPink,
-        titleColor: .kidkTextWhite
-    )
-
-    // MARK: - Mission completed popup
-
-    private let missionCompletedPopupView: UIView = {
-        let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2B2B31")
-        view.layer.cornerRadius = 24
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        view.alpha = 0
-        view.isHidden = true
-        return view
-    }()
-
-    private let missionCompletedTitleLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(text: "미션을 완료했어요!", size: .s18, weight: .bold, color: .kidkTextWhite)
-        return label
-    }()
-
-    private let missionCompletedDescriptionLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "완료 버튼을 눌러 미션 내용을\n부모님께 전달해보세요!",
-            size: .s14,
-            weight: .medium,
-            color: .kidkTextWhite,
-            lineHeight: 132
-        )
-        label.numberOfLines = 2
-        return label
-    }()
-
-    private let missionCompletedGiftImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
-    }()
-
-    private let missionCompletedConfirmButton = KIDKButton(
-        title: "완료",
-        backgroundColor: .kidkPink,
-        titleColor: .kidkTextWhite
-    )
-
-    private var isBuildingMissionOverlayVisible = false
-    private var isMissionCompletedPopupVisible = false
-
-    #if DEBUG
-    enum DebugSnapshotAction {
-        case none
-        case showBuildingDetail
-        case showMissionSelection
-        case showMissionCreation
-        case showMissionCompletedPopup
-    }
-
-    private var debugSnapshotAction: DebugSnapshotAction = .none
-    private var didApplyDebugSnapshotAction = false
-    #endif
-
     private weak var currentSheetViewController: UIViewController?
     private var cityScene: KidkCityScene?
     private var latestUnlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
+
+    #if DEBUG
+    private var debugPanelVisible = false
+    private var debugBgScale: CGFloat = 1.0
+    private var debugBgOffsetX: CGFloat = 0
+    private var debugBgOffsetY: CGFloat = 0
+    private var debugSchoolX: CGFloat = 0.50
+    private var debugSchoolY: CGFloat = 0.62
+    private var debugMartX: CGFloat = 0.80
+    private var debugMartY: CGFloat = 0.33
+
+    private let debugPanel = UIStackView()
+    private let debugSummaryLabel = UILabel()
+    #endif
 
     init(viewModel: KIDKCityViewModel, user: User) {
         self.viewModel = viewModel
@@ -378,12 +98,6 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
-
-    #if DEBUG
-    func setDebugSnapshotAction(_ action: DebugSnapshotAction) {
-        debugSnapshotAction = action
-    }
-    #endif
 
     var prefersNavigationBarHidden: Bool { true }
     var prefersTabBarHidden: Bool { true }
@@ -405,34 +119,14 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         viewDidAppearSubject.onNext(())
-        #if DEBUG
-        applyDebugSnapshotActionIfNeeded()
-        #endif
     }
 
     private func setupUI() {
         view.backgroundColor = .kidkDarkBackground
 
         view.addSubview(gameView)
-        view.addSubview(mapGuideBubbleView)
-        view.addSubview(missionClockBadgeView)
-        view.addSubview(martGuideBadgeView)
         view.addSubview(hudContainerView)
         view.addSubview(homeButton)
-        view.addSubview(missionDetailDimButton)
-        view.addSubview(buildingMissionCardView)
-        view.addSubview(missionCompletedPopupView)
-
-        mapGuideBubbleView.addSubview(mapGuideIconView)
-        mapGuideBubbleView.addSubview(mapGuideTitleLabel)
-        mapGuideBubbleView.addSubview(mapGuideDescriptionLabel)
-        mapGuideBubbleView.addSubview(mapGuideArrowImageView)
-
-        missionClockBadgeView.addSubview(missionClockIconView)
-        missionClockBadgeView.addSubview(missionClockLabel)
-
-        martGuideBadgeView.addSubview(martGuideIconView)
-        martGuideBadgeView.addSubview(martGuideLabel)
 
         hudContainerView.addSubview(gaugeTitleLabel)
         hudContainerView.addSubview(gaugeValueLabel)
@@ -440,102 +134,8 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         hudContainerView.addSubview(gaugeProgressView)
         hudContainerView.addSubview(schoolMissionButton)
 
-        buildingMissionCardView.addSubview(buildingMissionBackgroundImageView)
-        buildingMissionCardView.addSubview(buildingMissionGrabberView)
-        buildingMissionCardView.addSubview(buildingMissionTitleLabel)
-        buildingMissionCardView.addSubview(buildingMissionRewardLabel)
-        buildingMissionCardView.addSubview(buildingMissionCloseButton)
-        buildingMissionCardView.addSubview(buildingMissionMainCardView)
-        buildingMissionCardView.addSubview(buildingMissionItemView)
-        buildingMissionCardView.addSubview(buildingMissionParticipantsStackView)
-        buildingMissionCardView.addSubview(buildingMissionParticipantsLabel)
-        buildingMissionCardView.addSubview(buildingMissionOtherButton)
-        buildingMissionCardView.addSubview(buildingMissionStartButton)
-
-        buildingMissionMainCardView.addSubview(buildingMissionTagStackView)
-        buildingMissionMainCardView.addSubview(buildingMissionDescriptionLabel)
-        buildingMissionTagStackView.addArrangedSubview(buildingMissionVideoTagLabel)
-        buildingMissionTagStackView.addArrangedSubview(buildingMissionQuizTagLabel)
-
-        buildingMissionItemView.addSubview(buildingMissionItemIconContainer)
-        buildingMissionItemView.addSubview(buildingMissionItemTitleLabel)
-        buildingMissionItemIconContainer.addSubview(buildingMissionItemIconView)
-
-        missionCompletedPopupView.addSubview(missionCompletedTitleLabel)
-        missionCompletedPopupView.addSubview(missionCompletedDescriptionLabel)
-        missionCompletedPopupView.addSubview(missionCompletedGiftImageView)
-        missionCompletedPopupView.addSubview(missionCompletedConfirmButton)
-
         gameView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
-        }
-
-        mapGuideBubbleView.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.md)
-            make.trailing.equalToSuperview().offset(-Spacing.md)
-            make.width.lessThanOrEqualTo(220)
-        }
-
-        mapGuideIconView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(12)
-            make.top.equalToSuperview().offset(12)
-            make.width.height.equalTo(20)
-        }
-
-        mapGuideTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(mapGuideIconView.snp.trailing).offset(8)
-            make.top.equalToSuperview().offset(11)
-            make.trailing.equalToSuperview().offset(-12)
-        }
-
-        mapGuideDescriptionLabel.snp.makeConstraints { make in
-            make.top.equalTo(mapGuideTitleLabel.snp.bottom).offset(4)
-            make.leading.equalTo(mapGuideTitleLabel)
-            make.trailing.equalToSuperview().offset(-12)
-            make.bottom.equalToSuperview().offset(-12)
-        }
-
-        mapGuideArrowImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-8)
-            make.bottom.equalToSuperview().offset(10)
-            make.width.equalTo(26)
-            make.height.equalTo(18)
-        }
-
-        missionClockBadgeView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.md)
-            make.top.equalTo(homeButton.snp.bottom).offset(Spacing.sm)
-            make.height.equalTo(32)
-        }
-
-        missionClockIconView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(10)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(14)
-        }
-
-        missionClockLabel.snp.makeConstraints { make in
-            make.leading.equalTo(missionClockIconView.snp.trailing).offset(6)
-            make.trailing.equalToSuperview().offset(-10)
-            make.centerY.equalToSuperview()
-        }
-
-        martGuideBadgeView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-Spacing.md)
-            make.bottom.equalTo(hudContainerView.snp.top).offset(-Spacing.sm)
-            make.height.equalTo(28)
-        }
-
-        martGuideIconView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(8)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(14)
-        }
-
-        martGuideLabel.snp.makeConstraints { make in
-            make.leading.equalTo(martGuideIconView.snp.trailing).offset(5)
-            make.trailing.equalToSuperview().offset(-8)
-            make.centerY.equalToSuperview()
         }
 
         hudContainerView.snp.makeConstraints { make in
@@ -576,139 +176,6 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             make.width.height.equalTo(48)
         }
 
-        missionDetailDimButton.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        buildingMissionCardView.snp.makeConstraints { make in
-            make.leading.trailing.bottom.equalToSuperview()
-            make.height.equalTo(view.snp.height).multipliedBy(0.52)
-        }
-
-        buildingMissionBackgroundImageView.snp.makeConstraints { make in
-            make.edges.equalToSuperview()
-        }
-
-        buildingMissionGrabberView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(10)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(58)
-            make.height.equalTo(5)
-        }
-
-        buildingMissionTitleLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(24)
-            make.top.equalTo(buildingMissionGrabberView.snp.bottom).offset(16)
-        }
-
-        buildingMissionRewardLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-24)
-            make.centerY.equalTo(buildingMissionTitleLabel)
-            make.leading.greaterThanOrEqualTo(buildingMissionTitleLabel.snp.trailing).offset(8)
-        }
-
-        buildingMissionCloseButton.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().offset(-16)
-            make.centerY.equalTo(buildingMissionTitleLabel)
-            make.width.height.equalTo(28)
-        }
-
-        buildingMissionMainCardView.snp.makeConstraints { make in
-            make.top.equalTo(buildingMissionTitleLabel.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(24)
-            make.height.equalTo(176)
-        }
-
-        buildingMissionTagStackView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(20)
-            make.centerX.equalToSuperview()
-        }
-
-        buildingMissionDescriptionLabel.snp.makeConstraints { make in
-            make.top.equalTo(buildingMissionTagStackView.snp.bottom).offset(18)
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.centerX.equalToSuperview()
-        }
-
-        buildingMissionItemView.snp.makeConstraints { make in
-            make.top.equalTo(buildingMissionMainCardView.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview().inset(24)
-            make.height.equalTo(58)
-        }
-
-        buildingMissionItemIconContainer.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(10)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(40)
-        }
-
-        buildingMissionItemIconView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(18)
-        }
-
-        buildingMissionItemTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(buildingMissionItemIconContainer.snp.trailing).offset(10)
-            make.centerY.equalToSuperview()
-            make.trailing.lessThanOrEqualToSuperview().offset(-12)
-        }
-
-        buildingMissionParticipantsStackView.snp.makeConstraints { make in
-            make.top.equalTo(buildingMissionItemView.snp.bottom).offset(10)
-            make.leading.equalToSuperview().offset(24)
-            make.height.equalTo(24)
-        }
-
-        buildingMissionParticipantsLabel.snp.makeConstraints { make in
-            make.leading.equalTo(buildingMissionParticipantsStackView.snp.trailing).offset(8)
-            make.centerY.equalTo(buildingMissionParticipantsStackView)
-            make.trailing.lessThanOrEqualToSuperview().offset(-24)
-        }
-
-        buildingMissionOtherButton.snp.makeConstraints { make in
-            make.top.equalTo(buildingMissionParticipantsStackView.snp.bottom).offset(16)
-            make.leading.equalToSuperview().offset(24)
-            make.height.equalTo(56)
-            make.width.equalTo(148)
-        }
-
-        buildingMissionStartButton.snp.makeConstraints { make in
-            make.top.equalTo(buildingMissionOtherButton)
-            make.leading.equalTo(buildingMissionOtherButton.snp.trailing).offset(12)
-            make.trailing.equalToSuperview().offset(-24)
-            make.height.equalTo(56)
-            make.bottom.equalTo(view.safeAreaLayoutGuide.snp.bottom).offset(-12)
-        }
-
-        missionCompletedPopupView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.centerY.equalToSuperview().offset(34)
-        }
-
-        missionCompletedTitleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(28)
-            make.leading.trailing.equalToSuperview().inset(Spacing.lg)
-        }
-
-        missionCompletedDescriptionLabel.snp.makeConstraints { make in
-            make.top.equalTo(missionCompletedTitleLabel.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(Spacing.lg)
-        }
-
-        missionCompletedGiftImageView.snp.makeConstraints { make in
-            make.top.equalTo(missionCompletedDescriptionLabel.snp.bottom).offset(14)
-            make.centerX.equalToSuperview()
-            make.width.equalTo(280)
-            make.height.equalTo(220)
-        }
-
-        missionCompletedConfirmButton.snp.makeConstraints { make in
-            make.top.equalTo(missionCompletedGiftImageView.snp.bottom).offset(14)
-            make.leading.trailing.equalToSuperview().inset(Spacing.lg)
-            make.height.equalTo(56)
-            make.bottom.equalToSuperview().offset(-Spacing.lg)
-        }
-
         let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
         homeButton.addGestureRecognizer(homeTapGesture)
 
@@ -718,46 +185,9 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             })
             .disposed(by: disposeBag)
 
-        missionDetailDimButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.hideBuildingMissionDetailOverlay(animated: true)
-                self?.hideMissionCompletedPopup(animated: true)
-            })
-            .disposed(by: disposeBag)
-
-        buildingMissionCloseButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.hideBuildingMissionDetailOverlay(animated: true)
-            })
-            .disposed(by: disposeBag)
-
-        buildingMissionOtherButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.hideBuildingMissionDetailOverlay(animated: false)
-                self?.showMissionSelectionSheet()
-            })
-            .disposed(by: disposeBag)
-
-        buildingMissionStartButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.hideBuildingMissionDetailOverlay(animated: false)
-                self?.showMissionSelectionSheet()
-            })
-            .disposed(by: disposeBag)
-
-        missionCompletedConfirmButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                guard let self else { return }
-                self.missionCompletedSubject.onNext(UUID().uuidString)
-                self.hideMissionCompletedPopup(animated: true)
-            })
-            .disposed(by: disposeBag)
-
-        configureMapGuideAssets()
-        configureBuildingMissionDetailAssets()
-        configureMissionCompletedPopupAssets()
-        setupBuildingMissionParticipants()
-        updateMapGuideState()
+        #if DEBUG
+        setupDebugUI()
+        #endif
     }
 
     private func bind() {
@@ -790,7 +220,6 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
                 guard let self = self else { return }
                 self.latestUnlockedLocations = Set(locations.filter { $0.isUnlocked }.map { $0.type })
                 self.cityScene?.setUnlockedLocations(self.latestUnlockedLocations)
-                self.updateMapGuideState()
             })
             .disposed(by: disposeBag)
     }
@@ -802,13 +231,17 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         scene.scaleMode = .resizeFill
         scene.setUnlockedLocations(latestUnlockedLocations)
         scene.onSchoolTapped = { [weak self] in
-            self?.showBuildingMissionDetailOverlay()
+            self?.showMissionSelectionSheet()
         }
         scene.onLockedLocationTapped = { [weak self] location in
             self?.showLockedLocationToast(location: location)
         }
         gameView.presentScene(scene)
         cityScene = scene
+
+        #if DEBUG
+        applyDebugLayoutToScene()
+        #endif
     }
 
     private func updateGauge(progress: Float) {
@@ -817,283 +250,11 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         gaugeValueLabel.text = "\(Int(clamped * 100))%"
     }
 
-    #if DEBUG
-    private func applyDebugSnapshotActionIfNeeded() {
-        guard !didApplyDebugSnapshotAction else { return }
-        didApplyDebugSnapshotAction = true
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) { [weak self] in
-            guard let self else { return }
-            switch self.debugSnapshotAction {
-            case .none:
-                break
-            case .showBuildingDetail:
-                self.showBuildingMissionDetailOverlay()
-            case .showMissionSelection:
-                self.showMissionSelectionSheet()
-            case .showMissionCreation:
-                self.showMissionSelectionSheet()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    self.showMissionCreationSheet(missionType: .video)
-                }
-            case .showMissionCompletedPopup:
-                self.showMissionCompletedPopup()
-            }
-        }
-    }
-    #endif
-
     @objc private func homeButtonTapped() {
         navigationController?.popViewController(animated: true)
     }
 
-    private func configureMapGuideAssets() {
-        applyMapOverlayImage(to: mapGuideIconView, assetName: "kidk_icon_pencil", fallbackSystemName: "pencil")
-        applyMapOverlayImage(to: mapGuideArrowImageView, assetName: "kidk_game_bubble_arrow", fallbackSystemName: "arrowtriangle.down.fill")
-        applyMapOverlayImage(to: missionClockIconView, assetName: "kidk_game_clock", fallbackSystemName: "clock.fill")
-        applyMapOverlayImage(to: martGuideIconView, assetName: "kidk_game_mart_icon", fallbackSystemName: "storefront.fill")
-    }
-
-    private func configureBuildingMissionDetailAssets() {
-        buildingMissionItemTitleLabel.text = "내가 몰랐던 저축의 즐거움을 알아보아요!"
-        applyMapOverlayImage(to: buildingMissionItemIconView, assetName: "kidk_icon_pencil", fallbackSystemName: "lightbulb.fill")
-        configureBuildingMissionCardBackground()
-        configureBuildingMissionRewardBadge()
-    }
-
-    private func configureBuildingMissionCardBackground() {
-        if let backgroundImage = UIImage(named: "kidk_building_mission_detail_bg") {
-            buildingMissionBackgroundImageView.image = backgroundImage
-            buildingMissionBackgroundImageView.isHidden = false
-            buildingMissionCardView.backgroundColor = .clear
-            return
-        }
-
-        buildingMissionBackgroundImageView.image = nil
-        buildingMissionBackgroundImageView.isHidden = true
-        buildingMissionCardView.backgroundColor = UIColor(hex: "#1A1B20")
-    }
-
-    private func configureBuildingMissionRewardBadge() {
-        if let badgeImage = UIImage(named: "kidk_building_mission_reward_badge") {
-            let attachment = NSTextAttachment()
-            attachment.image = badgeImage
-            attachment.bounds = CGRect(x: 0, y: -2, width: 18, height: 18)
-
-            let text = NSMutableAttributedString(attachment: attachment)
-            text.append(
-                NSAttributedString(
-                    string: " 2000원",
-                    attributes: [
-                        .font: UIFont.systemFont(ofSize: 28, weight: .bold),
-                        .foregroundColor: UIColor.kidkTextWhite
-                    ]
-                )
-            )
-
-            buildingMissionRewardLabel.attributedText = text
-            buildingMissionRewardLabel.text = nil
-            buildingMissionRewardLabel.backgroundColor = .clear
-            return
-        }
-
-        buildingMissionRewardLabel.attributedText = nil
-        buildingMissionRewardLabel.applyTextStyle(text: "2000원", size: .s36, weight: .bold, color: .kidkTextWhite)
-        buildingMissionRewardLabel.backgroundColor = .clear
-    }
-
-    private func configureMissionCompletedPopupAssets() {
-        if let image = UIImage(named: "kidk_mission_completed_gift") {
-            missionCompletedGiftImageView.image = image
-            return
-        }
-
-        missionCompletedGiftImageView.image = UIImage(systemName: "gift.fill")
-        missionCompletedGiftImageView.tintColor = .kidkPink
-    }
-
-    private func updateMapGuideState() {
-        let isMartUnlocked = latestUnlockedLocations.contains(.mart)
-        martGuideLabel.text = isMartUnlocked ? "마트 오픈 완료" : "마트 Lv.2 오픈"
-        martGuideBadgeView.backgroundColor = isMartUnlocked
-            ? UIColor.kidkGreen.withAlphaComponent(0.2)
-            : UIColor(hex: "#1F1F22").withAlphaComponent(0.9)
-        martGuideLabel.textColor = isMartUnlocked ? .kidkGreen : .kidkTextWhite
-    }
-
-    private func setupBuildingMissionParticipants() {
-        buildingMissionParticipantsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
-
-        let avatarAssetNames = ["kidk_friend_avatar_1", "kidk_friend_avatar_2", "kidk_friend_avatar_3"]
-        avatarAssetNames.forEach { assetName in
-            let avatarView = UIImageView()
-            avatarView.contentMode = .scaleAspectFill
-            avatarView.layer.cornerRadius = 12
-            avatarView.layer.masksToBounds = true
-            avatarView.layer.borderWidth = 1
-            avatarView.layer.borderColor = UIColor(hex: "#202028").cgColor
-            avatarView.backgroundColor = UIColor(hex: "#25252C")
-            avatarView.snp.makeConstraints { make in
-                make.width.height.equalTo(24)
-            }
-
-            if let avatarImage = UIImage(named: assetName) ?? UIImage(named: "kidk_profile_one") {
-                avatarView.image = avatarImage
-                avatarView.contentMode = .scaleAspectFill
-            } else {
-                avatarView.image = UIImage(systemName: "person.fill")
-                avatarView.tintColor = .kidkGray
-                avatarView.contentMode = .center
-            }
-
-            buildingMissionParticipantsStackView.addArrangedSubview(avatarView)
-        }
-    }
-
-    private func applyMapOverlayImage(to imageView: UIImageView, assetName: String, fallbackSystemName: String) {
-        if let image = UIImage(named: assetName) {
-            imageView.image = image
-            imageView.tintColor = nil
-            return
-        }
-
-        let symbolConfig = UIImage.SymbolConfiguration(pointSize: 14, weight: .semibold)
-        imageView.image = UIImage(systemName: fallbackSystemName, withConfiguration: symbolConfig)
-        imageView.tintColor = UIColor.kidkPink.withAlphaComponent(0.92)
-    }
-
-    private func setCityChromeHidden(_ hidden: Bool, animated: Bool) {
-        let chromeViews: [UIView] = [homeButton, mapGuideBubbleView, missionClockBadgeView, martGuideBadgeView, hudContainerView]
-
-        if hidden {
-            chromeViews.forEach {
-                $0.isHidden = false
-                $0.alpha = 1
-            }
-        }
-
-        let animations = {
-            chromeViews.forEach { $0.alpha = hidden ? 0 : 1 }
-        }
-
-        let completion: (Bool) -> Void = { _ in
-            chromeViews.forEach { $0.isHidden = hidden }
-        }
-
-        if animated {
-            UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut, animations: animations, completion: completion)
-        } else {
-            animations()
-            completion(true)
-        }
-    }
-
-    private func showBuildingMissionDetailOverlay() {
-        guard !isBuildingMissionOverlayVisible else { return }
-
-        hideMissionCompletedPopup(animated: false)
-
-        isBuildingMissionOverlayVisible = true
-        missionDetailDimButton.isHidden = false
-        buildingMissionCardView.isHidden = false
-        buildingMissionCardView.transform = CGAffineTransform(translationX: 0, y: 36)
-        setCityChromeHidden(true, animated: true)
-        cityScene?.setSchoolFocus(true)
-
-        UIView.animate(withDuration: 0.22, delay: 0, options: .curveEaseOut, animations: {
-            self.missionDetailDimButton.alpha = 1
-            self.buildingMissionCardView.alpha = 1
-            self.buildingMissionCardView.transform = .identity
-        })
-    }
-
-    private func hideBuildingMissionDetailOverlay(animated: Bool) {
-        guard isBuildingMissionOverlayVisible else { return }
-
-        isBuildingMissionOverlayVisible = false
-
-        if !isMissionCompletedPopupVisible {
-            setCityChromeHidden(false, animated: animated)
-            cityScene?.setSchoolFocus(false)
-        }
-
-        let animations = {
-            self.missionDetailDimButton.alpha = self.isMissionCompletedPopupVisible ? 1 : 0
-            self.buildingMissionCardView.alpha = 0
-            self.buildingMissionCardView.transform = CGAffineTransform(translationX: 0, y: 36)
-        }
-
-        let completion: (Bool) -> Void = { _ in
-            if !self.isMissionCompletedPopupVisible {
-                self.missionDetailDimButton.isHidden = true
-            }
-            self.buildingMissionCardView.isHidden = true
-            self.buildingMissionCardView.transform = .identity
-        }
-
-        if animated {
-            UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut, animations: animations, completion: completion)
-        } else {
-            animations()
-            completion(true)
-        }
-    }
-
-    private func showMissionCompletedPopup() {
-        guard !isMissionCompletedPopupVisible else { return }
-
-        hideBuildingMissionDetailOverlay(animated: false)
-
-        isMissionCompletedPopupVisible = true
-        missionDetailDimButton.isHidden = false
-        missionCompletedPopupView.isHidden = false
-        missionCompletedPopupView.transform = CGAffineTransform(translationX: 0, y: 16)
-        missionCompletedPopupView.alpha = 0
-
-        setCityChromeHidden(true, animated: false)
-        cityScene?.setSchoolFocus(false)
-
-        UIView.animate(withDuration: 0.24, delay: 0, options: .curveEaseOut, animations: {
-            self.missionDetailDimButton.alpha = 1
-            self.missionCompletedPopupView.alpha = 1
-            self.missionCompletedPopupView.transform = .identity
-        })
-    }
-
-    private func hideMissionCompletedPopup(animated: Bool) {
-        guard isMissionCompletedPopupVisible else { return }
-
-        isMissionCompletedPopupVisible = false
-        if !isBuildingMissionOverlayVisible {
-            setCityChromeHidden(false, animated: animated)
-        }
-
-        let animations = {
-            self.missionCompletedPopupView.alpha = 0
-            self.missionCompletedPopupView.transform = CGAffineTransform(translationX: 0, y: 16)
-            self.missionDetailDimButton.alpha = self.isBuildingMissionOverlayVisible ? 1 : 0
-        }
-
-        let completion: (Bool) -> Void = { _ in
-            self.missionCompletedPopupView.isHidden = true
-            self.missionCompletedPopupView.transform = .identity
-            if !self.isBuildingMissionOverlayVisible {
-                self.missionDetailDimButton.isHidden = true
-            }
-        }
-
-        if animated {
-            UIView.animate(withDuration: 0.2, delay: 0, options: .curveEaseInOut, animations: animations, completion: completion)
-        } else {
-            animations()
-            completion(true)
-        }
-    }
-
     private func showMissionSelectionSheet() {
-        hideBuildingMissionDetailOverlay(animated: false)
-        hideMissionCompletedPopup(animated: false)
-
         guard currentSheetViewController == nil else {
             debugWarning("Sheet already presented")
             return
@@ -1210,35 +371,176 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             })
         })
     }
-}
 
-private final class CityMissionChipLabel: UILabel {
+    #if DEBUG
+    private func setupDebugUI() {
+        let toggleGesture = UITapGestureRecognizer(target: self, action: #selector(toggleDebugPanel))
+        toggleGesture.numberOfTapsRequired = 2
+        homeButton.addGestureRecognizer(toggleGesture)
 
-    private let horizontalPadding: CGFloat = 16
-    private let verticalPadding: CGFloat = 8
+        debugPanel.axis = .vertical
+        debugPanel.spacing = 6
+        debugPanel.backgroundColor = UIColor.black.withAlphaComponent(0.78)
+        debugPanel.layer.cornerRadius = 10
+        debugPanel.isLayoutMarginsRelativeArrangement = true
+        debugPanel.layoutMargins = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
+        debugPanel.isHidden = true
 
-    override var intrinsicContentSize: CGSize {
-        let base = super.intrinsicContentSize
-        return CGSize(
-            width: base.width + horizontalPadding * 2,
-            height: base.height + verticalPadding * 2
+        debugSummaryLabel.font = .monospacedSystemFont(ofSize: 11, weight: .regular)
+        debugSummaryLabel.textColor = .white
+        debugSummaryLabel.numberOfLines = 0
+
+        debugPanel.addArrangedSubview(makeSliderRow(title: "bgScale", min: 0.8, max: 1.4, value: Float(debugBgScale)) { [weak self] value in
+            self?.debugBgScale = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "bgOffsetX", min: -120, max: 120, value: Float(debugBgOffsetX)) { [weak self] value in
+            self?.debugBgOffsetX = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "bgOffsetY", min: -120, max: 120, value: Float(debugBgOffsetY)) { [weak self] value in
+            self?.debugBgOffsetY = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "schoolX", min: 0.0, max: 1.0, value: Float(debugSchoolX)) { [weak self] value in
+            self?.debugSchoolX = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "schoolY", min: 0.0, max: 1.0, value: Float(debugSchoolY)) { [weak self] value in
+            self?.debugSchoolY = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "martX", min: 0.0, max: 1.0, value: Float(debugMartX)) { [weak self] value in
+            self?.debugMartX = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "martY", min: 0.0, max: 1.0, value: Float(debugMartY)) { [weak self] value in
+            self?.debugMartY = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+
+        debugPanel.addArrangedSubview(debugSummaryLabel)
+
+        let buttonsRow = UIStackView()
+        buttonsRow.axis = .horizontal
+        buttonsRow.spacing = 8
+        buttonsRow.distribution = .fillEqually
+
+        let resetBtn = makeDebugButton(title: "RESET")
+        let copyBtn = makeDebugButton(title: "COPY")
+        resetBtn.addTarget(self, action: #selector(resetDebugLayout), for: .touchUpInside)
+        copyBtn.addTarget(self, action: #selector(copyDebugJSON), for: .touchUpInside)
+        buttonsRow.addArrangedSubview(resetBtn)
+        buttonsRow.addArrangedSubview(copyBtn)
+        debugPanel.addArrangedSubview(buttonsRow)
+
+        view.addSubview(debugPanel)
+        debugPanel.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.trailing.equalToSuperview().inset(8)
+            make.width.equalTo(240)
+        }
+
+        refreshDebugSummary()
+    }
+
+    private func makeSliderRow(title: String, min: Float, max: Float, value: Float, onChange: @escaping (Float) -> Void) -> UIView {
+        let row = UIStackView()
+        row.axis = .vertical
+        row.spacing = 2
+
+        let label = UILabel()
+        label.font = .systemFont(ofSize: 10, weight: .medium)
+        label.textColor = .white
+        label.text = title
+
+        let slider = UISlider()
+        slider.minimumValue = min
+        slider.maximumValue = max
+        slider.value = value
+        slider.addAction(UIAction { _ in
+            onChange(slider.value)
+        }, for: .valueChanged)
+
+        row.addArrangedSubview(label)
+        row.addArrangedSubview(slider)
+        return row
+    }
+
+    private func makeDebugButton(title: String) -> UIButton {
+        let button = UIButton(type: .system)
+        button.setTitle(title, for: .normal)
+        button.setTitleColor(.white, for: .normal)
+        button.backgroundColor = UIColor.white.withAlphaComponent(0.18)
+        button.layer.cornerRadius = 6
+        button.titleLabel?.font = .systemFont(ofSize: 12, weight: .semibold)
+        button.snp.makeConstraints { make in
+            make.height.equalTo(30)
+        }
+        return button
+    }
+
+    @objc private func toggleDebugPanel() {
+        debugPanelVisible.toggle()
+        debugPanel.isHidden = !debugPanelVisible
+    }
+
+    @objc private func resetDebugLayout() {
+        debugBgScale = 1.0
+        debugBgOffsetX = 0
+        debugBgOffsetY = 0
+        debugSchoolX = 0.50
+        debugSchoolY = 0.62
+        debugMartX = 0.80
+        debugMartY = 0.33
+        applyDebugLayoutToScene()
+    }
+
+    private func applyDebugLayoutToScene() {
+        cityScene?.updateLayoutForDebug(
+            backgroundScale: debugBgScale,
+            backgroundOffsetX: debugBgOffsetX,
+            backgroundOffsetY: debugBgOffsetY,
+            schoolX: debugSchoolX,
+            schoolY: debugSchoolY,
+            martX: debugMartX,
+            martY: debugMartY
         )
+        refreshDebugSummary()
     }
 
-    override func drawText(in rect: CGRect) {
-        super.drawText(in: rect.insetBy(dx: horizontalPadding, dy: verticalPadding))
+    private func refreshDebugSummary() {
+        debugSummaryLabel.text = "bgScale: \(String(format: "%.2f", debugBgScale))\nbgOffset: (\(Int(debugBgOffsetX)), \(Int(debugBgOffsetY)))\nschool: (\(String(format: "%.3f", debugSchoolX)), \(String(format: "%.3f", debugSchoolY)))\nmart: (\(String(format: "%.3f", debugMartX)), \(String(format: "%.3f", debugMartY)))"
     }
 
-    func applyFilledStyle(text: String, fillColor: UIColor, textColor: UIColor) {
-        applyTextStyle(text: text, size: .s12, weight: .bold, color: textColor)
-        backgroundColor = fillColor
-        layer.cornerRadius = 17
-        clipsToBounds = true
-        textAlignment = .center
+    @objc private func copyDebugJSON() {
+        let json = """
+        {
+          "map": {
+            "bgScale": \(String(format: "%.3f", debugBgScale)),
+            "bgOffsetX": \(String(format: "%.1f", debugBgOffsetX)),
+            "bgOffsetY": \(String(format: "%.1f", debugBgOffsetY))
+          },
+          "buildings": {
+            "school": { "xRatio": \(String(format: "%.4f", debugSchoolX)), "yRatio": \(String(format: "%.4f", debugSchoolY)) },
+            "mart": { "xRatio": \(String(format: "%.4f", debugMartX)), "yRatio": \(String(format: "%.4f", debugMartY)) }
+          }
+        }
+        """
+        UIPasteboard.general.string = json
+        refreshDebugSummary()
     }
+    #endif
 }
+
 
 private final class KidkCityScene: SKScene {
+
+    struct BuildingLayout {
+        var xRatio: CGFloat
+        var yRatio: CGFloat
+        var scale: CGFloat
+    }
 
     var onSchoolTapped: (() -> Void)?
     var onLockedLocationTapped: ((KIDKCityLocationType) -> Void)?
@@ -1246,13 +548,6 @@ private final class KidkCityScene: SKScene {
     private let backgroundNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_city_map_background")
         node.zPosition = 0
-        return node
-    }()
-
-    private let focusDimNode: SKSpriteNode = {
-        let node = SKSpriteNode(color: UIColor.black, size: .zero)
-        node.zPosition = 1
-        node.alpha = 0
         return node
     }()
 
@@ -1285,12 +580,17 @@ private final class KidkCityScene: SKScene {
     }()
 
     private var unlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
-    private var isSchoolFocused = false
+
+    // NOTE: 좌표는 "scene size"가 아니라 "배경 표시 영역(frame)" 기준 ratio로 관리한다.
+    private var backgroundScale: CGFloat = 1.0
+    private var backgroundOffset: CGPoint = .zero
+    private var schoolLayout = BuildingLayout(xRatio: 0.50, yRatio: 0.62, scale: 1.0)
+    private var martLayout = BuildingLayout(xRatio: 0.80, yRatio: 0.33, scale: 1.0)
+    private var characterLayout = BuildingLayout(xRatio: 0.20, yRatio: 0.38, scale: 1.0)
 
     override func didMove(to view: SKView) {
         backgroundColor = .clear
         addChild(backgroundNode)
-        addChild(focusDimNode)
         addChild(schoolNode)
         addChild(martNode)
         addChild(martLockNode)
@@ -1309,29 +609,63 @@ private final class KidkCityScene: SKScene {
     private func layoutScene() {
         guard size.width > 0, size.height > 0 else { return }
 
-        backgroundNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        backgroundNode.size = aspectFillSize(for: backgroundNode, in: size)
+        let sceneCenter = CGPoint(x: size.width / 2, y: size.height / 2)
+        backgroundNode.position = CGPoint(
+            x: sceneCenter.x + backgroundOffset.x,
+            y: sceneCenter.y + backgroundOffset.y
+        )
 
-        focusDimNode.position = CGPoint(x: size.width / 2, y: size.height / 2)
-        focusDimNode.size = size
+        let fillSize = aspectFillSize(for: backgroundNode, in: size)
+        backgroundNode.size = CGSize(width: fillSize.width * backgroundScale, height: fillSize.height * backgroundScale)
 
-        let schoolPosition = isSchoolFocused
-            ? CGPoint(x: size.width * 0.5, y: size.height * 0.665)
-            : CGPoint(x: size.width * 0.49, y: size.height * 0.675)
-        let schoolMaxSize = isSchoolFocused
-            ? CGSize(width: size.width * 0.78, height: size.height * 0.38)
-            : CGSize(width: size.width * 0.63, height: size.height * 0.315)
+        let displayRect = backgroundNode.frame
 
-        schoolNode.position = schoolPosition
-        schoolNode.size = aspectFitSize(for: schoolNode, in: schoolMaxSize)
+        schoolNode.position = point(in: displayRect, layout: schoolLayout)
+        schoolNode.size = aspectFitSize(
+            for: schoolNode,
+            in: CGSize(width: size.width * 0.5 * schoolLayout.scale, height: size.height * 0.25 * schoolLayout.scale)
+        )
 
-        martNode.position = CGPoint(x: size.width * 0.74, y: size.height * 0.28)
-        martNode.size = aspectFitSize(for: martNode, in: CGSize(width: size.width * 0.34, height: size.height * 0.22))
-        martLockNode.position = CGPoint(x: martNode.position.x, y: martNode.position.y + martNode.size.height * 0.3)
+        martNode.position = point(in: displayRect, layout: martLayout)
+        martNode.size = aspectFitSize(
+            for: martNode,
+            in: CGSize(width: size.width * 0.24 * martLayout.scale, height: size.height * 0.16 * martLayout.scale)
+        )
+        martLockNode.position = CGPoint(x: martNode.position.x, y: martNode.position.y + martNode.size.height * 0.28)
 
-        characterNode.position = CGPoint(x: size.width * 0.77, y: size.height * 0.685)
-        characterNode.size = aspectFitSize(for: characterNode, in: CGSize(width: 136, height: 136))
+        characterNode.position = point(in: displayRect, layout: characterLayout)
+        characterNode.size = aspectFitSize(
+            for: characterNode,
+            in: CGSize(width: 72 * characterLayout.scale, height: 72 * characterLayout.scale)
+        )
     }
+
+    private func point(in rect: CGRect, layout: BuildingLayout) -> CGPoint {
+        CGPoint(
+            x: rect.minX + rect.width * layout.xRatio,
+            y: rect.minY + rect.height * layout.yRatio
+        )
+    }
+
+    #if DEBUG
+    func updateLayoutForDebug(
+        backgroundScale: CGFloat,
+        backgroundOffsetX: CGFloat,
+        backgroundOffsetY: CGFloat,
+        schoolX: CGFloat,
+        schoolY: CGFloat,
+        martX: CGFloat,
+        martY: CGFloat
+    ) {
+        self.backgroundScale = backgroundScale
+        self.backgroundOffset = CGPoint(x: backgroundOffsetX, y: backgroundOffsetY)
+        self.schoolLayout.xRatio = schoolX
+        self.schoolLayout.yRatio = schoolY
+        self.martLayout.xRatio = martX
+        self.martLayout.yRatio = martY
+        layoutScene()
+    }
+    #endif
 
     private func aspectFitSize(for node: SKSpriteNode, in maxSize: CGSize) -> CGSize {
         guard maxSize.width > 0, maxSize.height > 0,
@@ -1360,28 +694,10 @@ private final class KidkCityScene: SKScene {
         applyUnlockState()
     }
 
-    func setSchoolFocus(_ focused: Bool) {
-        guard isSchoolFocused != focused else { return }
-        isSchoolFocused = focused
-        layoutScene()
-        applyUnlockState()
-    }
-
     private func applyUnlockState() {
         let martUnlocked = unlockedLocations.contains(.mart)
-        let martBaseAlpha: CGFloat = martUnlocked ? 1.0 : 0.6
-
-        if isSchoolFocused {
-            focusDimNode.alpha = 0.38
-            martNode.alpha = martBaseAlpha * 0.35
-            martLockNode.alpha = martUnlocked ? 0.0 : 0.4
-            characterNode.alpha = 0
-        } else {
-            focusDimNode.alpha = 0
-            martNode.alpha = martBaseAlpha
-            martLockNode.alpha = martUnlocked ? 0.0 : 1.0
-            characterNode.alpha = 1
-        }
+        martNode.alpha = martUnlocked ? 1.0 : 0.6
+        martLockNode.alpha = martUnlocked ? 0.0 : 1.0
     }
 
     private func startIdleAnimation() {
