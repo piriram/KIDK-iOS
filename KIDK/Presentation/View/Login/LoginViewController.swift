@@ -66,7 +66,7 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "이메일을 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
-        textField.text = "test@kidk.com" // Firebase 테스트 계정
+        textField.text = "test@kidk.com" // 개발용 테스트 계정
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
@@ -98,7 +98,7 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "비밀번호를 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
-        textField.text = "test123456" // Firebase 테스트 계정 비밀번호
+        textField.text = "test123456" // 개발용 테스트 비밀번호
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
