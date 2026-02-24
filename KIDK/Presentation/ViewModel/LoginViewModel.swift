@@ -61,10 +61,8 @@ final class LoginViewModel: BaseViewModel {
             })
             .flatMapLatest { [weak self] email, password, userType -> Observable<User> in
                 guard let self = self else { return .empty() }
-                // Backend 단일 로그인 경로 사용
-                return self.realLogin(email: email, password: password, userType: userType)
                 // Mock 로그인 (개발용)
-                // return self.mockLogin(email: email, password: password, userType: userType)
+                return self.mockLogin(email: email, password: password, userType: userType)
             }
             .do(onNext: { [weak self] user in
                 self?.stopLoading()
