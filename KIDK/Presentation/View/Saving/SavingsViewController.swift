@@ -18,6 +18,7 @@ final class SavingsViewController: BaseViewController {
     private let contentView = UIView()
 
     private let headerView = SavingsHeaderView()
+    private let quickStatsView = SavingsQuickStatsView()
 
     private let inProgressSection = SectionHeaderView()
     private let inProgressStackView: UIStackView = {
@@ -123,6 +124,7 @@ final class SavingsViewController: BaseViewController {
         scrollView.addSubview(contentView)
 
         contentView.addSubview(headerView)
+        contentView.addSubview(quickStatsView)
         contentView.addSubview(inProgressSection)
         contentView.addSubview(inProgressStackView)
         contentView.addSubview(completedSection)
@@ -151,8 +153,13 @@ final class SavingsViewController: BaseViewController {
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
+        quickStatsView.snp.makeConstraints { make in
+            make.top.equalTo(headerView.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
         inProgressSection.snp.makeConstraints { make in
-            make.top.equalTo(headerView.snp.bottom).offset(Spacing.lg)
+            make.top.equalTo(quickStatsView.snp.bottom).offset(Spacing.lg)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
@@ -240,6 +247,11 @@ final class SavingsViewController: BaseViewController {
         output.stats
             .drive(onNext: { [weak self] stats in
                 self?.headerView.configure(with: stats)
+                self?.quickStatsView.configure(
+                    streakDays: stats.currentStreak,
+                    weeklyAverage: stats.averageWeeklySavings.formattedCurrency,
+                    monthlyAverage: stats.averageMonthlySavings.formattedCurrency
+                )
             })
             .disposed(by: disposeBag)
 
@@ -288,19 +300,7 @@ final class SavingsViewController: BaseViewController {
         inProgressStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         if goals.isEmpty {
-            let emptyLabel = UILabel()
-            emptyLabel.applyTextStyle(
-                text: "진행 중인 저축 목표가 없습니다",
-                size: .s14,
-                weight: .regular,
-                color: .kidkGray,
-                lineHeight: 140
-            )
-            emptyLabel.textAlignment = .center
-            inProgressStackView.addArrangedSubview(emptyLabel)
-            emptyLabel.snp.makeConstraints { make in
-                make.height.equalTo(48)
-            }
+            inProgressStackView.addArrangedSubview(makeSectionEmptyCard(message: "진행 중인 저축 목표가 없습니다"))
         } else {
             goals.forEach { goal in
                 let cardView = SavingsGoalCardView()
@@ -319,19 +319,7 @@ final class SavingsViewController: BaseViewController {
         completedStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
 
         if goals.isEmpty {
-            let emptyLabel = UILabel()
-            emptyLabel.applyTextStyle(
-                text: "달성한 저축 목표가 없습니다",
-                size: .s14,
-                weight: .regular,
-                color: .kidkGray,
-                lineHeight: 140
-            )
-            emptyLabel.textAlignment = .center
-            completedStackView.addArrangedSubview(emptyLabel)
-            emptyLabel.snp.makeConstraints { make in
-                make.height.equalTo(48)
-            }
+            completedStackView.addArrangedSubview(makeSectionEmptyCard(message: "달성한 저축 목표가 없습니다"))
         } else {
             goals.forEach { goal in
                 let cardView = SavingsGoalCardView()
@@ -342,5 +330,169 @@ final class SavingsViewController: BaseViewController {
                 completedStackView.addArrangedSubview(cardView)
             }
         }
+    }
+
+    private func makeSectionEmptyCard(message: String) -> UIView {
+        let container = UIView()
+        container.backgroundColor = .cardBackground
+        container.layer.cornerRadius = CornerRadius.medium
+        container.layer.borderWidth = 1
+        container.layer.borderColor = UIColor.white.withAlphaComponent(0.06).cgColor
+
+        let iconView = UIImageView(image: UIImage(systemName: "tray"))
+        iconView.tintColor = .kidkGray
+
+        let messageLabel = UILabel()
+        messageLabel.applyTextStyle(
+            text: message,
+            size: .s14,
+            weight: .regular,
+            color: .kidkGray,
+            lineHeight: 140
+        )
+        messageLabel.textAlignment = .center
+
+        container.addSubview(iconView)
+        container.addSubview(messageLabel)
+
+        iconView.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(Spacing.sm)
+            make.centerX.equalToSuperview()
+            make.width.height.equalTo(18)
+        }
+
+        messageLabel.snp.makeConstraints { make in
+            make.top.equalTo(iconView.snp.bottom).offset(Spacing.xxs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.bottom.equalToSuperview().inset(Spacing.sm)
+        }
+
+        container.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(78)
+        }
+
+        return container
+    }
+}
+
+private final class SavingsQuickStatsView: UIView {
+
+    private let stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.xs
+        stack.distribution = .fillEqually
+        return stack
+    }()
+
+    private let streakItem = SavingsQuickStatItemView()
+    private let weeklyItem = SavingsQuickStatItemView()
+    private let monthlyItem = SavingsQuickStatItemView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(stackView)
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        stackView.addArrangedSubview(streakItem)
+        stackView.addArrangedSubview(weeklyItem)
+        stackView.addArrangedSubview(monthlyItem)
+
+        streakItem.configure(title: "연속", value: "0일", iconName: "flame.fill", tintColor: .kidkPink)
+        weeklyItem.configure(title: "주간 평균", value: "0원", iconName: "calendar.badge.clock", tintColor: .kidkBlue)
+        monthlyItem.configure(title: "월간 평균", value: "0원", iconName: "chart.line.uptrend.xyaxis", tintColor: .kidkGreen)
+    }
+
+    func configure(streakDays: Int, weeklyAverage: String, monthlyAverage: String) {
+        streakItem.configure(title: "연속", value: "\(max(streakDays, 0))일", iconName: "flame.fill", tintColor: .kidkPink)
+        weeklyItem.configure(title: "주간 평균", value: weeklyAverage, iconName: "calendar.badge.clock", tintColor: .kidkBlue)
+        monthlyItem.configure(title: "월간 평균", value: monthlyAverage, iconName: "chart.line.uptrend.xyaxis", tintColor: .kidkGreen)
+    }
+}
+
+private final class SavingsQuickStatItemView: UIView {
+
+    private let iconView = UIImageView()
+    private let titleLabel = UILabel()
+    private let valueLabel = UILabel()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = UIColor.white.withAlphaComponent(0.04)
+        layer.cornerRadius = CornerRadius.medium
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.white.withAlphaComponent(0.06).cgColor
+
+        iconView.contentMode = .scaleAspectFit
+
+        titleLabel.applyTextStyle(
+            text: "",
+            size: .s12,
+            weight: .regular,
+            color: .kidkGray,
+            lineHeight: 120
+        )
+
+        valueLabel.applyTextStyle(
+            text: "",
+            size: .s14,
+            weight: .bold,
+            color: .kidkTextWhite,
+            lineHeight: 130
+        )
+        valueLabel.adjustsFontSizeToFitWidth = true
+        valueLabel.minimumScaleFactor = 0.8
+
+        addSubview(iconView)
+        addSubview(titleLabel)
+        addSubview(valueLabel)
+
+        iconView.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(Spacing.xs)
+            make.width.height.equalTo(14)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.centerY.equalTo(iconView)
+            make.leading.equalTo(iconView.snp.trailing).offset(4)
+            make.trailing.lessThanOrEqualToSuperview().inset(Spacing.xs)
+        }
+
+        valueLabel.snp.makeConstraints { make in
+            make.top.equalTo(iconView.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.xs)
+            make.bottom.equalToSuperview().inset(Spacing.xs)
+        }
+
+        snp.makeConstraints { make in
+            make.height.equalTo(70)
+        }
+    }
+
+    func configure(title: String, value: String, iconName: String, tintColor: UIColor) {
+        titleLabel.text = title
+        valueLabel.text = value
+        valueLabel.textColor = tintColor
+        iconView.image = UIImage(systemName: iconName)
+        iconView.tintColor = tintColor
     }
 }
