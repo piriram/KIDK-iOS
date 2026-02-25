@@ -93,10 +93,15 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private var debugBgScale: CGFloat = 1.0
     private var debugBgOffsetX: CGFloat = 0
     private var debugBgOffsetY: CGFloat = 0
-    private var debugSchoolX: CGFloat = 0.3169
-    private var debugSchoolY: CGFloat = 0.7401
-    private var debugMartX: CGFloat = 0.80
-    private var debugMartY: CGFloat = 0.33
+    private var debugHomeX: CGFloat = 0.0060
+    private var debugHomeY: CGFloat = 0.4447
+    private var debugHomeScale: CGFloat = 1.173
+    private var debugSchoolX: CGFloat = 0.3964
+    private var debugSchoolY: CGFloat = 0.7712
+    private var debugSchoolScale: CGFloat = 1.269
+    private var debugMartX: CGFloat = 0.7781
+    private var debugMartY: CGFloat = 0.2945
+    private var debugMartScale: CGFloat = 1.456
 
     private let debugPanel = UIStackView()
     private let debugSummaryLabel = UILabel()
@@ -248,6 +253,9 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         let scene = KidkCityScene(size: gameView.bounds.size)
         scene.scaleMode = .resizeFill
         scene.setUnlockedLocations(latestUnlockedLocations)
+        scene.onHomeTapped = { [weak self] in
+            self?.homeButtonTapped()
+        }
         scene.onSchoolTapped = { [weak self] in
             self?.showMissionSelectionSheet()
         }
@@ -424,7 +432,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
         debugPanel.axis = .vertical
         debugPanel.spacing = 6
-        debugPanel.backgroundColor = UIColor.black.withAlphaComponent(0.78)
+        debugPanel.backgroundColor = UIColor.black.withAlphaComponent(0.2)
         debugPanel.layer.cornerRadius = 10
         debugPanel.isLayoutMarginsRelativeArrangement = true
         debugPanel.layoutMargins = UIEdgeInsets(top: 10, left: 10, bottom: 10, right: 10)
@@ -434,18 +442,19 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         debugSummaryLabel.textColor = .white
         debugSummaryLabel.numberOfLines = 0
 
-        debugPanel.addArrangedSubview(makeSliderRow(title: "bgScale", min: 0.8, max: 1.4, value: Float(debugBgScale)) { [weak self] value in
-            self?.debugBgScale = CGFloat(value)
+        debugPanel.addArrangedSubview(makeSliderRow(title: "homeX", min: 0.0, max: 1.0, value: Float(debugHomeX)) { [weak self] value in
+            self?.debugHomeX = CGFloat(value)
             self?.applyDebugLayoutToScene()
         })
-        debugPanel.addArrangedSubview(makeSliderRow(title: "bgOffsetX", min: -120, max: 120, value: Float(debugBgOffsetX)) { [weak self] value in
-            self?.debugBgOffsetX = CGFloat(value)
+        debugPanel.addArrangedSubview(makeSliderRow(title: "homeY", min: 0.0, max: 1.0, value: Float(debugHomeY)) { [weak self] value in
+            self?.debugHomeY = CGFloat(value)
             self?.applyDebugLayoutToScene()
         })
-        debugPanel.addArrangedSubview(makeSliderRow(title: "bgOffsetY", min: -120, max: 120, value: Float(debugBgOffsetY)) { [weak self] value in
-            self?.debugBgOffsetY = CGFloat(value)
+        debugPanel.addArrangedSubview(makeSliderRow(title: "homeScale", min: 0.5, max: 2.6, value: Float(debugHomeScale)) { [weak self] value in
+            self?.debugHomeScale = CGFloat(value)
             self?.applyDebugLayoutToScene()
         })
+
         debugPanel.addArrangedSubview(makeSliderRow(title: "schoolX", min: 0.0, max: 1.0, value: Float(debugSchoolX)) { [weak self] value in
             self?.debugSchoolX = CGFloat(value)
             self?.applyDebugLayoutToScene()
@@ -454,12 +463,20 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             self?.debugSchoolY = CGFloat(value)
             self?.applyDebugLayoutToScene()
         })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "schoolScale", min: 0.5, max: 1.8, value: Float(debugSchoolScale)) { [weak self] value in
+            self?.debugSchoolScale = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
         debugPanel.addArrangedSubview(makeSliderRow(title: "martX", min: 0.0, max: 1.0, value: Float(debugMartX)) { [weak self] value in
             self?.debugMartX = CGFloat(value)
             self?.applyDebugLayoutToScene()
         })
         debugPanel.addArrangedSubview(makeSliderRow(title: "martY", min: 0.0, max: 1.0, value: Float(debugMartY)) { [weak self] value in
             self?.debugMartY = CGFloat(value)
+            self?.applyDebugLayoutToScene()
+        })
+        debugPanel.addArrangedSubview(makeSliderRow(title: "martScale", min: 0.5, max: 2.6, value: Float(debugMartScale)) { [weak self] value in
+            self?.debugMartScale = CGFloat(value)
             self?.applyDebugLayoutToScene()
         })
 
@@ -533,10 +550,15 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         debugBgScale = 1.0
         debugBgOffsetX = 0
         debugBgOffsetY = 0
-        debugSchoolX = 0.3169
-        debugSchoolY = 0.7401
-        debugMartX = 0.80
-        debugMartY = 0.33
+        debugHomeX = 0.0060
+        debugHomeY = 0.4447
+        debugHomeScale = 1.173
+        debugSchoolX = 0.3964
+        debugSchoolY = 0.7712
+        debugSchoolScale = 1.269
+        debugMartX = 0.7781
+        debugMartY = 0.2945
+        debugMartScale = 1.456
         applyDebugLayoutToScene()
     }
 
@@ -545,16 +567,21 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             backgroundScale: debugBgScale,
             backgroundOffsetX: debugBgOffsetX,
             backgroundOffsetY: debugBgOffsetY,
+            homeX: debugHomeX,
+            homeY: debugHomeY,
+            homeScale: debugHomeScale,
             schoolX: debugSchoolX,
             schoolY: debugSchoolY,
+            schoolScale: debugSchoolScale,
             martX: debugMartX,
-            martY: debugMartY
+            martY: debugMartY,
+            martScale: debugMartScale
         )
         refreshDebugSummary()
     }
 
     private func refreshDebugSummary() {
-        debugSummaryLabel.text = "bgScale: \(String(format: "%.2f", debugBgScale))\nbgOffset: (\(Int(debugBgOffsetX)), \(Int(debugBgOffsetY)))\nschool: (\(String(format: "%.3f", debugSchoolX)), \(String(format: "%.3f", debugSchoolY)))\nmart: (\(String(format: "%.3f", debugMartX)), \(String(format: "%.3f", debugMartY)))"
+        debugSummaryLabel.text = "home: (\(String(format: "%.3f", debugHomeX)), \(String(format: "%.3f", debugHomeY))), s=\(String(format: "%.2f", debugHomeScale))\nschool: (\(String(format: "%.3f", debugSchoolX)), \(String(format: "%.3f", debugSchoolY))), s=\(String(format: "%.2f", debugSchoolScale))\nmart: (\(String(format: "%.3f", debugMartX)), \(String(format: "%.3f", debugMartY))), s=\(String(format: "%.2f", debugMartScale))"
     }
 
     @objc private func copyDebugJSON() {
@@ -566,8 +593,9 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             "bgOffsetY": \(String(format: "%.1f", debugBgOffsetY))
           },
           "buildings": {
-            "school": { "xRatio": \(String(format: "%.4f", debugSchoolX)), "yRatio": \(String(format: "%.4f", debugSchoolY)) },
-            "mart": { "xRatio": \(String(format: "%.4f", debugMartX)), "yRatio": \(String(format: "%.4f", debugMartY)) }
+            "home": { "xRatio": \(String(format: "%.4f", debugHomeX)), "yRatio": \(String(format: "%.4f", debugHomeY)), "scale": \(String(format: "%.3f", debugHomeScale)) },
+            "school": { "xRatio": \(String(format: "%.4f", debugSchoolX)), "yRatio": \(String(format: "%.4f", debugSchoolY)), "scale": \(String(format: "%.3f", debugSchoolScale)) },
+            "mart": { "xRatio": \(String(format: "%.4f", debugMartX)), "yRatio": \(String(format: "%.4f", debugMartY)), "scale": \(String(format: "%.3f", debugMartScale)) }
           }
         }
         """
@@ -586,12 +614,20 @@ private final class KidkCityScene: SKScene {
         var scale: CGFloat
     }
 
+    var onHomeTapped: (() -> Void)?
     var onSchoolTapped: (() -> Void)?
     var onLockedLocationTapped: ((KIDKCityLocationType) -> Void)?
 
     private let backgroundNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_city_map_background")
         node.zPosition = 0
+        return node
+    }()
+
+    private let homeNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_home")
+        node.name = "home"
+        node.zPosition = 2
         return node
     }()
 
@@ -609,14 +645,6 @@ private final class KidkCityScene: SKScene {
         return node
     }()
 
-    private let martLockNode: SKLabelNode = {
-        let node = SKLabelNode(text: "🔒")
-        node.fontSize = 24
-        node.zPosition = 4
-        node.alpha = 0
-        return node
-    }()
-
     private let characterNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_character_side_walk_1")
         node.zPosition = 3
@@ -628,16 +656,17 @@ private final class KidkCityScene: SKScene {
     // NOTE: 좌표는 "scene size"가 아니라 "배경 표시 영역(frame)" 기준 ratio로 관리한다.
     private var backgroundScale: CGFloat = 1.0
     private var backgroundOffset: CGPoint = .zero
-    private var schoolLayout = BuildingLayout(xRatio: 0.3169, yRatio: 0.7401, scale: 1.0)
-    private var martLayout = BuildingLayout(xRatio: 0.80, yRatio: 0.33, scale: 1.0)
+    private var homeLayout = BuildingLayout(xRatio: 0.0060, yRatio: 0.4447, scale: 1.173)
+    private var schoolLayout = BuildingLayout(xRatio: 0.3964, yRatio: 0.7712, scale: 1.269)
+    private var martLayout = BuildingLayout(xRatio: 0.7781, yRatio: 0.2945, scale: 1.456)
     private var characterLayout = BuildingLayout(xRatio: 0.20, yRatio: 0.38, scale: 1.0)
 
     override func didMove(to view: SKView) {
         backgroundColor = .clear
         addChild(backgroundNode)
+        addChild(homeNode)
         addChild(schoolNode)
         addChild(martNode)
-        addChild(martLockNode)
         addChild(characterNode)
         layoutScene()
         applyUnlockState()
@@ -664,6 +693,12 @@ private final class KidkCityScene: SKScene {
 
         let displayRect = backgroundNode.frame
 
+        homeNode.position = point(in: displayRect, layout: homeLayout)
+        homeNode.size = aspectFitSize(
+            for: homeNode,
+            in: CGSize(width: size.width * 0.28 * homeLayout.scale, height: size.height * 0.20 * homeLayout.scale)
+        )
+
         schoolNode.position = point(in: displayRect, layout: schoolLayout)
         schoolNode.size = aspectFitSize(
             for: schoolNode,
@@ -673,9 +708,8 @@ private final class KidkCityScene: SKScene {
         martNode.position = point(in: displayRect, layout: martLayout)
         martNode.size = aspectFitSize(
             for: martNode,
-            in: CGSize(width: size.width * 0.24 * martLayout.scale, height: size.height * 0.16 * martLayout.scale)
+            in: CGSize(width: size.width * 0.30 * martLayout.scale, height: size.height * 0.20 * martLayout.scale)
         )
-        martLockNode.position = CGPoint(x: martNode.position.x, y: martNode.position.y + martNode.size.height * 0.28)
 
         characterNode.position = point(in: displayRect, layout: characterLayout)
         characterNode.size = aspectFitSize(
@@ -696,17 +730,27 @@ private final class KidkCityScene: SKScene {
         backgroundScale: CGFloat,
         backgroundOffsetX: CGFloat,
         backgroundOffsetY: CGFloat,
+        homeX: CGFloat,
+        homeY: CGFloat,
+        homeScale: CGFloat,
         schoolX: CGFloat,
         schoolY: CGFloat,
+        schoolScale: CGFloat,
         martX: CGFloat,
-        martY: CGFloat
+        martY: CGFloat,
+        martScale: CGFloat
     ) {
         self.backgroundScale = backgroundScale
         self.backgroundOffset = CGPoint(x: backgroundOffsetX, y: backgroundOffsetY)
+        self.homeLayout.xRatio = homeX
+        self.homeLayout.yRatio = homeY
+        self.homeLayout.scale = homeScale
         self.schoolLayout.xRatio = schoolX
         self.schoolLayout.yRatio = schoolY
+        self.schoolLayout.scale = schoolScale
         self.martLayout.xRatio = martX
         self.martLayout.yRatio = martY
+        self.martLayout.scale = martScale
         layoutScene()
     }
     #endif
@@ -739,9 +783,7 @@ private final class KidkCityScene: SKScene {
     }
 
     private func applyUnlockState() {
-        let martUnlocked = unlockedLocations.contains(.mart)
-        martNode.alpha = martUnlocked ? 1.0 : 0.6
-        martLockNode.alpha = martUnlocked ? 0.0 : 1.0
+        martNode.alpha = 1.0
     }
 
     private func startIdleAnimation() {
@@ -756,6 +798,11 @@ private final class KidkCityScene: SKScene {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         let node = atPoint(location)
+
+        if node.name == "home" || node.parent?.name == "home" {
+            onHomeTapped?()
+            return
+        }
 
         if node.name == "school" || node.parent?.name == "school" {
             onSchoolTapped?()
