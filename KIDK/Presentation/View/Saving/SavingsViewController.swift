@@ -322,7 +322,8 @@ final class SavingsViewController: BaseViewController {
         headerView.applyStyle(visualStyle)
         quickStatsView.applyStyle(visualStyle)
         bentoOverviewView.applyStyle(visualStyle)
-        warmHeroView.applyStyle(visualStyle)
+        let warmHeroStyle: SavingsDisplayStyle = (style == .warmKids) ? .bentoDashboard : visualStyle
+        warmHeroView.applyStyle(warmHeroStyle)
         inProgressSection.applyStyle(titleColor: visualStyle.sectionTitleColor, subtitleColor: visualStyle.sectionSubtitleColor)
         completedSection.applyStyle(titleColor: visualStyle.sectionTitleColor, subtitleColor: visualStyle.sectionSubtitleColor)
 
