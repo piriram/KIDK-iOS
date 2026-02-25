@@ -17,7 +17,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor(hex: "#1F2229")
         case .bentoDashboard: return UIColor(hex: "#1B1C24")
-        case .warmKids: return UIColor(hex: "#2A1F2B")
+        case .warmKids: return UIColor(hex: "#2B1E29")
         }
     }
 
@@ -25,7 +25,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkBlue
         case .bentoDashboard: return UIColor(hex: "#8B7CFF")
-        case .warmKids: return UIColor(hex: "#FF7A7A")
+        case .warmKids: return .kidkPink
         }
     }
 
@@ -33,7 +33,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkGreen
         case .bentoDashboard: return .kidkPink
-        case .warmKids: return UIColor(hex: "#FFB64D")
+        case .warmKids: return UIColor(hex: "#FF9BC7")
         }
     }
 
@@ -44,7 +44,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         case .bentoDashboard:
             return [UIColor(hex: "#3A2A63"), UIColor(hex: "#28345D"), UIColor(hex: "#202437")]
         case .warmKids:
-            return [UIColor(hex: "#5B2D4F"), UIColor(hex: "#3E2E56"), UIColor(hex: "#2A2239")]
+            return [UIColor(hex: "#5A2848"), UIColor(hex: "#4A2742"), UIColor(hex: "#342131")]
         }
     }
 
@@ -52,7 +52,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor.white.withAlphaComponent(0.10)
         case .bentoDashboard: return UIColor(hex: "#8B7CFF").withAlphaComponent(0.45)
-        case .warmKids: return UIColor(hex: "#FF9C5B").withAlphaComponent(0.40)
+        case .warmKids: return UIColor(hex: "#FF8FC2").withAlphaComponent(0.42)
         }
     }
 
@@ -60,7 +60,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor.white.withAlphaComponent(0.16)
         case .bentoDashboard: return UIColor(hex: "#8B7CFF").withAlphaComponent(0.28)
-        case .warmKids: return UIColor(hex: "#FF9C5B").withAlphaComponent(0.28)
+        case .warmKids: return UIColor(hex: "#FF8FC2").withAlphaComponent(0.28)
         }
     }
 
@@ -68,7 +68,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor.white.withAlphaComponent(0.80)
         case .bentoDashboard: return UIColor(hex: "#D7D9FF")
-        case .warmKids: return UIColor(hex: "#FFE4D3")
+        case .warmKids: return UIColor(hex: "#FFDDF0")
         }
     }
 
@@ -76,7 +76,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor.white.withAlphaComponent(0.06)
         case .bentoDashboard: return UIColor(hex: "#2E3250")
-        case .warmKids: return UIColor(hex: "#463050")
+        case .warmKids: return UIColor(hex: "#44283D")
         }
     }
 
@@ -84,7 +84,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor.white.withAlphaComponent(0.08)
         case .bentoDashboard: return UIColor(hex: "#8B7CFF").withAlphaComponent(0.38)
-        case .warmKids: return UIColor(hex: "#FF9C5B").withAlphaComponent(0.34)
+        case .warmKids: return UIColor(hex: "#FF9BC7").withAlphaComponent(0.36)
         }
     }
 
@@ -92,7 +92,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkGray
         case .bentoDashboard: return UIColor(hex: "#C3C8FF")
-        case .warmKids: return UIColor(hex: "#FAD8C0")
+        case .warmKids: return UIColor(hex: "#F9CDE4")
         }
     }
 
@@ -100,7 +100,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkTextWhite
         case .bentoDashboard: return UIColor(hex: "#F3F4FF")
-        case .warmKids: return UIColor(hex: "#FFF0E7")
+        case .warmKids: return UIColor(hex: "#FFEAF5")
         }
     }
 
@@ -108,7 +108,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkGray
         case .bentoDashboard: return UIColor(hex: "#B9BFF3")
-        case .warmKids: return UIColor(hex: "#F3C8B2")
+        case .warmKids: return UIColor(hex: "#F2BDD8")
         }
     }
 
@@ -116,7 +116,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor(hex: "#2A2E38")
         case .bentoDashboard: return UIColor(hex: "#262B43")
-        case .warmKids: return UIColor(hex: "#3A2B44")
+        case .warmKids: return UIColor(hex: "#4A2A40")
         }
     }
 
@@ -132,7 +132,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkGray
         case .bentoDashboard: return UIColor(hex: "#C4C9F3")
-        case .warmKids: return UIColor(hex: "#F7D3C4")
+        case .warmKids: return UIColor(hex: "#F8D7E8")
         }
     }
 
@@ -140,7 +140,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor(hex: "#2A2E38")
         case .bentoDashboard: return UIColor(hex: "#252A41")
-        case .warmKids: return UIColor(hex: "#3A2B44")
+        case .warmKids: return UIColor(hex: "#43263A")
         }
     }
 
@@ -148,7 +148,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return UIColor.white.withAlphaComponent(0.06)
         case .bentoDashboard: return UIColor(hex: "#8B7CFF").withAlphaComponent(0.30)
-        case .warmKids: return UIColor(hex: "#FF9C5B").withAlphaComponent(0.28)
+        case .warmKids: return UIColor(hex: "#FF9BC7").withAlphaComponent(0.30)
         }
     }
 
@@ -156,7 +156,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkGray
         case .bentoDashboard: return UIColor(hex: "#B2B9FF")
-        case .warmKids: return UIColor(hex: "#FFC28A")
+        case .warmKids: return UIColor(hex: "#FFB6D8")
         }
     }
 
@@ -164,7 +164,7 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         switch self {
         case .neoBankClean: return .kidkBlue
         case .bentoDashboard: return UIColor(hex: "#8B7CFF")
-        case .warmKids: return UIColor(hex: "#FF8E6E")
+        case .warmKids: return .kidkPink
         }
     }
 
@@ -181,9 +181,9 @@ enum SavingsDisplayStyle: Int, CaseIterable {
         case (.bentoDashboard, .completed):
             return .kidkPink
         case (.warmKids, .inProgress):
-            return UIColor(hex: "#FF9C5B")
+            return .kidkPink
         case (.warmKids, .completed):
-            return UIColor(hex: "#FFD166")
+            return UIColor(hex: "#FF9BC7")
         }
     }
 

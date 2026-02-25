@@ -389,12 +389,7 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func designStyle(for layoutStyle: SavingsDisplayStyle) -> SavingsDisplayStyle {
-        switch layoutStyle {
-        case .warmKids:
-            return .bentoDashboard
-        default:
-            return layoutStyle
-        }
+        layoutStyle
     }
 
     private func updateInProgressGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
