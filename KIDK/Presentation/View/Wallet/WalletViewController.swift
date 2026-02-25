@@ -8,48 +8,39 @@ final class WalletViewController: BaseViewController {
     // MARK: - Properties
     private let viewModel: WalletViewModel
 
-    private let tableView: UITableView = {
-        let tableView = UITableView(frame: .zero, style: .grouped)
-        tableView.backgroundColor = .kidkDarkBackground
-        tableView.separatorStyle = .none
-        tableView.showsVerticalScrollIndicator = false
-        tableView.sectionHeaderHeight = UITableView.automaticDimension
-        tableView.estimatedSectionHeaderHeight = 60
-        tableView.sectionFooterHeight = 0
-        tableView.estimatedSectionFooterHeight = 0
-        if #available(iOS 15.0, *) {
-            tableView.sectionHeaderTopPadding = 0
-        }
-        return tableView
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsVerticalScrollIndicator = false
+        scrollView.alwaysBounceVertical = true
+        scrollView.backgroundColor = .clear
+        return scrollView
     }()
 
+    private let contentView = UIView()
+
+    private let contentStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = Spacing.lg
+        return stack
+    }()
+
+    // A안 + 게임요소
+    private let summaryCockpitView = WalletSummaryCockpitView()
+    private let gameStatusView = WalletGameStatusView()
+
+    private let quickActionsSectionView = WalletSectionView()
+    private let accountsSectionView = WalletSectionView()
+    private let savingsSectionView = WalletSectionView()
+    private let transactionsSectionView = WalletSectionView()
+    private let cardSectionView = WalletSectionView()
+
+    private let quickActionsRowView = WalletQuickActionsRowView()
+    private let accountsCarouselView = WalletAccountsCarouselView()
+    private let savingsCarouselView = WalletSavingsCarouselView()
+    private let transactionsTimelineView = WalletTransactionsTimelineView()
+
     private let refreshControl = UIRefreshControl()
-
-    private enum Section: Int, CaseIterable {
-        case hero
-        case quickActions
-        case accounts
-        case goals
-        case transactions
-        case card
-
-        var title: String? {
-            switch self {
-            case .hero:
-                return nil
-            case .quickActions:
-                return "빠른 액션"
-            case .accounts:
-                return "내 통장"
-            case .goals:
-                return "저축 목표"
-            case .transactions:
-                return "최근 거래"
-            case .card:
-                return "내 카드"
-            }
-        }
-    }
 
     // MARK: - Initialization
     init(viewModel: WalletViewModel) {
@@ -65,37 +56,70 @@ final class WalletViewController: BaseViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupNavigationBar()
-        setupTableView()
+        setupUI()
         bind()
     }
 
     // MARK: - Setup
     private func setupNavigationBar() {
         title = "내 지갑"
-        view.backgroundColor = .kidkDarkBackground
         navigationController?.navigationBar.prefersLargeTitles = true
     }
 
-    private func setupTableView() {
-        view.addSubview(tableView)
+    private func setupUI() {
+        view.backgroundColor = .kidkDarkBackground
+        refreshControl.tintColor = .kidkPink
 
-        tableView.snp.makeConstraints { make in
+        view.addSubview(scrollView)
+        scrollView.addSubview(contentView)
+        contentView.addSubview(contentStackView)
+
+        scrollView.refreshControl = refreshControl
+
+        scrollView.snp.makeConstraints { make in
             make.edges.equalTo(view.safeAreaLayoutGuide)
         }
 
-        tableView.delegate = self
-        tableView.dataSource = self
+        contentView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.width.equalTo(scrollView)
+        }
 
-        tableView.register(UITableViewCell.self, forCellReuseIdentifier: "PlaceholderCell")
-        tableView.register(WalletHeroCell.self, forCellReuseIdentifier: WalletHeroCell.identifier)
-        tableView.register(WalletQuickActionsGridCell.self, forCellReuseIdentifier: WalletQuickActionsGridCell.identifier)
-        tableView.register(WalletAccountModernCell.self, forCellReuseIdentifier: WalletAccountModernCell.identifier)
-        tableView.register(WalletGoalModernCell.self, forCellReuseIdentifier: WalletGoalModernCell.identifier)
-        tableView.register(WalletTransactionModernCell.self, forCellReuseIdentifier: WalletTransactionModernCell.identifier)
-        tableView.register(WalletCardModernCell.self, forCellReuseIdentifier: WalletCardModernCell.identifier)
+        contentStackView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.bottom.equalToSuperview().offset(-Spacing.xl)
+        }
 
-        refreshControl.tintColor = .kidkPink
-        tableView.refreshControl = refreshControl
+        contentStackView.addArrangedSubview(summaryCockpitView)
+        contentStackView.addArrangedSubview(gameStatusView)
+        contentStackView.addArrangedSubview(quickActionsSectionView)
+        contentStackView.addArrangedSubview(accountsSectionView)
+        contentStackView.addArrangedSubview(savingsSectionView)
+        contentStackView.addArrangedSubview(transactionsSectionView)
+        contentStackView.addArrangedSubview(cardSectionView)
+
+        summaryCockpitView.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(220)
+        }
+
+        quickActionsSectionView.configure(title: "빠른 액션", subtitle: "한 번에 바로 실행")
+        quickActionsSectionView.setContentView(quickActionsRowView)
+
+        accountsSectionView.configure(title: "내 통장", subtitle: "좌우로 넘겨서 확인")
+        accountsSectionView.setContentView(accountsCarouselView)
+
+        savingsSectionView.configure(title: "저축 목표", subtitle: "진행 중 목표 트랙")
+        savingsSectionView.setContentView(savingsCarouselView)
+
+        transactionsSectionView.configure(title: "최근 거래 타임라인", subtitle: "오늘부터 최근 순")
+        transactionsSectionView.setContentView(transactionsTimelineView)
+
+        cardSectionView.configure(title: "내 카드", subtitle: "카드 상태 확인")
+
+        quickActionsRowView.onActionTap = { [weak self] action in
+            self?.handleQuickAction(action)
+        }
     }
 
     private func bind() {
@@ -115,63 +139,99 @@ final class WalletViewController: BaseViewController {
             viewModel.dailySpendingLimit.asObservable()
         )
         .observe(on: MainScheduler.instance)
-        .subscribe(onNext: { [weak self] _, _, _, _, _, _, _ in
-            self?.tableView.reloadData()
-            self?.refreshControl.endRefreshing()
+        .subscribe(onNext: { [weak self] accounts, transactions, savingsGoals, card, level, exp, dailyLimit in
+            self?.render(
+                accounts: accounts,
+                transactions: transactions,
+                savingsGoals: savingsGoals,
+                card: card,
+                level: level,
+                experience: exp,
+                dailyLimit: dailyLimit
+            )
         })
         .disposed(by: disposeBag)
     }
 
-    private func sectionSubtitle(for section: Section) -> String? {
-        switch section {
-        case .hero:
-            return nil
-        case .quickActions:
-            return "입금, 출금, 이체, 영수증"
-        case .accounts:
-            return viewModel.accounts.value.isEmpty ? "등록된 통장이 없어요" : "총 \(viewModel.accounts.value.count)개"
-        case .goals:
-            let count = viewModel.savingsGoals.value.count
-            return count == 0 ? "진행 중인 목표가 없어요" : "진행 중 \(count)개"
-        case .transactions:
-            let count = viewModel.transactions.value.count
-            return count == 0 ? "최근 거래가 없어요" : "최근 \(min(count, 8))건"
-        case .card:
-            return viewModel.card.value == nil ? "연결된 카드가 없어요" : "카드 상태를 확인해요"
+    // MARK: - Render
+    private func render(
+        accounts: [Account],
+        transactions: [Transaction],
+        savingsGoals: [SavingsGoal],
+        card: Card?,
+        level: Int,
+        experience: Int,
+        dailyLimit: Int
+    ) {
+        let totalBalance = viewModel.getTotalBalance()
+        let primaryAccountName = viewModel.getPrimaryAccount()?.name ?? "주 계좌 없음"
+        let todaySpent = calculateTodaySpent(from: transactions)
+        let todayMissionCount = calculateTodayMissionCount(from: transactions)
+
+        summaryCockpitView.configure(
+            totalBalance: totalBalance,
+            primaryAccountName: primaryAccountName,
+            accountCount: accounts.count,
+            goalCount: savingsGoals.count,
+            dailyLimit: dailyLimit,
+            todaySpent: todaySpent
+        )
+
+        gameStatusView.configure(
+            level: level,
+            experience: experience,
+            missionDone: todayMissionCount,
+            missionTarget: 3,
+            savingsGoalCount: savingsGoals.count,
+            accountCount: accounts.count
+        )
+
+        accountsCarouselView.configure(accounts: accounts) { [weak self] account in
+            let message = "계좌 유형: \(account.type.displayName)\n현재 잔액: \(account.formattedBalance)"
+            self?.showAlert(title: account.name, message: message)
         }
-    }
 
-    private func monthlyIncomeExpense() -> (income: Int, expense: Int) {
-        let calendar = Calendar.current
-        let now = Date()
-
-        let monthTransactions = viewModel.transactions.value.filter {
-            calendar.isDate($0.date, equalTo: now, toGranularity: .month)
+        savingsCarouselView.configure(goals: Array(savingsGoals.prefix(6))) { [weak self] goal in
+            self?.showSavingsGoalDetail(goal)
         }
 
-        var income = 0
-        var expense = 0
+        transactionsTimelineView.configure(transactions: Array(transactions.prefix(8))) { [weak self] transaction in
+            self?.showTransactionDetail(transaction)
+        }
 
-        monthTransactions.forEach { transaction in
-            switch transaction.type {
-            case .deposit, .missionReward:
-                income += transaction.amount
-            case .withdrawal, .transfer:
-                expense += transaction.amount
+        if let card {
+            let cardView = WalletCardInfoView()
+            cardView.configure(with: card)
+            cardView.onTap = { [weak self] in
+                self?.showCardManagement()
             }
+            cardSectionView.configure(title: "내 카드", subtitle: "카드 상태 확인")
+            cardSectionView.setContentView(cardView)
+        } else {
+            cardSectionView.configure(title: "내 카드", subtitle: "등록된 카드가 없어요")
+            cardSectionView.setContentView(WalletEmptyCardView(message: "등록된 카드가 없어요"))
         }
 
-        return (income, expense)
+        refreshControl.endRefreshing()
     }
 
-    private func todaySpending() -> Int {
+    private func calculateTodaySpent(from transactions: [Transaction]) -> Int {
         let calendar = Calendar.current
-        return viewModel.transactions.value
+        return transactions
             .filter { calendar.isDateInToday($0.date) }
             .filter { $0.type == .withdrawal || $0.type == .transfer }
             .reduce(0) { $0 + $1.amount }
     }
 
+    private func calculateTodayMissionCount(from transactions: [Transaction]) -> Int {
+        let calendar = Calendar.current
+        return transactions
+            .filter { calendar.isDateInToday($0.date) }
+            .filter { $0.type == .missionReward }
+            .count
+    }
+
+    // MARK: - Actions
     private func handleQuickAction(_ action: QuickActionType) {
         switch action {
         case .deposit:
@@ -210,6 +270,7 @@ final class WalletViewController: BaseViewController {
         navigationController?.pushViewController(receiptScanVC, animated: true)
     }
 
+    // MARK: - Detail Alerts
     private func showTransactionDetail(_ transaction: Transaction) {
         var message = """
         거래 타입: \(transaction.type.displayName)
@@ -242,270 +303,64 @@ final class WalletViewController: BaseViewController {
     private func showCardManagement() {
         showAlert(title: "카드 관리", message: "카드 관리 기능은 준비중입니다.")
     }
+}
 
-    private func makePlaceholderCell(_ tableView: UITableView, indexPath: IndexPath, text: String) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "PlaceholderCell", for: indexPath)
-        cell.backgroundColor = .clear
-        cell.selectionStyle = .none
-        cell.contentView.subviews.forEach { $0.removeFromSuperview() }
+// MARK: - Section Wrapper
+private final class WalletSectionView: UIView {
 
-        let containerView = UIView()
-        containerView.backgroundColor = .cardBackground
-        containerView.layer.cornerRadius = CornerRadius.large
-        containerView.layer.borderWidth = 1
-        containerView.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
+    private let headerView = SectionHeaderView()
 
-        let label = UILabel()
-        label.font = UIFont.kidkFont(.s14, .medium)
-        label.textColor = .kidkGray
-        label.textAlignment = .center
-        label.text = text
+    private let containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .cardBackground
+        view.layer.cornerRadius = CornerRadius.large
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
+        return view
+    }()
 
-        cell.contentView.addSubview(containerView)
-        containerView.addSubview(label)
+    private var currentContentView: UIView?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(headerView)
+        addSubview(containerView)
+
+        headerView.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+        }
 
         containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
+            make.top.equalTo(headerView.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.bottom.equalToSuperview()
         }
+    }
 
-        label.snp.makeConstraints { make in
+    func configure(title: String, subtitle: String?) {
+        headerView.configure(title: title, subtitle: subtitle)
+    }
+
+    func setContentView(_ view: UIView) {
+        currentContentView?.removeFromSuperview()
+        currentContentView = view
+
+        containerView.addSubview(view)
+        view.snp.makeConstraints { make in
             make.edges.equalToSuperview().inset(Spacing.sm)
         }
-
-        return cell
     }
 }
 
-// MARK: - UITableViewDataSource
-extension WalletViewController: UITableViewDataSource {
-
-    func numberOfSections(in tableView: UITableView) -> Int {
-        return Section.allCases.count
-    }
-
-    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        guard let sectionType = Section(rawValue: section) else { return 0 }
-
-        switch sectionType {
-        case .hero, .quickActions, .card:
-            return 1
-        case .accounts:
-            return max(viewModel.accounts.value.count, 1)
-        case .goals:
-            return max(min(viewModel.savingsGoals.value.count, 3), 1)
-        case .transactions:
-            return max(min(viewModel.transactions.value.count, 8), 1)
-        }
-    }
-
-    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        guard let sectionType = Section(rawValue: indexPath.section) else {
-            return UITableViewCell()
-        }
-
-        switch sectionType {
-        case .hero:
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: WalletHeroCell.identifier,
-                for: indexPath
-            ) as? WalletHeroCell else {
-                return UITableViewCell()
-            }
-
-            let monthly = monthlyIncomeExpense()
-            let primaryAccountName = viewModel.getPrimaryAccount()?.name ?? "주 통장 없음"
-            cell.configure(
-                totalBalance: viewModel.getTotalBalance(),
-                primaryAccountName: primaryAccountName,
-                todaySpending: todaySpending(),
-                dailyLimit: viewModel.dailySpendingLimit.value,
-                monthlyIncome: monthly.income,
-                monthlyExpense: monthly.expense,
-                accountCount: viewModel.accounts.value.count,
-                userLevel: viewModel.userLevel.value,
-                experience: viewModel.userExperience.value
-            )
-            return cell
-
-        case .quickActions:
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: WalletQuickActionsGridCell.identifier,
-                for: indexPath
-            ) as? WalletQuickActionsGridCell else {
-                return UITableViewCell()
-            }
-
-            cell.configure { [weak self] action in
-                self?.handleQuickAction(action)
-            }
-            return cell
-
-        case .accounts:
-            guard !viewModel.accounts.value.isEmpty else {
-                return makePlaceholderCell(tableView, indexPath: indexPath, text: "등록된 통장이 없어요")
-            }
-
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: WalletAccountModernCell.identifier,
-                for: indexPath
-            ) as? WalletAccountModernCell else {
-                return UITableViewCell()
-            }
-
-            cell.configure(with: viewModel.accounts.value[indexPath.row])
-            return cell
-
-        case .goals:
-            guard !viewModel.savingsGoals.value.isEmpty else {
-                return makePlaceholderCell(tableView, indexPath: indexPath, text: "저축 목표를 추가해보세요")
-            }
-
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: WalletGoalModernCell.identifier,
-                for: indexPath
-            ) as? WalletGoalModernCell else {
-                return UITableViewCell()
-            }
-
-            cell.configure(with: viewModel.savingsGoals.value[indexPath.row])
-            return cell
-
-        case .transactions:
-            guard !viewModel.transactions.value.isEmpty else {
-                return makePlaceholderCell(tableView, indexPath: indexPath, text: "최근 거래가 없어요")
-            }
-
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: WalletTransactionModernCell.identifier,
-                for: indexPath
-            ) as? WalletTransactionModernCell else {
-                return UITableViewCell()
-            }
-
-            cell.configure(with: viewModel.transactions.value[indexPath.row])
-            return cell
-
-        case .card:
-            guard let cell = tableView.dequeueReusableCell(
-                withIdentifier: WalletCardModernCell.identifier,
-                for: indexPath
-            ) as? WalletCardModernCell else {
-                return UITableViewCell()
-            }
-
-            cell.configure(with: viewModel.card.value)
-            return cell
-        }
-    }
-}
-
-// MARK: - UITableViewDelegate
-extension WalletViewController: UITableViewDelegate {
-
-    func tableView(_ tableView: UITableView, viewForHeaderInSection section: Int) -> UIView? {
-        guard let sectionType = Section(rawValue: section),
-              let title = sectionType.title else {
-            return nil
-        }
-
-        let wrapper = UIView()
-        wrapper.backgroundColor = .clear
-
-        let headerView = SectionHeaderView()
-        headerView.configure(title: title, subtitle: sectionSubtitle(for: sectionType))
-
-        wrapper.addSubview(headerView)
-        headerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 4, right: 16))
-        }
-
-        return wrapper
-    }
-
-    func tableView(_ tableView: UITableView, heightForHeaderInSection section: Int) -> CGFloat {
-        guard let sectionType = Section(rawValue: section) else { return 0 }
-        return sectionType == .hero ? 0 : 60
-    }
-
-    func tableView(_ tableView: UITableView, heightForFooterInSection section: Int) -> CGFloat {
-        return 0.01
-    }
-
-    func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard let sectionType = Section(rawValue: indexPath.section) else {
-            return UITableView.automaticDimension
-        }
-
-        switch sectionType {
-        case .hero:
-            return UITableView.automaticDimension
-        case .quickActions:
-            return 182
-        case .accounts:
-            return viewModel.accounts.value.isEmpty ? 72 : 96
-        case .goals:
-            return viewModel.savingsGoals.value.isEmpty ? 72 : 128
-        case .transactions:
-            return viewModel.transactions.value.isEmpty ? 72 : 88
-        case .card:
-            return viewModel.card.value == nil ? 86 : 168
-        }
-    }
-
-    func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
-        guard let sectionType = Section(rawValue: indexPath.section) else {
-            return 100
-        }
-
-        switch sectionType {
-        case .hero:
-            return 280
-        case .quickActions:
-            return 182
-        case .accounts:
-            return 96
-        case .goals:
-            return 128
-        case .transactions:
-            return 88
-        case .card:
-            return 168
-        }
-    }
-
-    func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        tableView.deselectRow(at: indexPath, animated: true)
-
-        guard let sectionType = Section(rawValue: indexPath.section) else { return }
-
-        switch sectionType {
-        case .accounts:
-            guard !viewModel.accounts.value.isEmpty else { return }
-            let account = viewModel.accounts.value[indexPath.row]
-            let message = "계좌 유형: \(account.type.displayName)\n현재 잔액: \(account.formattedBalance)"
-            showAlert(title: account.name, message: message)
-
-        case .goals:
-            guard !viewModel.savingsGoals.value.isEmpty else { return }
-            showSavingsGoalDetail(viewModel.savingsGoals.value[indexPath.row])
-
-        case .transactions:
-            guard !viewModel.transactions.value.isEmpty else { return }
-            showTransactionDetail(viewModel.transactions.value[indexPath.row])
-
-        case .card:
-            showCardManagement()
-
-        default:
-            break
-        }
-    }
-}
-
-// MARK: - Hero Cell
-private final class WalletHeroCell: UITableViewCell {
-
-    static let identifier = "WalletHeroCell"
+// MARK: - Cockpit Summary
+private final class WalletSummaryCockpitView: UIView {
 
     private let gradientLayer = CAGradientLayer()
 
@@ -520,27 +375,17 @@ private final class WalletHeroCell: UITableViewCell {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.kidkFont(.s16, .bold)
-        label.textColor = UIColor.white.withAlphaComponent(0.9)
-        label.text = "지갑 요약"
-        return label
-    }()
-
-    private let levelBadgeLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.kidkFont(.s12, .bold)
-        label.textColor = .kidkGreen
-        label.textAlignment = .center
-        label.backgroundColor = .kidkGreen.withAlphaComponent(0.18)
-        label.layer.cornerRadius = 12
-        label.clipsToBounds = true
+        label.font = UIFont.kidkFont(.s14, .medium)
+        label.textColor = UIColor.white.withAlphaComponent(0.82)
+        label.text = "지갑 코크핏"
         return label
     }()
 
     private let amountLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.kidkFont(.s34, .bold)
+        label.font = UIFont.kidkFont(.s32, .bold)
         label.textColor = .kidkTextWhite
+        label.text = "0원"
         return label
     }()
 
@@ -548,40 +393,24 @@ private final class WalletHeroCell: UITableViewCell {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s14, .medium)
         label.textColor = UIColor.white.withAlphaComponent(0.78)
-        label.numberOfLines = 1
+        label.text = "주 계좌: 없음"
         return label
     }()
 
-    private let spendingLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.kidkFont(.s12, .medium)
-        label.textColor = UIColor.white.withAlphaComponent(0.9)
-        return label
+    private let chipsStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.xs
+        return stack
     }()
 
-    private let spendingProgressView: UIProgressView = {
-        let progressView = UIProgressView(progressViewStyle: .default)
-        progressView.progressTintColor = .kidkPink
-        progressView.trackTintColor = UIColor.white.withAlphaComponent(0.18)
-        progressView.transform = CGAffineTransform(scaleX: 1, y: 2.0)
-        progressView.clipsToBounds = true
-        return progressView
-    }()
+    private let accountChip = WalletSummaryChipView()
+    private let goalChip = WalletSummaryChipView()
 
-    private let metricsStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fillEqually
-        stackView.spacing = Spacing.xs
-        return stackView
-    }()
+    private let budgetRingView = WalletBudgetRingView()
 
-    private let incomeMetricView = WalletMetricView()
-    private let expenseMetricView = WalletMetricView()
-    private let countMetricView = WalletMetricView()
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
     }
 
@@ -595,121 +424,93 @@ private final class WalletHeroCell: UITableViewCell {
     }
 
     private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
+        addSubview(containerView)
 
         gradientLayer.colors = [
-            UIColor(hex: "#483165").cgColor,
-            UIColor(hex: "#2F3354").cgColor,
-            UIColor(hex: "#242A34").cgColor
+            UIColor(hex: "#4A2E71").cgColor,
+            UIColor(hex: "#2A3656").cgColor,
+            UIColor(hex: "#20232D").cgColor
         ]
-        gradientLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
-        gradientLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
-
-        contentView.addSubview(containerView)
+        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
+        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
         containerView.layer.insertSublayer(gradientLayer, at: 0)
 
         containerView.addSubview(titleLabel)
-        containerView.addSubview(levelBadgeLabel)
         containerView.addSubview(amountLabel)
         containerView.addSubview(subtitleLabel)
-        containerView.addSubview(spendingLabel)
-        containerView.addSubview(spendingProgressView)
-        containerView.addSubview(metricsStackView)
+        containerView.addSubview(chipsStackView)
+        containerView.addSubview(budgetRingView)
 
-        metricsStackView.addArrangedSubview(incomeMetricView)
-        metricsStackView.addArrangedSubview(expenseMetricView)
-        metricsStackView.addArrangedSubview(countMetricView)
+        chipsStackView.addArrangedSubview(accountChip)
+        chipsStackView.addArrangedSubview(goalChip)
 
         containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16))
+            make.edges.equalToSuperview()
+        }
+
+        budgetRingView.snp.makeConstraints { make in
+            make.top.trailing.equalToSuperview().inset(Spacing.md)
+            make.width.height.equalTo(104)
         }
 
         titleLabel.snp.makeConstraints { make in
             make.top.leading.equalToSuperview().inset(Spacing.md)
-        }
-
-        levelBadgeLabel.snp.makeConstraints { make in
-            make.centerY.equalTo(titleLabel)
-            make.trailing.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(24)
-            make.width.greaterThanOrEqualTo(68)
+            make.trailing.lessThanOrEqualTo(budgetRingView.snp.leading).offset(-Spacing.sm)
         }
 
         amountLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.leading.equalToSuperview().inset(Spacing.md)
+            make.trailing.lessThanOrEqualTo(budgetRingView.snp.leading).offset(-Spacing.xs)
         }
 
         subtitleLabel.snp.makeConstraints { make in
             make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.xxs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.leading.equalToSuperview().inset(Spacing.md)
+            make.trailing.lessThanOrEqualTo(budgetRingView.snp.leading).offset(-Spacing.xs)
         }
 
-        spendingLabel.snp.makeConstraints { make in
+        chipsStackView.snp.makeConstraints { make in
             make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.sm)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-        }
-
-        spendingProgressView.snp.makeConstraints { make in
-            make.top.equalTo(spendingLabel.snp.bottom).offset(6)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(8)
-        }
-
-        metricsStackView.snp.makeConstraints { make in
-            make.top.equalTo(spendingProgressView.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.leading.equalToSuperview().inset(Spacing.md)
+            make.trailing.lessThanOrEqualTo(budgetRingView.snp.leading).offset(-Spacing.xs)
             make.bottom.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(68)
         }
     }
 
     func configure(
         totalBalance: Int,
         primaryAccountName: String,
-        todaySpending: Int,
-        dailyLimit: Int,
-        monthlyIncome: Int,
-        monthlyExpense: Int,
         accountCount: Int,
-        userLevel: Int,
-        experience: Int
+        goalCount: Int,
+        dailyLimit: Int,
+        todaySpent: Int
     ) {
         amountLabel.text = totalBalance.formattedCurrency
-        subtitleLabel.text = "주 통장: \(primaryAccountName)"
-        levelBadgeLabel.text = "Lv.\(userLevel) · EXP \(experience)"
+        subtitleLabel.text = "주 계좌: \(primaryAccountName)"
 
-        let safeLimit = max(dailyLimit, 1)
-        let progress = min(Float(todaySpending) / Float(safeLimit), 1)
-        spendingProgressView.setProgress(progress, animated: false)
-        spendingLabel.text = "오늘 사용 \(todaySpending.formattedCurrency) / 일일 한도 \(dailyLimit.formattedCurrency)"
+        accountChip.configure(title: "통장", value: "\(accountCount)개", color: .kidkBlue)
+        goalChip.configure(title: "목표", value: "\(goalCount)개", color: .kidkPink)
 
-        incomeMetricView.configure(title: "이번달 수입", value: monthlyIncome.formattedCurrency, color: .kidkGreen)
-        expenseMetricView.configure(title: "이번달 지출", value: monthlyExpense.formattedCurrency, color: .kidkPink)
-        countMetricView.configure(title: "통장 수", value: "\(accountCount)개", color: .kidkBlue)
+        budgetRingView.configure(dailyLimit: dailyLimit, todaySpent: todaySpent)
 
-        accessibilityLabel = "총 자산 \(totalBalance.formattedCurrency), 오늘 사용 \(todaySpending.formattedCurrency), 일일 한도 \(dailyLimit.formattedCurrency)"
+        accessibilityLabel = "총 자산 \(totalBalance.formattedCurrency), 주 계좌 \(primaryAccountName), 오늘 사용 \(todaySpent.formattedCurrency)"
     }
 }
 
-private final class WalletMetricView: UIView {
+private final class WalletSummaryChipView: UIView {
 
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s12, .regular)
-        label.textColor = UIColor.white.withAlphaComponent(0.72)
-        label.textAlignment = .center
+        label.textColor = UIColor.white.withAlphaComponent(0.8)
         return label
     }()
 
     private let valueLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.kidkFont(.s14, .bold)
+        label.font = UIFont.kidkFont(.s12, .bold)
         label.textColor = .kidkTextWhite
-        label.textAlignment = .center
-        label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.75
         return label
     }()
 
@@ -723,20 +524,16 @@ private final class WalletMetricView: UIView {
     }
 
     private func setupUI() {
-        backgroundColor = UIColor.white.withAlphaComponent(0.1)
+        backgroundColor = UIColor.white.withAlphaComponent(0.14)
         layer.cornerRadius = CornerRadius.medium
 
-        addSubview(titleLabel)
-        addSubview(valueLabel)
+        let stack = UIStackView(arrangedSubviews: [titleLabel, valueLabel])
+        stack.axis = .horizontal
+        stack.spacing = 6
 
-        titleLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview().inset(6)
-        }
-
-        valueLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview().inset(6)
-            make.bottom.equalToSuperview().inset(6)
+        addSubview(stack)
+        stack.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 10, bottom: 6, right: 10))
         }
     }
 
@@ -747,51 +544,179 @@ private final class WalletMetricView: UIView {
     }
 }
 
-// MARK: - Quick Actions Grid Cell
-private final class WalletQuickActionsGridCell: UITableViewCell {
+private final class WalletBudgetRingView: UIView {
 
-    static let identifier = "WalletQuickActionsGridCell"
+    private let trackLayer = CAShapeLayer()
+    private let progressLayer = CAShapeLayer()
+
+    private let percentLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s16, .bold)
+        label.textColor = .kidkTextWhite
+        label.textAlignment = .center
+        label.text = "0%"
+        return label
+    }()
+
+    private let captionLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s10, .regular)
+        label.textColor = UIColor.white.withAlphaComponent(0.7)
+        label.textAlignment = .center
+        label.text = "오늘 사용"
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        updateRingPath()
+    }
+
+    private func setupUI() {
+        layer.addSublayer(trackLayer)
+        layer.addSublayer(progressLayer)
+
+        trackLayer.strokeColor = UIColor.white.withAlphaComponent(0.2).cgColor
+        trackLayer.fillColor = UIColor.clear.cgColor
+        trackLayer.lineWidth = 8
+
+        progressLayer.strokeColor = UIColor.kidkGreen.cgColor
+        progressLayer.fillColor = UIColor.clear.cgColor
+        progressLayer.lineWidth = 8
+        progressLayer.lineCap = .round
+        progressLayer.strokeEnd = 0
+
+        let textStack = UIStackView(arrangedSubviews: [percentLabel, captionLabel])
+        textStack.axis = .vertical
+        textStack.spacing = 2
+        textStack.alignment = .center
+
+        addSubview(textStack)
+        textStack.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+        }
+    }
+
+    private func updateRingPath() {
+        let centerPoint = CGPoint(x: bounds.midX, y: bounds.midY)
+        let radius = min(bounds.width, bounds.height) / 2 - 8
+        let start = -CGFloat.pi / 2
+        let end = start + CGFloat.pi * 2
+
+        let path = UIBezierPath(arcCenter: centerPoint, radius: radius, startAngle: start, endAngle: end, clockwise: true)
+        trackLayer.path = path.cgPath
+        progressLayer.path = path.cgPath
+    }
+
+    func configure(dailyLimit: Int, todaySpent: Int) {
+        guard dailyLimit > 0 else {
+            percentLabel.text = "0%"
+            progressLayer.strokeEnd = 0
+            captionLabel.text = "오늘 사용"
+            return
+        }
+
+        let ratio = min(max(CGFloat(todaySpent) / CGFloat(dailyLimit), 0), 1)
+        let percent = Int(ratio * 100)
+
+        percentLabel.text = "\(percent)%"
+        progressLayer.strokeEnd = ratio
+
+        if ratio < 0.6 {
+            progressLayer.strokeColor = UIColor.kidkGreen.cgColor
+        } else if ratio < 0.85 {
+            progressLayer.strokeColor = UIColor.kidkBlue.cgColor
+        } else {
+            progressLayer.strokeColor = UIColor.kidkPink.cgColor
+        }
+
+        let remaining = max(dailyLimit - todaySpent, 0)
+        captionLabel.text = "남은 \(remaining.formattedCurrency)"
+    }
+}
+
+// MARK: - Game Status
+private final class WalletGameStatusView: UIView {
 
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .cardBackground
+        view.backgroundColor = UIColor(hex: "#2B2B34")
         view.layer.cornerRadius = CornerRadius.large
         view.layer.borderWidth = 1
         view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         return view
     }()
 
-    private let verticalStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .vertical
-        stackView.distribution = .fillEqually
-        stackView.spacing = Spacing.xs
-        return stackView
+    private let levelBadgeLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s14, .bold)
+        label.textColor = .kidkTextWhite
+        label.backgroundColor = .kidkBlue.withAlphaComponent(0.2)
+        label.layer.cornerRadius = 12
+        label.clipsToBounds = true
+        label.textAlignment = .center
+        label.text = "Lv.1"
+        return label
     }()
 
-    private let firstRowStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fillEqually
-        stackView.spacing = Spacing.xs
-        return stackView
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s16, .bold)
+        label.textColor = .kidkTextWhite
+        label.text = "오늘의 지갑 퀘스트"
+        return label
     }()
 
-    private let secondRowStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
-        stackView.distribution = .fillEqually
-        stackView.spacing = Spacing.xs
-        return stackView
+    private let missionLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s14, .medium)
+        label.textColor = .kidkGray
+        label.text = "미션 0/3 완료"
+        return label
     }()
 
-    private let actions: [QuickActionType] = [.deposit, .withdraw, .transfer, .scanReceipt]
-    private var onTap: ((QuickActionType) -> Void)?
+    private let expProgressView: UIProgressView = {
+        let view = UIProgressView(progressViewStyle: .default)
+        view.trackTintColor = UIColor.white.withAlphaComponent(0.12)
+        view.progressTintColor = .kidkGreen
+        view.transform = CGAffineTransform(scaleX: 1, y: 1.8)
+        view.layer.cornerRadius = 6
+        view.clipsToBounds = true
+        return view
+    }()
 
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    private let expLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s12, .regular)
+        label.textColor = UIColor.white.withAlphaComponent(0.75)
+        label.text = "EXP 0 / 200"
+        return label
+    }()
+
+    private let rewardsStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.xs
+        stack.distribution = .fillEqually
+        return stack
+    }()
+
+    private let rewardChip1 = WalletRewardChipView()
+    private let rewardChip2 = WalletRewardChipView()
+    private let rewardChip3 = WalletRewardChipView()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
-        setupButtons()
     }
 
     required init?(coder: NSCoder) {
@@ -799,61 +724,275 @@ private final class WalletQuickActionsGridCell: UITableViewCell {
     }
 
     private func setupUI() {
-        backgroundColor = .clear
-        selectionStyle = .none
+        addSubview(containerView)
 
-        contentView.addSubview(containerView)
-        containerView.addSubview(verticalStackView)
+        containerView.addSubview(levelBadgeLabel)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(missionLabel)
+        containerView.addSubview(expProgressView)
+        containerView.addSubview(expLabel)
+        containerView.addSubview(rewardsStackView)
 
-        verticalStackView.addArrangedSubview(firstRowStackView)
-        verticalStackView.addArrangedSubview(secondRowStackView)
+        rewardsStackView.addArrangedSubview(rewardChip1)
+        rewardsStackView.addArrangedSubview(rewardChip2)
+        rewardsStackView.addArrangedSubview(rewardChip3)
 
         containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
+            make.edges.equalToSuperview()
         }
 
-        verticalStackView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(Spacing.sm)
+        levelBadgeLabel.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(Spacing.sm)
+            make.height.equalTo(24)
+            make.width.greaterThanOrEqualTo(58)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(levelBadgeLabel.snp.trailing).offset(Spacing.xs)
+            make.centerY.equalTo(levelBadgeLabel)
+            make.trailing.equalToSuperview().inset(Spacing.sm)
+        }
+
+        missionLabel.snp.makeConstraints { make in
+            make.top.equalTo(levelBadgeLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+        }
+
+        expProgressView.snp.makeConstraints { make in
+            make.top.equalTo(missionLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.height.equalTo(8)
+        }
+
+        expLabel.snp.makeConstraints { make in
+            make.top.equalTo(expProgressView.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+        }
+
+        rewardsStackView.snp.makeConstraints { make in
+            make.top.equalTo(expLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.bottom.equalToSuperview().inset(Spacing.sm)
+            make.height.equalTo(44)
         }
     }
 
-    private func setupButtons() {
-        actions.enumerated().forEach { index, action in
-            let button = QuickActionButton(action: action)
-            button.tag = index
-            button.addTarget(self, action: #selector(actionTapped(_:)), for: .touchUpInside)
+    func configure(
+        level: Int,
+        experience: Int,
+        missionDone: Int,
+        missionTarget: Int,
+        savingsGoalCount: Int,
+        accountCount: Int
+    ) {
+        levelBadgeLabel.text = "  Lv.\(level)  "
+        missionLabel.text = "미션 \(min(missionDone, missionTarget))/\(missionTarget) 완료"
 
-            if index < 2 {
-                firstRowStackView.addArrangedSubview(button)
-            } else {
-                secondRowStackView.addArrangedSubview(button)
-            }
-        }
-    }
+        let levelUnit = 200
+        let currentExp = max(experience % levelUnit, 0)
+        let progress = Float(currentExp) / Float(levelUnit)
 
-    func configure(onTap: @escaping (QuickActionType) -> Void) {
-        self.onTap = onTap
-    }
+        expProgressView.setProgress(progress, animated: true)
+        expLabel.text = "EXP \(currentExp) / \(levelUnit)"
 
-    @objc private func actionTapped(_ sender: UIButton) {
-        guard actions.indices.contains(sender.tag) else { return }
-        onTap?(actions[sender.tag])
+        rewardChip1.configure(
+            title: missionDone >= 1 ? "미션러너" : "미션 시작",
+            icon: "star.fill",
+            color: missionDone >= 1 ? .kidkGreen : .kidkGray
+        )
+        rewardChip2.configure(
+            title: savingsGoalCount > 0 ? "저축중" : "목표 만들기",
+            icon: "target",
+            color: savingsGoalCount > 0 ? .kidkPink : .kidkGray
+        )
+        rewardChip3.configure(
+            title: accountCount >= 2 ? "통장 마스터" : "통장 확장",
+            icon: "wallet.pass.fill",
+            color: accountCount >= 2 ? .kidkBlue : .kidkGray
+        )
+
+        accessibilityLabel = "레벨 \(level), 미션 \(missionDone)개 완료, 경험치 \(currentExp)"
     }
 }
 
-// MARK: - Account Cell
-private final class WalletAccountModernCell: UITableViewCell {
+private final class WalletRewardChipView: UIView {
 
-    static let identifier = "WalletAccountModernCell"
-
-    private let containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = CornerRadius.large
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        return view
+    private let iconView: UIImageView = {
+        let imageView = UIImageView()
+        imageView.contentMode = .scaleAspectFit
+        return imageView
     }()
+
+    private let titleLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s12, .bold)
+        label.textColor = .kidkTextWhite
+        label.textAlignment = .center
+        label.numberOfLines = 1
+        return label
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        layer.cornerRadius = CornerRadius.medium
+
+        addSubview(iconView)
+        addSubview(titleLabel)
+
+        iconView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(8)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(14)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(iconView.snp.trailing).offset(4)
+            make.trailing.equalToSuperview().inset(8)
+            make.centerY.equalToSuperview()
+        }
+    }
+
+    func configure(title: String, icon: String, color: UIColor) {
+        titleLabel.text = title
+        titleLabel.textColor = color
+        iconView.image = UIImage(systemName: icon)
+        iconView.tintColor = color
+    }
+}
+
+// MARK: - Quick Actions Row (4 fixed)
+private final class WalletQuickActionsRowView: UIView {
+
+    var onActionTap: ((QuickActionType) -> Void)?
+
+    private let stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.distribution = .fillEqually
+        stack.spacing = Spacing.xs
+        return stack
+    }()
+
+    private let actions: [QuickActionType] = [.deposit, .withdraw, .transfer, .scanReceipt]
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(stackView)
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        actions.enumerated().forEach { index, action in
+            let button = QuickActionButton(action: action)
+            button.tag = index
+            button.addTarget(self, action: #selector(didTapAction(_:)), for: .touchUpInside)
+            stackView.addArrangedSubview(button)
+        }
+
+        snp.makeConstraints { make in
+            make.height.equalTo(108)
+        }
+    }
+
+    @objc private func didTapAction(_ sender: UIButton) {
+        guard actions.indices.contains(sender.tag) else { return }
+        onActionTap?(actions[sender.tag])
+    }
+}
+
+// MARK: - Accounts Horizontal Carousel
+private final class WalletAccountsCarouselView: UIView {
+
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        return scrollView
+    }()
+
+    private let stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.sm
+        return stack
+    }()
+
+    private let emptyView = WalletEmptyCardView(message: "등록된 계좌가 없어요")
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(scrollView)
+        scrollView.addSubview(stackView)
+
+        scrollView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(136)
+        }
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalToSuperview()
+        }
+
+        snp.makeConstraints { make in
+            make.height.equalTo(136)
+        }
+    }
+
+    func configure(accounts: [Account], onTap: @escaping (Account) -> Void) {
+        stackView.arrangedSubviews.forEach { view in
+            stackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+
+        guard !accounts.isEmpty else {
+            stackView.addArrangedSubview(emptyView)
+            emptyView.snp.makeConstraints { make in
+                make.width.equalTo(220)
+            }
+            return
+        }
+
+        for account in accounts {
+            let card = WalletAccountCarouselCardView()
+            card.configure(with: account)
+            card.onTap = { onTap(account) }
+            stackView.addArrangedSubview(card)
+            card.snp.makeConstraints { make in
+                make.width.equalTo(230)
+            }
+        }
+    }
+}
+
+private final class WalletAccountCarouselCardView: UIControl {
+
+    var onTap: (() -> Void)?
 
     private let iconBackgroundView: UIView = {
         let view = UIView()
@@ -869,14 +1008,14 @@ private final class WalletAccountModernCell: UITableViewCell {
 
     private let nameLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.kidkFont(.s16, .bold)
+        label.font = UIFont.kidkFont(.s14, .bold)
         label.textColor = .kidkTextWhite
         return label
     }()
 
     private let typeLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.kidkFont(.s12, .medium)
+        label.font = UIFont.kidkFont(.s12, .regular)
         label.textColor = .kidkGray
         return label
     }()
@@ -885,33 +1024,13 @@ private final class WalletAccountModernCell: UITableViewCell {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s18, .bold)
         label.textColor = .kidkTextWhite
-        label.textAlignment = .right
         return label
     }()
 
-    private let primaryBadgeLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.kidkFont(.s12, .bold)
-        label.textColor = .kidkPink
-        label.text = "주 통장"
-        label.backgroundColor = .kidkPink.withAlphaComponent(0.16)
-        label.layer.cornerRadius = 10
-        label.clipsToBounds = true
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
-    }()
-
-    private let chevronImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
-        imageView.contentMode = .scaleAspectFit
-        imageView.tintColor = .chevronGray
-        return imageView
-    }()
-
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
+        addTarget(self, action: #selector(didTap), for: .touchUpInside)
     }
 
     required init?(coder: NSCoder) {
@@ -919,69 +1038,48 @@ private final class WalletAccountModernCell: UITableViewCell {
     }
 
     private func setupUI() {
-        backgroundColor = .clear
+        backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        layer.cornerRadius = CornerRadius.large
 
-        contentView.addSubview(containerView)
-        containerView.addSubview(iconBackgroundView)
+        addSubview(iconBackgroundView)
         iconBackgroundView.addSubview(iconImageView)
-        containerView.addSubview(nameLabel)
-        containerView.addSubview(typeLabel)
-        containerView.addSubview(primaryBadgeLabel)
-        containerView.addSubview(amountLabel)
-        containerView.addSubview(chevronImageView)
-
-        containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
-        }
+        addSubview(nameLabel)
+        addSubview(typeLabel)
+        addSubview(amountLabel)
 
         iconBackgroundView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.sm)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(44)
+            make.top.leading.equalToSuperview().inset(Spacing.sm)
+            make.width.height.equalTo(40)
         }
 
         iconImageView.snp.makeConstraints { make in
             make.center.equalToSuperview()
-            make.width.height.equalTo(22)
-        }
-
-        chevronImageView.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(Spacing.sm)
-            make.centerY.equalToSuperview()
-            make.width.equalTo(8)
-            make.height.equalTo(14)
-        }
-
-        amountLabel.snp.makeConstraints { make in
-            make.trailing.equalTo(chevronImageView.snp.leading).offset(-Spacing.sm)
-            make.centerY.equalToSuperview()
-            make.width.greaterThanOrEqualTo(90)
+            make.width.height.equalTo(20)
         }
 
         nameLabel.snp.makeConstraints { make in
-            make.top.equalTo(iconBackgroundView.snp.top)
-            make.leading.equalTo(iconBackgroundView.snp.trailing).offset(Spacing.sm)
-            make.trailing.lessThanOrEqualTo(amountLabel.snp.leading).offset(-Spacing.xs)
+            make.top.equalTo(iconBackgroundView)
+            make.leading.equalTo(iconBackgroundView.snp.trailing).offset(Spacing.xs)
+            make.trailing.equalToSuperview().inset(Spacing.sm)
         }
 
         typeLabel.snp.makeConstraints { make in
             make.leading.equalTo(nameLabel)
-            make.bottom.equalTo(iconBackgroundView.snp.bottom)
+            make.bottom.equalTo(iconBackgroundView)
+            make.trailing.equalTo(nameLabel)
         }
 
-        primaryBadgeLabel.snp.makeConstraints { make in
-            make.leading.equalTo(typeLabel.snp.trailing).offset(8)
-            make.centerY.equalTo(typeLabel)
-            make.height.equalTo(20)
-            make.width.greaterThanOrEqualTo(52)
+        amountLabel.snp.makeConstraints { make in
+            make.top.equalTo(iconBackgroundView.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
         }
     }
 
     func configure(with account: Account) {
         nameLabel.text = account.name
-        typeLabel.text = account.type.displayName
+        typeLabel.text = account.type.displayName + (account.isPrimary ? " · 주 계좌" : "")
         amountLabel.text = account.formattedBalance
-        primaryBadgeLabel.isHidden = !account.isPrimary
+        amountLabel.textColor = account.isPrimary ? .kidkGreen : .kidkTextWhite
 
         switch account.type {
         case .spending:
@@ -997,29 +1095,113 @@ private final class WalletAccountModernCell: UITableViewCell {
             iconImageView.image = UIImage(systemName: "target")
             iconImageView.tintColor = .kidkGreen
         }
+    }
 
-        accessibilityLabel = "\(account.name), 잔액 \(account.formattedBalance)"
+    @objc private func didTap() {
+        UISelectionFeedbackGenerator().selectionChanged()
+        onTap?()
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.12) {
+                self.alpha = self.isHighlighted ? 0.7 : 1
+            }
+        }
     }
 }
 
-// MARK: - Goal Cell
-private final class WalletGoalModernCell: UITableViewCell {
+// MARK: - Savings Horizontal Carousel
+private final class WalletSavingsCarouselView: UIView {
 
-    static let identifier = "WalletGoalModernCell"
-
-    private let containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = CornerRadius.large
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        return view
+    private let scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.showsHorizontalScrollIndicator = false
+        return scrollView
     }()
+
+    private let stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.spacing = Spacing.sm
+        return stack
+    }()
+
+    private let emptyView = WalletEmptyCardView(message: "저축 목표를 추가해보세요")
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(scrollView)
+        scrollView.addSubview(stackView)
+
+        scrollView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalTo(148)
+        }
+
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+            make.height.equalToSuperview()
+        }
+
+        snp.makeConstraints { make in
+            make.height.equalTo(148)
+        }
+    }
+
+    func configure(goals: [SavingsGoal], onTap: @escaping (SavingsGoal) -> Void) {
+        stackView.arrangedSubviews.forEach { view in
+            stackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
+
+        guard !goals.isEmpty else {
+            stackView.addArrangedSubview(emptyView)
+            emptyView.snp.makeConstraints { make in
+                make.width.equalTo(240)
+            }
+            return
+        }
+
+        for goal in goals {
+            let card = WalletSavingsGoalCarouselCardView()
+            card.configure(with: goal)
+            card.onTap = { onTap(goal) }
+            stackView.addArrangedSubview(card)
+            card.snp.makeConstraints { make in
+                make.width.equalTo(252)
+            }
+        }
+    }
+}
+
+private final class WalletSavingsGoalCarouselCardView: UIControl {
+
+    var onTap: (() -> Void)?
 
     private let titleLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s16, .bold)
         label.textColor = .kidkTextWhite
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private let statusLabel: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s12, .bold)
+        label.textColor = .kidkTextWhite
+        label.textAlignment = .center
+        label.layer.cornerRadius = 10
+        label.clipsToBounds = true
         return label
     }()
 
@@ -1030,35 +1212,134 @@ private final class WalletGoalModernCell: UITableViewCell {
         return label
     }()
 
-    private let progressPercentLabel: UILabel = {
-        let label = UILabel()
-        label.font = UIFont.kidkFont(.s12, .bold)
-        label.textColor = .kidkPink
-        label.backgroundColor = .kidkPink.withAlphaComponent(0.16)
-        label.layer.cornerRadius = 10
-        label.clipsToBounds = true
-        label.textAlignment = .center
-        return label
-    }()
-
     private let progressView: UIProgressView = {
-        let progressView = UIProgressView(progressViewStyle: .default)
-        progressView.progressTintColor = .kidkPink
-        progressView.trackTintColor = UIColor.white.withAlphaComponent(0.12)
-        progressView.transform = CGAffineTransform(scaleX: 1, y: 1.9)
-        progressView.clipsToBounds = true
-        return progressView
+        let view = UIProgressView(progressViewStyle: .default)
+        view.trackTintColor = UIColor.white.withAlphaComponent(0.12)
+        view.progressTintColor = .kidkPink
+        view.transform = CGAffineTransform(scaleX: 1, y: 1.8)
+        view.layer.cornerRadius = 6
+        view.clipsToBounds = true
+        return view
     }()
 
-    private let remainLabel: UILabel = {
+    private let bottomLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s12, .regular)
-        label.textColor = .kidkGray
+        label.textColor = UIColor.white.withAlphaComponent(0.75)
         return label
     }()
 
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+        addTarget(self, action: #selector(didTap), for: .touchUpInside)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = UIColor.white.withAlphaComponent(0.06)
+        layer.cornerRadius = CornerRadius.large
+
+        addSubview(titleLabel)
+        addSubview(statusLabel)
+        addSubview(amountLabel)
+        addSubview(progressView)
+        addSubview(bottomLabel)
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.leading.equalToSuperview().inset(Spacing.sm)
+            make.trailing.lessThanOrEqualTo(statusLabel.snp.leading).offset(-Spacing.xs)
+        }
+
+        statusLabel.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(Spacing.sm)
+            make.centerY.equalTo(titleLabel)
+            make.height.equalTo(22)
+            make.width.greaterThanOrEqualTo(50)
+        }
+
+        amountLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+        }
+
+        progressView.snp.makeConstraints { make in
+            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
+            make.height.equalTo(8)
+        }
+
+        bottomLabel.snp.makeConstraints { make in
+            make.top.equalTo(progressView.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.bottom.equalToSuperview().inset(Spacing.sm)
+        }
+    }
+
+    func configure(with goal: SavingsGoal) {
+        titleLabel.text = goal.name
+        amountLabel.text = "\(goal.formattedCurrentAmount) / \(goal.formattedTargetAmount)"
+        progressView.setProgress(Float(goal.progress), animated: true)
+
+        switch goal.status {
+        case .inProgress:
+            statusLabel.text = "진행"
+            statusLabel.backgroundColor = .kidkBlue.withAlphaComponent(0.2)
+            statusLabel.textColor = .kidkBlue
+            progressView.progressTintColor = .kidkPink
+        case .completed:
+            statusLabel.text = "달성"
+            statusLabel.backgroundColor = .kidkGreen.withAlphaComponent(0.2)
+            statusLabel.textColor = .kidkGreen
+            progressView.progressTintColor = .kidkGreen
+        case .cancelled:
+            statusLabel.text = "취소"
+            statusLabel.backgroundColor = .kidkGray.withAlphaComponent(0.2)
+            statusLabel.textColor = .kidkGray
+            progressView.progressTintColor = .kidkGray
+        }
+
+        if let days = goal.daysRemaining {
+            if days > 0 {
+                bottomLabel.text = "D-\(days) · 남은 \(goal.formattedRemainingAmount)"
+            } else if days == 0 {
+                bottomLabel.text = "D-Day · 남은 \(goal.formattedRemainingAmount)"
+            } else {
+                bottomLabel.text = "D+\(-days) · 남은 \(goal.formattedRemainingAmount)"
+            }
+        } else {
+            bottomLabel.text = "남은 \(goal.formattedRemainingAmount)"
+        }
+    }
+
+    @objc private func didTap() {
+        UISelectionFeedbackGenerator().selectionChanged()
+        onTap?()
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.12) {
+                self.alpha = self.isHighlighted ? 0.7 : 1
+            }
+        }
+    }
+}
+
+// MARK: - Transactions Timeline
+private final class WalletTransactionsTimelineView: UIView {
+
+    private let stackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .vertical
+        stack.spacing = Spacing.xs
+        return stack
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
     }
 
@@ -1067,101 +1348,54 @@ private final class WalletGoalModernCell: UITableViewCell {
     }
 
     private func setupUI() {
-        backgroundColor = .clear
-
-        contentView.addSubview(containerView)
-        containerView.addSubview(titleLabel)
-        containerView.addSubview(progressPercentLabel)
-        containerView.addSubview(amountLabel)
-        containerView.addSubview(progressView)
-        containerView.addSubview(remainLabel)
-
-        containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
-        }
-
-        titleLabel.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(Spacing.sm)
-            make.trailing.lessThanOrEqualTo(progressPercentLabel.snp.leading).offset(-Spacing.xs)
-        }
-
-        progressPercentLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview().inset(Spacing.sm)
-            make.centerY.equalTo(titleLabel)
-            make.height.equalTo(22)
-            make.width.greaterThanOrEqualTo(62)
-        }
-
-        amountLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xxs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
-        }
-
-        progressView.snp.makeConstraints { make in
-            make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
-            make.height.equalTo(7)
-        }
-
-        remainLabel.snp.makeConstraints { make in
-            make.top.equalTo(progressView.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.sm)
-            make.bottom.equalToSuperview().inset(Spacing.sm)
+        addSubview(stackView)
+        stackView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
         }
     }
 
-    func configure(with goal: SavingsGoal) {
-        titleLabel.text = goal.name
-        amountLabel.text = "\(goal.formattedCurrentAmount) / \(goal.formattedTargetAmount)"
-        remainLabel.text = "남은 금액: \(goal.formattedRemainingAmount)"
-
-        let progress = Float(goal.progress)
-        progressView.setProgress(progress, animated: false)
-        progressPercentLabel.text = String(format: "%.1f%%", goal.progressPercentage)
-
-        switch goal.status {
-        case .inProgress:
-            progressView.progressTintColor = .kidkPink
-            progressPercentLabel.textColor = .kidkPink
-            progressPercentLabel.backgroundColor = .kidkPink.withAlphaComponent(0.16)
-        case .completed:
-            progressView.progressTintColor = .kidkGreen
-            progressPercentLabel.textColor = .kidkGreen
-            progressPercentLabel.backgroundColor = .kidkGreen.withAlphaComponent(0.16)
-        case .cancelled:
-            progressView.progressTintColor = .kidkGray
-            progressPercentLabel.textColor = .kidkGray
-            progressPercentLabel.backgroundColor = .kidkGray.withAlphaComponent(0.16)
+    func configure(transactions: [Transaction], onTap: @escaping (Transaction) -> Void) {
+        stackView.arrangedSubviews.forEach { view in
+            stackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
         }
 
-        accessibilityLabel = "\(goal.name), 진행률 \(String(format: "%.1f", goal.progressPercentage))퍼센트"
+        guard !transactions.isEmpty else {
+            stackView.addArrangedSubview(WalletEmptyCardView(message: "아직 거래 내역이 없어요"))
+            return
+        }
+
+        for (index, transaction) in transactions.enumerated() {
+            let row = WalletTimelineTransactionRowView()
+            row.configure(with: transaction, isLast: index == transactions.count - 1)
+            row.onTap = { onTap(transaction) }
+            stackView.addArrangedSubview(row)
+        }
     }
 }
 
-// MARK: - Transaction Cell
-private final class WalletTransactionModernCell: UITableViewCell {
+private final class WalletTimelineTransactionRowView: UIControl {
 
-    static let identifier = "WalletTransactionModernCell"
+    var onTap: (() -> Void)?
+
+    private let timelineLineView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.16)
+        return view
+    }()
+
+    private let timelineDotView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkBlue
+        view.layer.cornerRadius = 5
+        return view
+    }()
 
     private let containerView: UIView = {
         let view = UIView()
-        view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = CornerRadius.large
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        return view
-    }()
-
-    private let iconBackgroundView: UIView = {
-        let view = UIView()
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.06)
         view.layer.cornerRadius = CornerRadius.medium
         return view
-    }()
-
-    private let iconImageView: UIImageView = {
-        let imageView = UIImageView()
-        imageView.contentMode = .scaleAspectFit
-        return imageView
     }()
 
     private let titleLabel: UILabel = {
@@ -1171,7 +1405,7 @@ private final class WalletTransactionModernCell: UITableViewCell {
         return label
     }()
 
-    private let subtitleLabel: UILabel = {
+    private let dateLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s12, .regular)
         label.textColor = .kidkGray
@@ -1185,9 +1419,10 @@ private final class WalletTransactionModernCell: UITableViewCell {
         return label
     }()
 
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    override init(frame: CGRect) {
+        super.init(frame: frame)
         setupUI()
+        addTarget(self, action: #selector(didTap), for: .touchUpInside)
     }
 
     required init?(coder: NSCoder) {
@@ -1195,28 +1430,31 @@ private final class WalletTransactionModernCell: UITableViewCell {
     }
 
     private func setupUI() {
-        backgroundColor = .clear
+        addSubview(timelineLineView)
+        addSubview(timelineDotView)
+        addSubview(containerView)
 
-        contentView.addSubview(containerView)
-        containerView.addSubview(iconBackgroundView)
-        iconBackgroundView.addSubview(iconImageView)
         containerView.addSubview(titleLabel)
-        containerView.addSubview(subtitleLabel)
+        containerView.addSubview(dateLabel)
         containerView.addSubview(amountLabel)
 
+        timelineDotView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(4)
+            make.top.equalToSuperview().offset(20)
+            make.width.height.equalTo(10)
+        }
+
+        timelineLineView.snp.makeConstraints { make in
+            make.centerX.equalTo(timelineDotView)
+            make.top.equalTo(timelineDotView.snp.bottom)
+            make.bottom.equalToSuperview()
+            make.width.equalTo(2)
+        }
+
         containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
-        }
-
-        iconBackgroundView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.sm)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(40)
-        }
-
-        iconImageView.snp.makeConstraints { make in
-            make.center.equalToSuperview()
-            make.width.height.equalTo(20)
+            make.leading.equalTo(timelineDotView.snp.trailing).offset(Spacing.sm)
+            make.trailing.top.bottom.equalToSuperview()
+            make.height.greaterThanOrEqualTo(72)
         }
 
         amountLabel.snp.makeConstraints { make in
@@ -1226,69 +1464,59 @@ private final class WalletTransactionModernCell: UITableViewCell {
         }
 
         titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(iconBackgroundView.snp.top).offset(1)
-            make.leading.equalTo(iconBackgroundView.snp.trailing).offset(Spacing.sm)
-            make.trailing.lessThanOrEqualTo(amountLabel.snp.leading).offset(-Spacing.sm)
+            make.top.equalToSuperview().inset(Spacing.sm)
+            make.leading.equalToSuperview().inset(Spacing.sm)
+            make.trailing.lessThanOrEqualTo(amountLabel.snp.leading).offset(-Spacing.xs)
         }
 
-        subtitleLabel.snp.makeConstraints { make in
+        dateLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(4)
             make.leading.equalTo(titleLabel)
-            make.bottom.equalTo(iconBackgroundView.snp.bottom).offset(-1)
-            make.trailing.lessThanOrEqualTo(amountLabel.snp.leading).offset(-Spacing.sm)
+            make.trailing.lessThanOrEqualTo(amountLabel.snp.leading).offset(-Spacing.xs)
+            make.bottom.equalToSuperview().inset(Spacing.sm)
         }
     }
 
-    func configure(with transaction: Transaction) {
+    func configure(with transaction: Transaction, isLast: Bool) {
         titleLabel.text = transaction.description
-
-        if let category = transaction.category {
-            subtitleLabel.text = "\(transaction.formattedDate) · \(category.rawValue)"
-        } else {
-            subtitleLabel.text = transaction.formattedDate
-        }
-
+        dateLabel.text = "\(transaction.formattedDateWithDay) · \(transaction.formattedDate)"
         amountLabel.text = transaction.formattedAmount
 
         switch transaction.type {
         case .deposit, .missionReward:
             amountLabel.textColor = .kidkGreen
-            iconBackgroundView.backgroundColor = .kidkGreen.withAlphaComponent(0.2)
-            iconImageView.image = UIImage(systemName: "arrow.down.left.circle.fill")
-            iconImageView.tintColor = .kidkGreen
+            timelineDotView.backgroundColor = .kidkGreen
         case .withdrawal:
             amountLabel.textColor = .kidkPink
-            iconBackgroundView.backgroundColor = .kidkPink.withAlphaComponent(0.2)
-            iconImageView.image = UIImage(systemName: "arrow.up.right.circle.fill")
-            iconImageView.tintColor = .kidkPink
+            timelineDotView.backgroundColor = .kidkPink
         case .transfer:
             amountLabel.textColor = .kidkBlue
-            iconBackgroundView.backgroundColor = .kidkBlue.withAlphaComponent(0.2)
-            iconImageView.image = UIImage(systemName: "arrow.left.arrow.right.circle.fill")
-            iconImageView.tintColor = .kidkBlue
+            timelineDotView.backgroundColor = .kidkBlue
         }
 
-        accessibilityLabel = "\(transaction.description), \(transaction.formattedAmount)"
+        timelineLineView.isHidden = isLast
+    }
+
+    @objc private func didTap() {
+        UISelectionFeedbackGenerator().selectionChanged()
+        onTap?()
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.12) {
+                self.alpha = self.isHighlighted ? 0.7 : 1
+            }
+        }
     }
 }
 
-// MARK: - Card Cell
-private final class WalletCardModernCell: UITableViewCell {
+// MARK: - Card Info
+private final class WalletCardInfoView: UIControl {
 
-    static let identifier = "WalletCardModernCell"
+    var onTap: (() -> Void)?
 
-    private let containerView: UIView = {
-        let view = UIView()
-        view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = CornerRadius.large
-        view.layer.borderWidth = 1
-        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
-        view.clipsToBounds = true
-        return view
-    }()
-
-    private let gradientLayer = CAGradientLayer()
-
-    private let iconImageView: UIImageView = {
+    private let cardImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
         return imageView
@@ -1301,24 +1529,118 @@ private final class WalletCardModernCell: UITableViewCell {
         return label
     }()
 
-    private let subtitleLabel: UILabel = {
+    private let statusLabel: UILabel = {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s14, .medium)
-        label.textColor = UIColor.white.withAlphaComponent(0.78)
+        label.textColor = .kidkGray
         return label
     }()
 
-    private let statusBadgeLabel: UILabel = {
+    private let numberLabel: UILabel = {
         let label = UILabel()
-        label.font = UIFont.kidkFont(.s12, .bold)
-        label.textAlignment = .center
-        label.layer.cornerRadius = 10
-        label.clipsToBounds = true
+        label.font = UIFont.kidkFont(.s12, .regular)
+        label.textColor = UIColor.white.withAlphaComponent(0.72)
         return label
     }()
 
-    override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
-        super.init(style: style, reuseIdentifier: reuseIdentifier)
+    private let chevronImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
+        imageView.tintColor = .chevronGray
+        imageView.contentMode = .scaleAspectFit
+        return imageView
+    }()
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        setupUI()
+        addTarget(self, action: #selector(didTap), for: .touchUpInside)
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        addSubview(cardImageView)
+        addSubview(titleLabel)
+        addSubview(statusLabel)
+        addSubview(numberLabel)
+        addSubview(chevronImageView)
+
+        snp.makeConstraints { make in
+            make.height.equalTo(110)
+        }
+
+        cardImageView.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(72)
+        }
+
+        chevronImageView.snp.makeConstraints { make in
+            make.trailing.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.width.equalTo(8)
+            make.height.equalTo(14)
+        }
+
+        titleLabel.snp.makeConstraints { make in
+            make.top.equalTo(cardImageView).offset(4)
+            make.leading.equalTo(cardImageView.snp.trailing).offset(Spacing.sm)
+            make.trailing.lessThanOrEqualTo(chevronImageView.snp.leading).offset(-Spacing.sm)
+        }
+
+        statusLabel.snp.makeConstraints { make in
+            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xxs)
+            make.leading.trailing.equalTo(titleLabel)
+        }
+
+        numberLabel.snp.makeConstraints { make in
+            make.top.equalTo(statusLabel.snp.bottom).offset(Spacing.xxs)
+            make.leading.trailing.equalTo(titleLabel)
+        }
+    }
+
+    func configure(with card: Card) {
+        cardImageView.image = UIImage(named: card.characterImageName)
+        titleLabel.text = card.isPhysicalCard ? "실물 카드" : "디지털 카드"
+        statusLabel.text = card.statusDescription
+
+        if let digits = card.lastFourDigits {
+            numberLabel.text = "•••• \(digits)"
+        } else {
+            numberLabel.text = "카드 번호 미등록"
+        }
+    }
+
+    @objc private func didTap() {
+        UISelectionFeedbackGenerator().selectionChanged()
+        onTap?()
+    }
+
+    override var isHighlighted: Bool {
+        didSet {
+            UIView.animate(withDuration: 0.12) {
+                self.alpha = self.isHighlighted ? 0.7 : 1
+            }
+        }
+    }
+}
+
+// MARK: - Empty
+private final class WalletEmptyCardView: UIView {
+
+    private let label: UILabel = {
+        let label = UILabel()
+        label.font = UIFont.kidkFont(.s14, .medium)
+        label.textColor = .kidkGray
+        label.textAlignment = .center
+        return label
+    }()
+
+    init(message: String) {
+        super.init(frame: .zero)
+        label.text = message
         setupUI()
     }
 
@@ -1326,95 +1648,17 @@ private final class WalletCardModernCell: UITableViewCell {
         fatalError("init(coder:) has not been implemented")
     }
 
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        gradientLayer.frame = containerView.bounds
-    }
-
     private func setupUI() {
-        backgroundColor = .clear
+        backgroundColor = UIColor.white.withAlphaComponent(0.05)
+        layer.cornerRadius = CornerRadius.medium
 
-        gradientLayer.colors = [
-            UIColor(hex: "#2D2D36").cgColor,
-            UIColor(hex: "#303045").cgColor,
-            UIColor(hex: "#2A2440").cgColor
-        ]
-        gradientLayer.startPoint = CGPoint(x: 0, y: 0)
-        gradientLayer.endPoint = CGPoint(x: 1, y: 1)
-
-        contentView.addSubview(containerView)
-        containerView.layer.insertSublayer(gradientLayer, at: 0)
-        containerView.addSubview(iconImageView)
-        containerView.addSubview(titleLabel)
-        containerView.addSubview(subtitleLabel)
-        containerView.addSubview(statusBadgeLabel)
-
-        containerView.snp.makeConstraints { make in
-            make.edges.equalToSuperview().inset(UIEdgeInsets(top: 6, left: 16, bottom: 6, right: 16))
+        addSubview(label)
+        label.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(Spacing.sm)
         }
 
-        iconImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.sm)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(70)
+        snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(88)
         }
-
-        titleLabel.snp.makeConstraints { make in
-            make.top.equalTo(iconImageView).offset(6)
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.sm)
-            make.trailing.equalToSuperview().inset(Spacing.sm)
-        }
-
-        subtitleLabel.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xxs)
-            make.leading.trailing.equalTo(titleLabel)
-        }
-
-        statusBadgeLabel.snp.makeConstraints { make in
-            make.top.equalTo(subtitleLabel.snp.bottom).offset(Spacing.xxs)
-            make.leading.equalTo(titleLabel)
-            make.height.equalTo(22)
-            make.width.greaterThanOrEqualTo(58)
-        }
-    }
-
-    func configure(with card: Card?) {
-        guard let card else {
-            iconImageView.image = UIImage(systemName: "creditcard")
-            iconImageView.tintColor = .kidkGray
-            titleLabel.text = "연결된 카드가 없어요"
-            subtitleLabel.text = "카드를 연결하면 더 빠르게 쓸 수 있어요"
-            statusBadgeLabel.text = "미연결"
-            statusBadgeLabel.textColor = .kidkGray
-            statusBadgeLabel.backgroundColor = .kidkGray.withAlphaComponent(0.18)
-            accessibilityLabel = "연결된 카드 없음"
-            return
-        }
-
-        iconImageView.image = UIImage(named: card.characterImageName) ?? UIImage(systemName: "creditcard.fill")
-        iconImageView.tintColor = .kidkTextWhite
-
-        let cardTypeText = card.isPhysicalCard ? "실물 카드" : "디지털 카드"
-        let cardNumberText = card.lastFourDigits.map { "•••• \($0)" } ?? "번호 미등록"
-
-        titleLabel.text = "\(cardTypeText) · \(cardNumberText)"
-        subtitleLabel.text = card.statusDescription
-
-        switch card.status {
-        case .active:
-            statusBadgeLabel.text = "사용 가능"
-            statusBadgeLabel.textColor = .kidkGreen
-            statusBadgeLabel.backgroundColor = .kidkGreen.withAlphaComponent(0.18)
-        case .suspended:
-            statusBadgeLabel.text = "일시 정지"
-            statusBadgeLabel.textColor = .kidkPink
-            statusBadgeLabel.backgroundColor = .kidkPink.withAlphaComponent(0.18)
-        case .expired:
-            statusBadgeLabel.text = "만료"
-            statusBadgeLabel.textColor = .kidkGray
-            statusBadgeLabel.backgroundColor = .kidkGray.withAlphaComponent(0.18)
-        }
-
-        accessibilityLabel = "\(cardTypeText), 상태 \(card.status.displayName)"
     }
 }
