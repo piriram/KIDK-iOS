@@ -101,17 +101,7 @@ final class SavingsViewController: BaseViewController {
     }()
 
     private let refreshControl = UIRefreshControl()
-    private var currentStyle: SavingsDisplayStyle = .neoBankClean
-
-    private lazy var styleSegmentedControl: UISegmentedControl = {
-        let control = UISegmentedControl(items: SavingsDisplayStyle.allCases.map { $0.segmentTitle })
-        control.selectedSegmentIndex = currentStyle.rawValue
-        control.backgroundColor = UIColor.white.withAlphaComponent(0.08)
-        control.selectedSegmentTintColor = currentStyle.primaryAccentColor
-        control.setTitleTextAttributes([.foregroundColor: UIColor.kidkTextWhite], for: .normal)
-        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
-        return control
-    }()
+    private var currentStyle: SavingsDisplayStyle = .warmKids
 
     init(viewModel: SavingsViewModel) {
         self.viewModel = viewModel
@@ -136,7 +126,6 @@ final class SavingsViewController: BaseViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        contentView.addSubview(styleSegmentedControl)
         contentView.addSubview(headerView)
         contentView.addSubview(quickStatsView)
         contentView.addSubview(bentoOverviewView)
@@ -164,14 +153,8 @@ final class SavingsViewController: BaseViewController {
             make.width.equalTo(scrollView)
         }
 
-        styleSegmentedControl.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(34)
-        }
-
         headerView.snp.makeConstraints { make in
-            make.top.equalTo(styleSegmentedControl.snp.bottom).offset(Spacing.sm)
+            make.top.equalToSuperview().offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
@@ -181,12 +164,12 @@ final class SavingsViewController: BaseViewController {
         }
 
         bentoOverviewView.snp.makeConstraints { make in
-            make.top.equalTo(styleSegmentedControl.snp.bottom).offset(Spacing.sm)
+            make.top.equalToSuperview().offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
         warmHeroView.snp.makeConstraints { make in
-            make.top.equalTo(styleSegmentedControl.snp.bottom).offset(Spacing.sm)
+            make.top.equalToSuperview().offset(Spacing.md)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
@@ -328,15 +311,6 @@ final class SavingsViewController: BaseViewController {
                 self?.showAlert(title: "준비중", message: "저축 목표 만들기 기능은 곧 추가될 예정입니다.")
             })
             .disposed(by: disposeBag)
-
-        styleSegmentedControl.rx.selectedSegmentIndex
-            .skip(1)
-            .compactMap(SavingsDisplayStyle.init(rawValue:))
-            .subscribe(onNext: { [weak self] style in
-                self?.currentStyle = style
-                self?.applyStyle(style)
-            })
-            .disposed(by: disposeBag)
     }
 
     private func applyStyle(_ style: SavingsDisplayStyle) {
@@ -344,7 +318,6 @@ final class SavingsViewController: BaseViewController {
 
         view.backgroundColor = visualStyle.screenBackgroundColor
         refreshControl.tintColor = visualStyle.primaryAccentColor
-        styleSegmentedControl.selectedSegmentTintColor = visualStyle.primaryAccentColor
 
         headerView.applyStyle(visualStyle)
         quickStatsView.applyStyle(visualStyle)
