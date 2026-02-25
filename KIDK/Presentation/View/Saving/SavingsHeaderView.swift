@@ -4,6 +4,7 @@ import SnapKit
 final class SavingsHeaderView: UIView {
 
     private let headerGradientLayer = CAGradientLayer()
+    private var displayStyle: SavingsDisplayStyle = .neoBankClean
 
     private let containerView: UIView = {
         let view = UIView()
@@ -94,11 +95,6 @@ final class SavingsHeaderView: UIView {
         addSubview(containerView)
         containerView.layer.insertSublayer(headerGradientLayer, at: 0)
 
-        headerGradientLayer.colors = [
-            UIColor(hex: "#3A2A45").cgColor,
-            UIColor(hex: "#2B2B33").cgColor,
-            UIColor(hex: "#26262D").cgColor
-        ]
         headerGradientLayer.startPoint = CGPoint(x: 0.0, y: 0.0)
         headerGradientLayer.endPoint = CGPoint(x: 1.0, y: 1.0)
 
@@ -149,6 +145,20 @@ final class SavingsHeaderView: UIView {
             make.bottom.equalToSuperview().inset(Spacing.md)
             make.height.equalTo(68)
         }
+
+        applyStyle(.neoBankClean)
+    }
+
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        displayStyle = style
+        headerGradientLayer.colors = style.headerGradientColors.map(\.cgColor)
+        containerView.layer.borderColor = style.headerBorderColor.cgColor
+        iconBackgroundView.backgroundColor = style.headerIconBackgroundColor
+        summaryLabel.textColor = style.summaryTextColor
+        savingsRateView.applyStyle(backgroundColor: style.statCardBackgroundColor, borderColor: style.statCardBorderColor, titleColor: style.statTitleColor)
+        thisMonthView.applyStyle(backgroundColor: style.statCardBackgroundColor, borderColor: style.statCardBorderColor, titleColor: style.statTitleColor)
+        completedView.applyStyle(backgroundColor: style.statCardBackgroundColor, borderColor: style.statCardBorderColor, titleColor: style.statTitleColor)
+        setNeedsLayout()
     }
 
     func configure(with stats: SavingsStats) {
@@ -158,19 +168,19 @@ final class SavingsHeaderView: UIView {
         savingsRateView.configure(
             title: "저축률",
             value: stats.formattedSavingsRate,
-            color: .kidkGreen,
+            color: displayStyle.secondaryAccentColor,
             iconName: "chart.bar.fill"
         )
         thisMonthView.configure(
             title: "이번 달",
             value: stats.formattedThisMonthSavings,
-            color: .kidkBlue,
+            color: displayStyle.primaryAccentColor,
             iconName: "calendar"
         )
         completedView.configure(
             title: "달성 목표",
             value: "\(stats.completedGoalsCount)개",
-            color: .kidkPink,
+            color: displayStyle.accentColor(for: .completed),
             iconName: "checkmark.seal.fill"
         )
 
@@ -232,6 +242,8 @@ private final class StatItemView: UIView {
     private func setupUI() {
         backgroundColor = UIColor.white.withAlphaComponent(0.08)
         layer.cornerRadius = CornerRadius.medium
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
 
         addSubview(iconBackgroundView)
         iconBackgroundView.addSubview(iconImageView)
@@ -267,5 +279,11 @@ private final class StatItemView: UIView {
         valueLabel.textColor = color
         iconImageView.image = UIImage(systemName: iconName)
         iconBackgroundView.backgroundColor = color.withAlphaComponent(0.24)
+    }
+
+    func applyStyle(backgroundColor: UIColor, borderColor: UIColor, titleColor: UIColor) {
+        self.backgroundColor = backgroundColor
+        layer.borderColor = borderColor.cgColor
+        titleLabel.textColor = titleColor
     }
 }

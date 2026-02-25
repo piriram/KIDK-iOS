@@ -99,6 +99,17 @@ final class SavingsViewController: BaseViewController {
     }()
 
     private let refreshControl = UIRefreshControl()
+    private var currentStyle: SavingsDisplayStyle = .neoBankClean
+
+    private lazy var styleSegmentedControl: UISegmentedControl = {
+        let control = UISegmentedControl(items: SavingsDisplayStyle.allCases.map { $0.segmentTitle })
+        control.selectedSegmentIndex = currentStyle.rawValue
+        control.backgroundColor = UIColor.white.withAlphaComponent(0.08)
+        control.selectedSegmentTintColor = currentStyle.primaryAccentColor
+        control.setTitleTextAttributes([.foregroundColor: UIColor.kidkTextWhite], for: .normal)
+        control.setTitleTextAttributes([.foregroundColor: UIColor.white], for: .selected)
+        return control
+    }()
 
     init(viewModel: SavingsViewModel) {
         self.viewModel = viewModel
@@ -123,6 +134,7 @@ final class SavingsViewController: BaseViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
 
+        contentView.addSubview(styleSegmentedControl)
         contentView.addSubview(headerView)
         contentView.addSubview(quickStatsView)
         contentView.addSubview(inProgressSection)
@@ -148,8 +160,14 @@ final class SavingsViewController: BaseViewController {
             make.width.equalTo(scrollView)
         }
 
-        headerView.snp.makeConstraints { make in
+        styleSegmentedControl.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.height.equalTo(34)
+        }
+
+        headerView.snp.makeConstraints { make in
+            make.top.equalTo(styleSegmentedControl.snp.bottom).offset(Spacing.sm)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
@@ -216,6 +234,8 @@ final class SavingsViewController: BaseViewController {
 
         inProgressSection.configure(title: "진행 중인 목표", subtitle: nil)
         completedSection.configure(title: "달성한 목표", subtitle: nil)
+
+        applyStyle(currentStyle)
     }
 
     private func bind() {
@@ -292,6 +312,51 @@ final class SavingsViewController: BaseViewController {
                 self?.showAlert(title: "준비중", message: "저축 목표 만들기 기능은 곧 추가될 예정입니다.")
             })
             .disposed(by: disposeBag)
+
+        styleSegmentedControl.rx.selectedSegmentIndex
+            .skip(1)
+            .compactMap(SavingsDisplayStyle.init(rawValue:))
+            .subscribe(onNext: { [weak self] style in
+                self?.currentStyle = style
+                self?.applyStyle(style)
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func applyStyle(_ style: SavingsDisplayStyle) {
+        view.backgroundColor = style.screenBackgroundColor
+        refreshControl.tintColor = style.primaryAccentColor
+        styleSegmentedControl.selectedSegmentTintColor = style.primaryAccentColor
+
+        headerView.applyStyle(style)
+        quickStatsView.applyStyle(style)
+        inProgressSection.applyStyle(titleColor: style.sectionTitleColor, subtitleColor: style.sectionSubtitleColor)
+        completedSection.applyStyle(titleColor: style.sectionTitleColor, subtitleColor: style.sectionSubtitleColor)
+
+        emptyStateView.backgroundColor = style.emptyCardBackgroundColor
+        emptyStateView.layer.borderColor = style.emptyCardBorderColor.cgColor
+        emptyImageBackgroundView.backgroundColor = style.primaryAccentColor.withAlphaComponent(0.20)
+        emptyImageView.tintColor = style.primaryAccentColor
+        emptyMessageLabel.textColor = style.sectionSubtitleColor
+        addGoalButton.backgroundColor = style.primaryButtonColor
+
+        inProgressStackView.arrangedSubviews.forEach {
+            if let card = $0 as? SavingsGoalCardView {
+                card.applyStyle(style)
+            }
+            if let emptyCard = $0 as? SavingsSectionEmptyCardView {
+                emptyCard.applyStyle(style)
+            }
+        }
+
+        completedStackView.arrangedSubviews.forEach {
+            if let card = $0 as? SavingsGoalCardView {
+                card.applyStyle(style)
+            }
+            if let emptyCard = $0 as? SavingsSectionEmptyCardView {
+                emptyCard.applyStyle(style)
+            }
+        }
     }
 
     private func updateInProgressGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
@@ -304,6 +369,7 @@ final class SavingsViewController: BaseViewController {
         } else {
             goals.forEach { goal in
                 let cardView = SavingsGoalCardView()
+                cardView.applyStyle(currentStyle)
                 cardView.configure(with: goal)
                 cardView.cardTapped
                     .bind(to: goalSelectedRelay)
@@ -323,6 +389,7 @@ final class SavingsViewController: BaseViewController {
         } else {
             goals.forEach { goal in
                 let cardView = SavingsGoalCardView()
+                cardView.applyStyle(currentStyle)
                 cardView.configure(with: goal)
                 cardView.cardTapped
                     .bind(to: goalSelectedRelay)
@@ -333,18 +400,37 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func makeSectionEmptyCard(message: String) -> UIView {
-        let container = UIView()
-        container.backgroundColor = .cardBackground
-        container.layer.cornerRadius = CornerRadius.medium
-        container.layer.borderWidth = 1
-        container.layer.borderColor = UIColor.white.withAlphaComponent(0.06).cgColor
+        let card = SavingsSectionEmptyCardView(message: message)
+        card.applyStyle(currentStyle)
+        return card
+    }
+}
 
-        let iconView = UIImageView(image: UIImage(systemName: "tray"))
+private final class SavingsSectionEmptyCardView: UIView {
+
+    private let iconView = UIImageView(image: UIImage(systemName: "tray"))
+    private let messageLabel = UILabel()
+
+    init(message: String) {
+        super.init(frame: .zero)
+        setupUI()
+        messageLabel.text = message
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    private func setupUI() {
+        backgroundColor = .cardBackground
+        layer.cornerRadius = CornerRadius.medium
+        layer.borderWidth = 1
+        layer.borderColor = UIColor.white.withAlphaComponent(0.06).cgColor
+
         iconView.tintColor = .kidkGray
 
-        let messageLabel = UILabel()
         messageLabel.applyTextStyle(
-            text: message,
+            text: "",
             size: .s14,
             weight: .regular,
             color: .kidkGray,
@@ -352,8 +438,8 @@ final class SavingsViewController: BaseViewController {
         )
         messageLabel.textAlignment = .center
 
-        container.addSubview(iconView)
-        container.addSubview(messageLabel)
+        addSubview(iconView)
+        addSubview(messageLabel)
 
         iconView.snp.makeConstraints { make in
             make.top.equalToSuperview().inset(Spacing.sm)
@@ -367,11 +453,16 @@ final class SavingsViewController: BaseViewController {
             make.bottom.equalToSuperview().inset(Spacing.sm)
         }
 
-        container.snp.makeConstraints { make in
+        snp.makeConstraints { make in
             make.height.greaterThanOrEqualTo(78)
         }
+    }
 
-        return container
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        backgroundColor = style.emptyCardBackgroundColor
+        layer.borderColor = style.emptyCardBorderColor.cgColor
+        iconView.tintColor = style.emptyIconColor
+        messageLabel.textColor = style.sectionSubtitleColor
     }
 }
 
@@ -388,6 +479,11 @@ private final class SavingsQuickStatsView: UIView {
     private let streakItem = SavingsQuickStatItemView()
     private let weeklyItem = SavingsQuickStatItemView()
     private let monthlyItem = SavingsQuickStatItemView()
+
+    private var currentStyle: SavingsDisplayStyle = .neoBankClean
+    private var streakDays: Int = 0
+    private var weeklyAverage: String = "0원"
+    private var monthlyAverage: String = "0원"
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -409,15 +505,35 @@ private final class SavingsQuickStatsView: UIView {
         stackView.addArrangedSubview(weeklyItem)
         stackView.addArrangedSubview(monthlyItem)
 
-        streakItem.configure(title: "연속", value: "0일", iconName: "flame.fill", tintColor: .kidkPink)
-        weeklyItem.configure(title: "주간 평균", value: "0원", iconName: "calendar.badge.clock", tintColor: .kidkBlue)
-        monthlyItem.configure(title: "월간 평균", value: "0원", iconName: "chart.line.uptrend.xyaxis", tintColor: .kidkGreen)
+        render()
     }
 
     func configure(streakDays: Int, weeklyAverage: String, monthlyAverage: String) {
-        streakItem.configure(title: "연속", value: "\(max(streakDays, 0))일", iconName: "flame.fill", tintColor: .kidkPink)
-        weeklyItem.configure(title: "주간 평균", value: weeklyAverage, iconName: "calendar.badge.clock", tintColor: .kidkBlue)
-        monthlyItem.configure(title: "월간 평균", value: monthlyAverage, iconName: "chart.line.uptrend.xyaxis", tintColor: .kidkGreen)
+        self.streakDays = max(streakDays, 0)
+        self.weeklyAverage = weeklyAverage
+        self.monthlyAverage = monthlyAverage
+        render()
+    }
+
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        currentStyle = style
+        switch style {
+        case .bentoDashboard:
+            stackView.spacing = Spacing.sm
+        default:
+            stackView.spacing = Spacing.xs
+        }
+        render()
+    }
+
+    private func render() {
+        streakItem.applyStyle(backgroundColor: currentStyle.statCardBackgroundColor, borderColor: currentStyle.statCardBorderColor, titleColor: currentStyle.statTitleColor)
+        weeklyItem.applyStyle(backgroundColor: currentStyle.statCardBackgroundColor, borderColor: currentStyle.statCardBorderColor, titleColor: currentStyle.statTitleColor)
+        monthlyItem.applyStyle(backgroundColor: currentStyle.statCardBackgroundColor, borderColor: currentStyle.statCardBorderColor, titleColor: currentStyle.statTitleColor)
+
+        streakItem.configure(title: "연속", value: "\(streakDays)일", iconName: "flame.fill", tintColor: currentStyle.secondaryAccentColor)
+        weeklyItem.configure(title: "주간 평균", value: weeklyAverage, iconName: "calendar.badge.clock", tintColor: currentStyle.primaryAccentColor)
+        monthlyItem.configure(title: "월간 평균", value: monthlyAverage, iconName: "chart.line.uptrend.xyaxis", tintColor: currentStyle.accentColor(for: .completed))
     }
 }
 
@@ -494,5 +610,11 @@ private final class SavingsQuickStatItemView: UIView {
         valueLabel.textColor = tintColor
         iconView.image = UIImage(systemName: iconName)
         iconView.tintColor = tintColor
+    }
+
+    func applyStyle(backgroundColor: UIColor, borderColor: UIColor, titleColor: UIColor) {
+        self.backgroundColor = backgroundColor
+        layer.borderColor = borderColor.cgColor
+        titleLabel.textColor = titleColor
     }
 }
