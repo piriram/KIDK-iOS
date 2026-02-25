@@ -76,6 +76,18 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private var latestUnlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
 
     #if DEBUG
+    enum DebugSnapshotAction {
+        case none
+        case showMissionCompletedPopup
+        case showBuildingDetail
+        case showMissionSelection
+        case showMissionCreation
+    }
+
+    private var debugSnapshotAction: DebugSnapshotAction = .none
+    #endif
+
+    #if DEBUG
     private var debugPanelVisible = false
     private var debugBgScale: CGFloat = 1.0
     private var debugBgOffsetX: CGFloat = 0
@@ -119,6 +131,10 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         viewDidAppearSubject.onNext(())
+
+        #if DEBUG
+        runDebugSnapshotActionIfNeeded()
+        #endif
     }
 
     private func setupUI() {
@@ -373,6 +389,29 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     }
 
     #if DEBUG
+    func setDebugSnapshotAction(_ action: DebugSnapshotAction) {
+        debugSnapshotAction = action
+    }
+
+    private func runDebugSnapshotActionIfNeeded() {
+        switch debugSnapshotAction {
+        case .none:
+            break
+        case .showMissionCompletedPopup:
+            missionCompletedSubject.onNext(UUID().uuidString)
+        case .showBuildingDetail:
+            showLockedLocationToast(location: .mart)
+        case .showMissionSelection:
+            showMissionSelectionSheet()
+        case .showMissionCreation:
+            showMissionSelectionSheet()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) { [weak self] in
+                self?.showMissionCreationSheet(missionType: .custom)
+            }
+        }
+        debugSnapshotAction = .none
+    }
+
     private func setupDebugUI() {
         let toggleGesture = UITapGestureRecognizer(target: self, action: #selector(toggleDebugPanel))
         toggleGesture.numberOfTapsRequired = 2
