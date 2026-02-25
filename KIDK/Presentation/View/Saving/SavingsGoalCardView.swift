@@ -10,6 +10,8 @@ final class SavingsGoalCardView: UIView {
     private var goal: SavingsGoal?
     private let disposeBag = DisposeBag()
     private var displayStyle: SavingsDisplayStyle = .neoBankClean
+    private var detailsHeightConstraint: Constraint?
+    private var isExpanded = false
 
     private let containerView: UIView = {
         let view = UIView()
@@ -55,10 +57,16 @@ final class SavingsGoalCardView: UIView {
     }()
 
     private let chevronImageView: UIImageView = {
-        let imageView = UIImageView(image: UIImage(systemName: "chevron.right"))
+        let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
         imageView.contentMode = .scaleAspectFit
         imageView.tintColor = .kidkGray
         return imageView
+    }()
+
+    private let expandButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.backgroundColor = .clear
+        return button
     }()
 
     private let badgeStackView: UIStackView = {
@@ -153,6 +161,7 @@ final class SavingsGoalCardView: UIView {
 
         containerView.addSubview(nameLabel)
         containerView.addSubview(chevronImageView)
+        containerView.addSubview(expandButton)
         containerView.addSubview(badgeStackView)
         containerView.addSubview(remainingHighlightLabel)
         containerView.addSubview(progressLabel)
@@ -193,8 +202,12 @@ final class SavingsGoalCardView: UIView {
         chevronImageView.snp.makeConstraints { make in
             make.trailing.equalToSuperview().inset(Spacing.md)
             make.centerY.equalTo(nameLabel.snp.centerY)
-            make.width.equalTo(8)
-            make.height.equalTo(14)
+            make.width.height.equalTo(12)
+        }
+
+        expandButton.snp.makeConstraints { make in
+            make.center.equalTo(chevronImageView)
+            make.width.height.equalTo(32)
         }
 
         nameLabel.snp.makeConstraints { make in
@@ -234,13 +247,15 @@ final class SavingsGoalCardView: UIView {
         }
 
         amountStackView.snp.makeConstraints { make in
-            make.top.equalTo(progressBar.snp.bottom).offset(Spacing.md)
+            make.top.equalTo(progressBar.snp.bottom).offset(Spacing.sm)
             make.leading.equalTo(iconContainerView.snp.leading)
             make.trailing.equalToSuperview().inset(Spacing.md)
+            detailsHeightConstraint = make.height.equalTo(0).constraint
             make.bottom.equalToSuperview().inset(Spacing.md)
         }
 
         accessibilityTraits = [.button]
+        setExpanded(false, animated: false)
     }
 
     private func bind() {
@@ -263,6 +278,33 @@ final class SavingsGoalCardView: UIView {
                 self.cardTapped.accept(goal)
             })
             .disposed(by: disposeBag)
+
+        expandButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.toggleExpanded()
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func toggleExpanded() {
+        setExpanded(!isExpanded, animated: true)
+    }
+
+    private func setExpanded(_ expanded: Bool, animated: Bool) {
+        isExpanded = expanded
+        detailsHeightConstraint?.update(offset: expanded ? 58 : 0)
+
+        let animationBlock = {
+            self.amountStackView.alpha = expanded ? 1.0 : 0.0
+            self.chevronImageView.transform = expanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+            self.layoutIfNeeded()
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut], animations: animationBlock)
+        } else {
+            animationBlock()
+        }
     }
 
     func applyStyle(_ style: SavingsDisplayStyle) {
@@ -296,7 +338,8 @@ final class SavingsGoalCardView: UIView {
         progressBar.setProgress(Float(progressPercentage / 100), animated: true)
 
         currentAmountView.configure(title: "현재 금액", value: goal.formattedCurrentAmount, color: displayStyle.secondaryAccentColor)
-        remainingAmountView.isHidden = true
+        remainingAmountView.isHidden = false
+        remainingAmountView.configure(title: "남은 금액", value: goal.formattedRemainingAmount, color: displayStyle.goalCardSecondaryTextColor)
         targetAmountView.configure(title: "목표 금액", value: goal.formattedTargetAmount, color: displayStyle.primaryAccentColor)
 
         let accentColor = displayStyle.accentColor(for: goal.status)
@@ -338,6 +381,7 @@ final class SavingsGoalCardView: UIView {
             dDayLabel.isHidden = true
         }
 
+        setExpanded(false, animated: false)
         accessibilityLabel = "\(goal.name), 진행률 \(String(format: "%.1f", progressPercentage))퍼센트, 현재 \(goal.formattedCurrentAmount), 목표 \(goal.formattedTargetAmount)"
     }
 }
