@@ -134,35 +134,9 @@ final class FamilyRepository: BaseRepository, FamilyRepositoryProtocol {
         }
     }
 
-    func removeFamilyMember(familyMemberId: String) -> Completable {
-        return Completable.create { [weak self] completable in
-            guard let self = self else {
-                completable(.error(RepositoryError.unknown(NSError(domain: "FamilyRepository", code: -1))))
-                return Disposables.create()
-            }
-
-            guard let familyMemberIdInt = Int(familyMemberId) else {
-                completable(.error(RepositoryError.invalidParameter))
-                return Disposables.create()
-            }
-
-            // 실제 API 호출
-            self.networkService.request(FamilyMemberAPI.removeFamilyMember(familyMemberId: familyMemberIdInt))
-                .subscribe(onNext: { (result: Result<EmptyData, NetworkError>) in
-                    switch result {
-                    case .success:
-                        self.debugSuccess("Family member removed via API")
-                        completable(.completed)
-
-                    case .failure(let error):
-                        self.debugError("Failed to remove family member via API", error: error)
-                        completable(.error(RepositoryError.networkError(error)))
-                    }
-                })
-                .disposed(by: self.disposeBag)
-
-            return Disposables.create()
-        }
+    func removeFamilyMember(familyMemberId _: String) -> Completable {
+        debugWarning("removeFamilyMember API is deferred in MVP. Blocked request.")
+        return .error(RepositoryError.deferredInMVP(feature: "가족 구성원 삭제"))
     }
 
     // MARK: - Raw Response Helpers

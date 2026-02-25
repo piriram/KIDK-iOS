@@ -1,5 +1,11 @@
 import Foundation
 
+enum ParameterEncoding {
+    case methodDependent   // 기본: GET/DELETE=query, 나머지=JSON body
+    case query             // 메서드와 무관하게 query string 사용
+    case jsonBody          // 메서드와 무관하게 JSON body 사용
+}
+
 protocol APIEndpoint {
     var path: String { get }
     var method: HTTPMethod { get }
@@ -7,6 +13,7 @@ protocol APIEndpoint {
     var headers: [String: String]? { get }
     var requiresAuth: Bool { get }
     var usesRefreshToken: Bool { get }  // Refresh Token 사용 여부 (로그아웃/재발급 API용)
+    var parameterEncoding: ParameterEncoding { get }
 }
 
 extension APIEndpoint {
@@ -20,5 +27,9 @@ extension APIEndpoint {
 
     var usesRefreshToken: Bool {
         return false  // 기본값: Access Token 사용
+    }
+
+    var parameterEncoding: ParameterEncoding {
+        return .methodDependent
     }
 }

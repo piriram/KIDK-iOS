@@ -75,7 +75,7 @@ class BaseRepository {
     }
 }
 
-enum RepositoryError: Error {
+enum RepositoryError: Error, LocalizedError {
     case networkError(Error)
     case decodingError(Error)
     case notFound
@@ -83,26 +83,29 @@ enum RepositoryError: Error {
     case serverError
     case insufficientBalance
     case invalidParameter
+    case deferredInMVP(feature: String)
     case unknown(Error)
 
-    var localizedDescription: String {
+    var errorDescription: String? {
         switch self {
         case .networkError(let error):
-            return "Network error: \(error.localizedDescription)"
-        case .decodingError(let error):
-            return "Decoding error: \(error.localizedDescription)"
+            return error.localizedDescription
+        case .decodingError:
+            return "데이터 처리 중 오류가 발생했습니다."
         case .notFound:
-            return "Resource not found"
+            return "요청한 정보를 찾을 수 없습니다."
         case .unauthorized:
-            return "Unauthorized access"
+            return "인증이 필요합니다. 다시 로그인해주세요."
         case .serverError:
-            return "Server error occurred"
+            return "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
         case .insufficientBalance:
-            return "Insufficient balance"
+            return "잔액이 부족합니다."
         case .invalidParameter:
-            return "Invalid parameter"
+            return "요청 값이 올바르지 않습니다."
+        case .deferredInMVP(let feature):
+            return "\(feature)은(는) 현재 MVP 범위에서 보류된 기능입니다."
         case .unknown(let error):
-            return "Unknown error: \(error.localizedDescription)"
+            return error.localizedDescription
         }
     }
 }

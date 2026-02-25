@@ -47,16 +47,25 @@ final class NetworkService {
                 }
                 #endif
 
-                switch endpoint.method {
-                case .get, .delete:
-                    // GET/DELETE는 query string 사용
+                let encoding: ParameterEncoding
+                switch endpoint.parameterEncoding {
+                case .methodDependent:
+                    encoding = (endpoint.method == .get || endpoint.method == .delete) ? .query : .jsonBody
+                case .query:
+                    encoding = .query
+                case .jsonBody:
+                    encoding = .jsonBody
+                }
+
+                switch encoding {
+                case .query:
                     if var components = URLComponents(url: url, resolvingAgainstBaseURL: false) {
                         components.queryItems = parameters.map { URLQueryItem(name: $0.key, value: "\($0.value)") }
                         if let updatedURL = components.url {
                             request.url = updatedURL
                         }
                     }
-                default:
+                case .jsonBody:
                     do {
                         request.httpBody = try JSONSerialization.data(withJSONObject: parameters)
                     } catch {
@@ -64,6 +73,8 @@ final class NetworkService {
                         observer.onCompleted()
                         return Disposables.create()
                     }
+                case .methodDependent:
+                    break
                 }
             }
 
