@@ -87,4 +87,13 @@ extension MissionAPI: APIEndpoint {
     var requiresAuth: Bool {
         return true
     }
+
+    var parameterEncoding: ParameterEncoding {
+        switch self {
+        case .updateMissionProgress:
+            return .query
+        default:
+            return .methodDependent
+        }
+    }
 }
