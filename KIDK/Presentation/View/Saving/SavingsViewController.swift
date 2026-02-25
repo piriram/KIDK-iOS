@@ -340,23 +340,25 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func applyStyle(_ style: SavingsDisplayStyle) {
-        view.backgroundColor = style.screenBackgroundColor
-        refreshControl.tintColor = style.primaryAccentColor
-        styleSegmentedControl.selectedSegmentTintColor = style.primaryAccentColor
+        let visualStyle = designStyle(for: style)
 
-        headerView.applyStyle(style)
-        quickStatsView.applyStyle(style)
-        bentoOverviewView.applyStyle(style)
-        warmHeroView.applyStyle(style)
-        inProgressSection.applyStyle(titleColor: style.sectionTitleColor, subtitleColor: style.sectionSubtitleColor)
-        completedSection.applyStyle(titleColor: style.sectionTitleColor, subtitleColor: style.sectionSubtitleColor)
+        view.backgroundColor = visualStyle.screenBackgroundColor
+        refreshControl.tintColor = visualStyle.primaryAccentColor
+        styleSegmentedControl.selectedSegmentTintColor = visualStyle.primaryAccentColor
 
-        emptyStateView.backgroundColor = style.emptyCardBackgroundColor
-        emptyStateView.layer.borderColor = style.emptyCardBorderColor.cgColor
-        emptyImageBackgroundView.backgroundColor = style.primaryAccentColor.withAlphaComponent(0.20)
-        emptyImageView.tintColor = style.primaryAccentColor
-        emptyMessageLabel.textColor = style.sectionSubtitleColor
-        addGoalButton.backgroundColor = style.primaryButtonColor
+        headerView.applyStyle(visualStyle)
+        quickStatsView.applyStyle(visualStyle)
+        bentoOverviewView.applyStyle(visualStyle)
+        warmHeroView.applyStyle(visualStyle)
+        inProgressSection.applyStyle(titleColor: visualStyle.sectionTitleColor, subtitleColor: visualStyle.sectionSubtitleColor)
+        completedSection.applyStyle(titleColor: visualStyle.sectionTitleColor, subtitleColor: visualStyle.sectionSubtitleColor)
+
+        emptyStateView.backgroundColor = visualStyle.emptyCardBackgroundColor
+        emptyStateView.layer.borderColor = visualStyle.emptyCardBorderColor.cgColor
+        emptyImageBackgroundView.backgroundColor = visualStyle.primaryAccentColor.withAlphaComponent(0.20)
+        emptyImageView.tintColor = visualStyle.primaryAccentColor
+        emptyMessageLabel.textColor = visualStyle.sectionSubtitleColor
+        addGoalButton.backgroundColor = visualStyle.primaryButtonColor
 
         switch style {
         case .neoBankClean:
@@ -396,25 +398,35 @@ final class SavingsViewController: BaseViewController {
 
         inProgressStackView.arrangedSubviews.forEach {
             if let card = $0 as? SavingsGoalCardView {
-                card.applyStyle(style)
+                card.applyStyle(visualStyle)
             }
             if let emptyCard = $0 as? SavingsSectionEmptyCardView {
-                emptyCard.applyStyle(style)
+                emptyCard.applyStyle(visualStyle)
             }
         }
 
         completedStackView.arrangedSubviews.forEach {
             if let card = $0 as? SavingsGoalCardView {
-                card.applyStyle(style)
+                card.applyStyle(visualStyle)
             }
             if let emptyCard = $0 as? SavingsSectionEmptyCardView {
-                emptyCard.applyStyle(style)
+                emptyCard.applyStyle(visualStyle)
             }
         }
     }
 
+    private func designStyle(for layoutStyle: SavingsDisplayStyle) -> SavingsDisplayStyle {
+        switch layoutStyle {
+        case .warmKids:
+            return .bentoDashboard
+        default:
+            return layoutStyle
+        }
+    }
+
     private func updateInProgressGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
-        let inProgressTitle = currentStyle == .warmKids ? "지금 모으는 목표" : "진행 중인 목표"
+        let activeDesignStyle = designStyle(for: currentStyle)
+        let inProgressTitle = activeDesignStyle == .warmKids ? "지금 모으는 목표" : "진행 중인 목표"
         inProgressSection.configure(title: inProgressTitle, subtitle: goals.isEmpty ? "현재 목표가 없어요" : "\(goals.count)개 진행 중")
 
         inProgressStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -424,7 +436,7 @@ final class SavingsViewController: BaseViewController {
         } else {
             goals.forEach { goal in
                 let cardView = SavingsGoalCardView()
-                cardView.applyStyle(currentStyle)
+                cardView.applyStyle(activeDesignStyle)
                 cardView.configure(with: goal)
                 cardView.cardTapped
                     .bind(to: goalSelectedRelay)
@@ -435,7 +447,8 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func updateCompletedGoals(_ goals: [SavingsGoal], goalSelectedRelay: PublishRelay<SavingsGoal>) {
-        let completedTitle = currentStyle == .warmKids ? "달성한 목표 스티커" : "달성한 목표"
+        let activeDesignStyle = designStyle(for: currentStyle)
+        let completedTitle = activeDesignStyle == .warmKids ? "달성한 목표 스티커" : "달성한 목표"
         completedSection.configure(title: completedTitle, subtitle: goals.isEmpty ? "아직 달성된 목표가 없어요" : "\(goals.count)개 달성")
 
         completedStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
@@ -445,7 +458,7 @@ final class SavingsViewController: BaseViewController {
         } else {
             goals.forEach { goal in
                 let cardView = SavingsGoalCardView()
-                cardView.applyStyle(currentStyle)
+                cardView.applyStyle(activeDesignStyle)
                 cardView.configure(with: goal)
                 cardView.cardTapped
                     .bind(to: goalSelectedRelay)
@@ -457,7 +470,7 @@ final class SavingsViewController: BaseViewController {
 
     private func makeSectionEmptyCard(message: String) -> UIView {
         let card = SavingsSectionEmptyCardView(message: message)
-        card.applyStyle(currentStyle)
+        card.applyStyle(designStyle(for: currentStyle))
         return card
     }
 }
