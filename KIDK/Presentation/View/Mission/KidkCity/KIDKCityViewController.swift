@@ -704,6 +704,18 @@ private final class KidkCityScene: SKScene {
         var xRatio: CGFloat
         var yRatio: CGFloat
         var scale: CGFloat
+
+        init(xRatio: CGFloat, yRatio: CGFloat, scale: CGFloat) {
+            self.xRatio = xRatio
+            self.yRatio = yRatio
+            self.scale = scale
+        }
+
+        init(config: KIDKCityLayoutConfig.BuildingConfig) {
+            self.xRatio = CGFloat(config.xRatio)
+            self.yRatio = CGFloat(config.yRatio)
+            self.scale = CGFloat(config.scale)
+        }
     }
 
     var onHomeTapped: (() -> Void)?
@@ -746,12 +758,19 @@ private final class KidkCityScene: SKScene {
     private var unlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
 
     // NOTE: 좌표는 "scene size"가 아니라 "배경 표시 영역(frame)" 기준 ratio로 관리한다.
-    private var backgroundScale: CGFloat = 1.0
-    private var backgroundOffset: CGPoint = .zero
-    private var homeLayout = BuildingLayout(xRatio: 0.0060, yRatio: 0.4447, scale: 1.173)
-    private var schoolLayout = BuildingLayout(xRatio: 0.3964, yRatio: 0.7712, scale: 1.269)
-    private var martLayout = BuildingLayout(xRatio: 0.7781, yRatio: 0.2945, scale: 1.456)
-    private var characterLayout = BuildingLayout(xRatio: 0.20, yRatio: 0.38, scale: 1.0)
+    private let layoutConfig = KIDKCityLayoutConfig.loadFromBundle()
+
+    private lazy var backgroundScale: CGFloat = CGFloat(layoutConfig.map.bgScale)
+    private lazy var backgroundOffset: CGPoint = CGPoint(
+        x: CGFloat(layoutConfig.map.bgOffsetX),
+        y: CGFloat(layoutConfig.map.bgOffsetY)
+    )
+    private lazy var homeLayout = BuildingLayout(config: layoutConfig.buildings.home)
+    private lazy var schoolLayout = BuildingLayout(config: layoutConfig.buildings.school)
+    private lazy var martLayout = BuildingLayout(config: layoutConfig.buildings.mart)
+    private lazy var characterLayout = BuildingLayout(
+        config: layoutConfig.buildings.character ?? KIDKCityLayoutConfig.fallback.buildings.character!
+    )
 
     override func didMove(to view: SKView) {
         backgroundColor = .clear

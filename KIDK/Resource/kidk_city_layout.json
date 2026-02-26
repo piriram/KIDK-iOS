@@ -1,0 +1,13 @@
+{
+  "map": {
+    "bgScale": 1.0,
+    "bgOffsetX": 0.0,
+    "bgOffsetY": 0.0
+  },
+  "buildings": {
+    "home": { "xRatio": 0.0060, "yRatio": 0.4447, "scale": 1.173 },
+    "school": { "xRatio": 0.3964, "yRatio": 0.7712, "scale": 1.269 },
+    "mart": { "xRatio": 0.7781, "yRatio": 0.2945, "scale": 1.456 },
+    "character": { "xRatio": 0.2000, "yRatio": 0.3800, "scale": 1.000 }
+  }
+}
