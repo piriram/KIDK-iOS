@@ -7,6 +7,7 @@ class BaseRepository {
     let disposeBag = DisposeBag()
     let networkService: NetworkService
     let tokenManager: TokenManager
+    private let authInterceptor = AuthRequestInterceptor()
 
     init(
         networkService: NetworkService = .shared,
@@ -43,6 +44,10 @@ class BaseRepository {
         #if DEBUG
         debugLog("[\(String(describing: type(of: self)))] \(method)")
         #endif
+    }
+
+    func applyAuthHeader(to request: URLRequest, usesRefreshToken: Bool = false) -> URLRequest {
+        authInterceptor.applyAuthHeader(to: request, usesRefreshToken: usesRefreshToken)
     }
     
     func debugLog(_ message: String, file: String = #file, function: String = #function, line: Int = #line) {

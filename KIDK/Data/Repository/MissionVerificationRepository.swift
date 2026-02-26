@@ -566,9 +566,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -613,9 +611,7 @@ final class MissionVerificationRepository: BaseRepository, MissionVerificationRe
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
