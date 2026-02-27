@@ -119,7 +119,7 @@ final class SavingsViewController: BaseViewController {
     }
 
     private func setupUI() {
-        title = "내 저금통"
+        title = PortfolioCaptureMock.enabled ? "내 용돈통장" : "내 저금통"
         view.backgroundColor = .kidkDarkBackground
         refreshControl.tintColor = .kidkPink
 

@@ -71,14 +71,14 @@ final class SavingsViewModel: BaseViewModel {
     // MARK: - Mock Data
     private static func createMockStats() -> SavingsStats {
         return SavingsStats(
-            totalSavings: 50000,
-            thisMonthSavings: 15000,
-            savingsRate: 35.5,
-            totalAllowance: 42000,
-            currentStreak: 7,
+            totalSavings: PortfolioCaptureMock.savingsAccountAmount,
+            thisMonthSavings: 45_000,
+            savingsRate: 80.0,
+            totalAllowance: 56_000,
+            currentStreak: 9,
             completedGoalsCount: 2,
-            averageWeeklySavings: 3500,
-            averageMonthlySavings: 14000
+            averageWeeklySavings: 11_000,
+            averageMonthlySavings: 44_000
         )
     }
 
@@ -87,10 +87,10 @@ final class SavingsViewModel: BaseViewModel {
             SavingsGoal(
                 id: "goal1",
                 userId: "user1",
-                name: "새 자전거 사기",
-                targetAmount: 150000,
-                currentAmount: 50000,
-                imageName: "bicycle",
+                name: PortfolioCaptureMock.primaryMissionTitle,
+                targetAmount: PortfolioCaptureMock.primaryMissionTargetAmount,
+                currentAmount: PortfolioCaptureMock.primaryMissionCurrentAmount,
+                imageName: "game",
                 imageData: nil,
                 startDate: Date().addingTimeInterval(-30 * 24 * 60 * 60),
                 targetDate: Date().addingTimeInterval(60 * 24 * 60 * 60),
