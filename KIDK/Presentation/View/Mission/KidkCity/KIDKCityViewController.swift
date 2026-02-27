@@ -102,6 +102,10 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private var previousGaugeProgress: CGFloat = 0
     private let savingsTargetAmount: Int = 50_000
 
+    #if DEBUG
+    private let debugMockProgress: CGFloat = 0.8
+    #endif
+
     private let homeButton: IconContainerView = {
         let button = IconContainerView(
             "kidk_icon_home",
@@ -363,7 +367,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
         #if DEBUG
         if clamped == 0 {
-            clamped = 0.8
+            clamped = debugMockProgress
         }
         #endif
 
