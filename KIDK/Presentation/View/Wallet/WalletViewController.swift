@@ -63,7 +63,7 @@ final class WalletViewController: BaseViewController {
     // MARK: - Setup
     private func setupNavigationBar() {
         title = "내 지갑"
-        navigationController?.navigationBar.prefersLargeTitles = true
+        navigationItem.largeTitleDisplayMode = .never
     }
 
     private func setupUI() {

@@ -3,12 +3,13 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class ParentChildWalletViewController: BaseViewController {
+final class ParentChildWalletViewController: BaseViewController, NavigationChromeConfigurable {
 
     // MARK: - Properties
 
     private let viewModel: ParentChildWalletViewModel
     private let refreshTrigger = PublishRelay<Void>()
+    private let navigationHeaderView = KIDKNavigationHeaderView(title: "아이 지갑")
 
     // MARK: - UI Components
 
@@ -24,7 +25,7 @@ final class ParentChildWalletViewController: BaseViewController {
     private let stackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .vertical
-        stackView.spacing = Spacing.lg
+        stackView.spacing = Spacing.md
         return stackView
     }()
 
@@ -35,29 +36,29 @@ final class ParentChildWalletViewController: BaseViewController {
     }()
 
     private let childInfoHeaderView = ChildInfoHeaderView()
+    private let assetSectionHeader = ParentTimelineSectionHeaderView()
 
-    private let balanceCardView: AccountCardView = {
-        let cardView = AccountCardView()
-        return cardView
-    }()
-
-    private let balanceContentView = UIView()
+    private let balanceCardView = ParentTimelineCardView(accentColor: .kidkGreen)
 
     private let balanceTitleLabel: UILabel = {
         let label = UILabel()
-        label.text = "💰 총 잔액"
-        label.font = .kidkFont(.s18, .bold)
-        label.textColor = .kidkTextWhite
+        label.text = "총 잔액"
+        label.font = UIFont.kidkFont(.s14, .medium)
+        label.textColor = .kidkGray
         return label
     }()
 
     private let totalAmountLabel: UILabel = {
         let label = UILabel()
         label.text = "0원"
-        label.font = .kidkFont(.s32, .bold)
+        label.font = UIFont.kidkFont(.s32, .bold)
         label.textColor = .kidkGreen
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.78
         return label
     }()
+
+    private let accountDistributionProgressView = ParentTimelineProgressRowView()
 
     private let accountsStackView: UIStackView = {
         let stackView = UIStackView()
@@ -66,15 +67,36 @@ final class ParentChildWalletViewController: BaseViewController {
         return stackView
     }()
 
-    private let transactionsSectionHeader = SectionHeaderView()
+    private let transactionsSectionHeader = ParentTimelineSectionHeaderView()
+    private let transactionsCardView = ParentTimelineCardView(accentColor: .kidkPink)
+
+    private let transactionsGuideLabel: UILabel = {
+        let label = UILabel()
+        label.text = "입출금 흐름을 최신 순으로 확인할 수 있어요"
+        label.font = UIFont.kidkFont(.s12, .regular)
+        label.textColor = .kidkGray
+        return label
+    }()
 
     private let transactionsTableView: UITableView = {
         let tableView = UITableView()
         tableView.backgroundColor = .clear
         tableView.separatorStyle = .none
         tableView.isScrollEnabled = false
+        tableView.rowHeight = UITableView.automaticDimension
+        tableView.estimatedRowHeight = 96
         tableView.register(TransactionCell.self, forCellReuseIdentifier: TransactionCell.identifier)
         return tableView
+    }()
+
+    private let emptyTransactionsLabel: UILabel = {
+        let label = UILabel()
+        label.text = "최근 거래가 아직 없어요"
+        label.font = UIFont.kidkFont(.s14, .medium)
+        label.textColor = .kidkGray
+        label.textAlignment = .center
+        label.isHidden = true
+        return label
     }()
 
     // MARK: - Initialization
@@ -88,46 +110,72 @@ final class ParentChildWalletViewController: BaseViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    var prefersNavigationBarHidden: Bool { true }
+
     // MARK: - Lifecycle
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        setupNavigationBar()
         setupUI()
         bindViewModel()
     }
 
-    // MARK: - Setup
-
-    private func setupNavigationBar() {
-        title = "아이 지갑"
-        navigationController?.navigationBar.prefersLargeTitles = true
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        let isCompact = view.bounds.width <= 360
+        childInfoHeaderView.setCompactLayout(isCompact)
     }
 
+    // MARK: - Setup
+
     private func setupUI() {
+        view.backgroundColor = .kidkDarkBackground
+
+        view.addSubview(navigationHeaderView)
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
         contentView.addSubview(stackView)
         scrollView.refreshControl = refreshControl
 
-        // Add views to stack
+        let balanceContentStack = UIStackView(arrangedSubviews: [balanceTitleLabel, totalAmountLabel, accountDistributionProgressView, accountsStackView])
+        balanceContentStack.axis = .vertical
+        balanceContentStack.spacing = Spacing.xs
+        balanceCardView.contentView.addSubview(balanceContentStack)
+
+        transactionsCardView.contentView.addSubview(transactionsGuideLabel)
+        transactionsCardView.contentView.addSubview(transactionsTableView)
+        transactionsCardView.contentView.addSubview(emptyTransactionsLabel)
+
         stackView.addArrangedSubview(childInfoHeaderView)
+        stackView.addArrangedSubview(assetSectionHeader)
         stackView.addArrangedSubview(balanceCardView)
         stackView.addArrangedSubview(transactionsSectionHeader)
-        stackView.addArrangedSubview(transactionsTableView)
+        stackView.addArrangedSubview(transactionsCardView)
 
-        // Setup balance card content
-        balanceContentView.addSubview(balanceTitleLabel)
-        balanceContentView.addSubview(totalAmountLabel)
-        balanceContentView.addSubview(accountsStackView)
-        balanceCardView.configure(with: balanceContentView)
+        stackView.setCustomSpacing(Spacing.sm, after: assetSectionHeader)
+        stackView.setCustomSpacing(Spacing.sm, after: transactionsSectionHeader)
 
-        // Configure section header
-        transactionsSectionHeader.configure(title: "📋 최근 거래")
+        assetSectionHeader.configure(
+            step: "STEP 2",
+            title: "자산 타임라인",
+            subtitle: "잔액 변화를 계좌별로 나눠서 확인해요"
+        )
 
-        // Layout
+        transactionsSectionHeader.configure(
+            step: "STEP 3",
+            title: "최근 거래 타임라인",
+            subtitle: "아이 지갑에서 일어난 변화를 시간순으로 읽어보세요"
+        )
+
+        navigationHeaderView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(KIDKNavigationHeaderView.height)
+        }
+
         scrollView.snp.makeConstraints { make in
-            make.edges.equalTo(view.safeAreaLayoutGuide)
+            make.top.equalTo(navigationHeaderView.snp.bottom)
+            make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
         contentView.snp.makeConstraints { make in
@@ -139,22 +187,25 @@ final class ParentChildWalletViewController: BaseViewController {
             make.edges.equalToSuperview().inset(Spacing.md)
         }
 
-        balanceTitleLabel.snp.makeConstraints { make in
+        balanceContentStack.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        transactionsGuideLabel.snp.makeConstraints { make in
             make.top.leading.trailing.equalToSuperview()
         }
 
-        totalAmountLabel.snp.makeConstraints { make in
-            make.top.equalTo(balanceTitleLabel.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview()
-        }
-
-        accountsStackView.snp.makeConstraints { make in
-            make.top.equalTo(totalAmountLabel.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.bottom.equalToSuperview()
-        }
-
         transactionsTableView.snp.makeConstraints { make in
+            make.top.equalTo(transactionsGuideLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview()
             make.height.equalTo(0)
+            make.bottom.equalToSuperview()
+        }
+
+        emptyTransactionsLabel.snp.makeConstraints { make in
+            make.top.equalTo(transactionsGuideLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview()
+            make.bottom.equalToSuperview().offset(-Spacing.xs)
         }
     }
 
@@ -168,21 +219,18 @@ final class ParentChildWalletViewController: BaseViewController {
 
         let output = viewModel.transform(input: input)
 
-        // Child Info
         output.childInfo
             .drive(onNext: { [weak self] childInfo in
                 self?.updateChildInfo(childInfo)
             })
             .disposed(by: disposeBag)
 
-        // Accounts
         output.accounts
             .drive(onNext: { [weak self] accounts in
                 self?.updateAccounts(accounts)
             })
             .disposed(by: disposeBag)
 
-        // Transactions
         output.recentTransactions
             .drive(transactionsTableView.rx.items(cellIdentifier: TransactionCell.identifier, cellType: TransactionCell.self)) { _, transaction, cell in
                 cell.configure(with: transaction)
@@ -191,14 +239,21 @@ final class ParentChildWalletViewController: BaseViewController {
 
         output.recentTransactions
             .drive(onNext: { [weak self] transactions in
-                let height = CGFloat(transactions.count) * 70
-                self?.transactionsTableView.snp.updateConstraints { make in
-                    make.height.equalTo(height)
+                guard let self = self else { return }
+                self.emptyTransactionsLabel.isHidden = !transactions.isEmpty
+                self.transactionsTableView.isHidden = transactions.isEmpty
+
+                DispatchQueue.main.async {
+                    self.transactionsTableView.layoutIfNeeded()
+                    let measuredHeight = transactions.isEmpty ? 0 : self.transactionsTableView.contentSize.height
+                    self.transactionsTableView.snp.updateConstraints { make in
+                        make.height.equalTo(measuredHeight)
+                    }
+                    self.view.layoutIfNeeded()
                 }
             })
             .disposed(by: disposeBag)
 
-        // Loading
         output.isLoading
             .drive(onNext: { [weak self] isLoading in
                 if isLoading {
@@ -210,14 +265,12 @@ final class ParentChildWalletViewController: BaseViewController {
             })
             .disposed(by: disposeBag)
 
-        // Error
         output.error
             .drive(onNext: { [weak self] error in
                 self?.showError(message: error.localizedDescription)
             })
             .disposed(by: disposeBag)
 
-        // Refresh Control
         refreshControl.rx.controlEvent(.valueChanged)
             .bind(to: refreshTrigger)
             .disposed(by: disposeBag)
@@ -236,41 +289,81 @@ final class ParentChildWalletViewController: BaseViewController {
     }
 
     private func updateAccounts(_ accounts: [Account]) {
-        accountsStackView.arrangedSubviews.forEach { $0.removeFromSuperview() }
+        accountsStackView.arrangedSubviews.forEach { view in
+            accountsStackView.removeArrangedSubview(view)
+            view.removeFromSuperview()
+        }
 
         for account in accounts {
             let accountRow = createAccountRow(account: account)
             accountsStackView.addArrangedSubview(accountRow)
         }
+
+        let savingsAmount = accounts
+            .filter { $0.type == .savings || $0.type == .goal }
+            .reduce(0) { $0 + $1.balance }
+        let totalAmount = max(accounts.reduce(0) { $0 + $1.balance }, 1)
+        let ratio = CGFloat(savingsAmount) / CGFloat(totalAmount)
+
+        accountDistributionProgressView.configure(
+            title: "저축 비중",
+            valueText: "\(Int((ratio * 100).rounded()))%",
+            progress: ratio,
+            tintColor: .kidkGreen
+        )
     }
 
     private func createAccountRow(account: Account) -> UIView {
         let containerView = UIView()
 
+        let dotView = UIView()
+        dotView.layer.cornerRadius = 4
+        dotView.backgroundColor = account.type == .spending ? .kidkPink : .kidkGreen
+
         let nameLabel = UILabel()
         nameLabel.text = account.type.displayName
-        nameLabel.font = .kidkFont(.s14, .medium)
-        nameLabel.textColor = .kidkGray
+        nameLabel.font = UIFont.kidkFont(.s14, .medium)
+        nameLabel.textColor = .kidkTextWhite
 
         let balanceLabel = UILabel()
         balanceLabel.text = account.formattedBalance
-        balanceLabel.font = .kidkFont(.s16, .bold)
+        balanceLabel.font = UIFont.kidkFont(.s16, .bold)
         balanceLabel.textColor = .kidkTextWhite
+        balanceLabel.textAlignment = .right
 
+        let statusBadge = ParentTimelineStatusBadgeView()
+        statusBadge.configure(text: account.type == .spending ? "사용" : "저축", tone: account.type == .spending ? .pink : .green)
+
+        containerView.addSubview(dotView)
         containerView.addSubview(nameLabel)
         containerView.addSubview(balanceLabel)
+        containerView.addSubview(statusBadge)
+
+        dotView.snp.makeConstraints { make in
+            make.leading.equalToSuperview()
+            make.centerY.equalToSuperview()
+            make.size.equalTo(8)
+        }
 
         nameLabel.snp.makeConstraints { make in
-            make.leading.top.bottom.equalToSuperview()
+            make.leading.equalTo(dotView.snp.trailing).offset(Spacing.xs)
+            make.top.equalToSuperview().offset(Spacing.xxs)
         }
 
         balanceLabel.snp.makeConstraints { make in
-            make.trailing.top.bottom.equalToSuperview()
-            make.leading.greaterThanOrEqualTo(nameLabel.snp.trailing).offset(Spacing.sm)
+            make.top.equalTo(nameLabel)
+            make.trailing.equalToSuperview()
+            make.leading.greaterThanOrEqualTo(nameLabel.snp.trailing).offset(Spacing.xs)
+        }
+
+        statusBadge.snp.makeConstraints { make in
+            make.top.equalTo(nameLabel.snp.bottom).offset(4)
+            make.leading.equalTo(nameLabel)
+            make.bottom.equalToSuperview().offset(-Spacing.xxs)
         }
 
         containerView.snp.makeConstraints { make in
-            make.height.equalTo(24)
+            make.height.greaterThanOrEqualTo(58)
         }
 
         return containerView

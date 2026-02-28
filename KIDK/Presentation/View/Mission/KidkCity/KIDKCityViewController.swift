@@ -4,7 +4,7 @@ import RxSwift
 import RxCocoa
 import SnapKit
 
-final class KIDKCityViewController: BaseViewController {
+final class KIDKCityViewController: BaseViewController, NavigationChromeConfigurable {
 
     private let viewModel: KIDKCityViewModel
     private let user: User
@@ -85,6 +85,9 @@ final class KIDKCityViewController: BaseViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    var prefersNavigationBarHidden: Bool { true }
+    var prefersTabBarHidden: Bool { true }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         self.edgesForExtendedLayout = .all
@@ -102,18 +105,6 @@ final class KIDKCityViewController: BaseViewController {
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         viewDidAppearSubject.onNext(())
-    }
-
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
-        navigationController?.setNavigationBarHidden(true, animated: animated)
-        tabBarController?.tabBar.isHidden = true
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        navigationController?.setNavigationBarHidden(false, animated: animated)
-        tabBarController?.tabBar.isHidden = false
     }
 
     private func setupUI() {

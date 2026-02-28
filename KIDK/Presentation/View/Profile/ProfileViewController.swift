@@ -314,8 +314,8 @@ final class ProfileViewController: BaseViewController {
     }
 
     private func setupNavigationBar() {
-        navigationController?.setNavigationBarHidden(false, animated: false)
         navigationItem.title = "프로필"
+        navigationItem.largeTitleDisplayMode = .never
         navigationController?.navigationBar.titleTextAttributes = [
             .foregroundColor: UIColor.kidkTextWhite
         ]

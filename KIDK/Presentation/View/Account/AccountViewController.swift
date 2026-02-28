@@ -3,10 +3,12 @@ import SnapKit
 import RxSwift
 import RxCocoa
 
-final class AccountViewController: BaseViewController {
+final class AccountViewController: BaseViewController, NavigationChromeConfigurable {
 
     private let viewModel: AccountViewModel
     weak var coordinator: AccountCoordinator?
+
+    private let navigationHeaderView = KIDKNavigationHeaderView(title: Strings.TabBar.account)
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -65,6 +67,8 @@ final class AccountViewController: BaseViewController {
         fatalError("init(coder:) has not been implemented")
     }
 
+    var prefersNavigationBarHidden: Bool { true }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
@@ -87,6 +91,7 @@ final class AccountViewController: BaseViewController {
     private func setupUI() {
         view.backgroundColor = UIColor(hex: "#1C1C1E")
 
+        view.addSubview(navigationHeaderView)
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
 
@@ -96,8 +101,15 @@ final class AccountViewController: BaseViewController {
 
         contentView.addSubview(cardsStackView)
 
+        navigationHeaderView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide)
+            make.leading.trailing.equalToSuperview()
+            make.height.equalTo(KIDKNavigationHeaderView.height)
+        }
+
         scrollView.snp.makeConstraints { make in
-            make.edges.equalTo(view.safeAreaLayoutGuide)
+            make.top.equalTo(navigationHeaderView.snp.bottom)
+            make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
         contentView.snp.makeConstraints { make in

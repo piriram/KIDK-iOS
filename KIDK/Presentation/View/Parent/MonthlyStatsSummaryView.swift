@@ -6,7 +6,7 @@ final class MonthlyStatsSummaryView: UIView {
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = CornerRadius.medium
+        view.layer.cornerRadius = CornerRadius.large
         return view
     }()
 
@@ -15,7 +15,7 @@ final class MonthlyStatsSummaryView: UIView {
     private let statsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
-        stackView.spacing = Spacing.md
+        stackView.spacing = Spacing.xs
         stackView.distribution = .fillEqually
         return stackView
     }()
@@ -23,13 +23,45 @@ final class MonthlyStatsSummaryView: UIView {
     private let spendingView = StatItemView(title: "총 지출", color: .kidkPink)
     private let savingsView = StatItemView(title: "총 저축", color: .kidkGreen)
 
-    private let progressView = CircularProgressView()
-
-    private let limitLabel: UILabel = {
+    private let progressTitleLabel: UILabel = {
         let label = UILabel()
+        label.text = "월 한도 사용 현황"
         label.font = .kidkFont(.s14, .medium)
         label.textColor = .kidkGray
         label.textAlignment = .center
+        return label
+    }()
+
+    private let progressView = CircularProgressView()
+
+    private let usageRateLabel: UILabel = {
+        let label = UILabel()
+        label.font = .kidkFont(.s12, .regular)
+        label.textColor = .kidkGray
+        label.textAlignment = .center
+        return label
+    }()
+
+    private let limitContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkDarkBackground.withAlphaComponent(0.4)
+        view.layer.cornerRadius = CornerRadius.medium
+        return view
+    }()
+
+    private let limitTitleLabel: UILabel = {
+        let label = UILabel()
+        label.text = "일일 사용 한도"
+        label.font = .kidkFont(.s12, .medium)
+        label.textColor = .kidkGray
+        return label
+    }()
+
+    private let limitLabel: UILabel = {
+        let label = UILabel()
+        label.font = .kidkFont(.s16, .bold)
+        label.textColor = .kidkTextWhite
+        label.textAlignment = .right
         return label
     }()
 
@@ -46,13 +78,21 @@ final class MonthlyStatsSummaryView: UIView {
         addSubview(containerView)
         containerView.addSubview(sectionHeader)
         containerView.addSubview(statsStackView)
+        containerView.addSubview(progressTitleLabel)
         containerView.addSubview(progressView)
-        containerView.addSubview(limitLabel)
+        containerView.addSubview(usageRateLabel)
+        containerView.addSubview(limitContainerView)
+
+        limitContainerView.addSubview(limitTitleLabel)
+        limitContainerView.addSubview(limitLabel)
 
         statsStackView.addArrangedSubview(spendingView)
         statsStackView.addArrangedSubview(savingsView)
 
-        sectionHeader.configure(title: "📊 이번 달")
+        sectionHeader.configure(
+            title: "📊 이번 달",
+            subtitle: "지출·저축 흐름과 한도 사용률"
+        )
 
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -67,16 +107,37 @@ final class MonthlyStatsSummaryView: UIView {
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
         }
 
-        progressView.snp.makeConstraints { make in
+        progressTitleLabel.snp.makeConstraints { make in
             make.top.equalTo(statsStackView.snp.bottom).offset(Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        progressView.snp.makeConstraints { make in
+            make.top.equalTo(progressTitleLabel.snp.bottom).offset(Spacing.sm)
             make.centerX.equalToSuperview()
             make.size.equalTo(200)
         }
 
-        limitLabel.snp.makeConstraints { make in
-            make.top.equalTo(progressView.snp.bottom).offset(Spacing.sm)
+        usageRateLabel.snp.makeConstraints { make in
+            make.top.equalTo(progressView.snp.bottom).offset(Spacing.xxs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+        }
+
+        limitContainerView.snp.makeConstraints { make in
+            make.top.equalTo(usageRateLabel.snp.bottom).offset(Spacing.sm)
             make.leading.trailing.equalToSuperview().inset(Spacing.md)
             make.bottom.equalToSuperview().offset(-Spacing.md)
+        }
+
+        limitTitleLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Spacing.sm)
+            make.centerY.equalToSuperview()
+        }
+
+        limitLabel.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview().inset(Spacing.sm)
+            make.leading.greaterThanOrEqualTo(limitTitleLabel.snp.trailing).offset(Spacing.xs)
+            make.trailing.equalToSuperview().offset(-Spacing.sm)
         }
     }
 
@@ -89,13 +150,15 @@ final class MonthlyStatsSummaryView: UIView {
         spendingView.configure(amount: totalSpending)
         savingsView.configure(amount: totalSavings)
 
-        limitLabel.text = "한도: \(formatAmount(dailyLimit))"
+        let percentage = max(0, min(Int((usagePercentage * 100).rounded()), 100))
+        usageRateLabel.text = "이번 달 한도 사용률 \(percentage)%"
+        limitLabel.text = formatAmount(dailyLimit)
 
         // CircularProgressView 설정
         let image = UIImage(systemName: "chart.bar.fill")
         progressView.configure(
             currentAmount: totalSpending,
-            targetAmount: dailyLimit,
+            targetAmount: max(dailyLimit * 30, 1),
             image: image
         )
     }
@@ -111,6 +174,13 @@ final class MonthlyStatsSummaryView: UIView {
 // MARK: - StatItemView
 
 private final class StatItemView: UIView {
+
+    private let containerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkDarkBackground.withAlphaComponent(0.4)
+        view.layer.cornerRadius = CornerRadius.medium
+        return view
+    }()
 
     private let titleLabel: UILabel = {
         let label = UILabel()
@@ -139,17 +209,27 @@ private final class StatItemView: UIView {
     }
 
     private func setupUI() {
-        addSubview(titleLabel)
-        addSubview(amountLabel)
+        addSubview(containerView)
+        containerView.addSubview(titleLabel)
+        containerView.addSubview(amountLabel)
+
+        containerView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
 
         titleLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.top.equalToSuperview().offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Spacing.xs)
         }
 
         amountLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xxs)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(Spacing.xs)
+            make.bottom.equalToSuperview().offset(-Spacing.xs)
+        }
+
+        containerView.snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(72)
         }
     }
 

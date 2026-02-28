@@ -140,9 +140,57 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 createdAt: calendar.date(byAdding: .month, value: -1, to: today) ?? today,
                 completedAt: calendar.date(byAdding: .day, value: -7, to: today),
                 participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 7),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "과학 실험 키트 사기",
+                description: "주말 과학 실험을 위한 키트 비용 모으기",
+                targetAmount: 90000,
+                currentAmount: 42000,
+                rewardAmount: 3500,
+                targetDate: calendar.date(byAdding: .day, value: 28, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -4, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 8),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "축구화 장만하기",
+                description: "동아리 경기용 축구화 구매하기",
+                targetAmount: 130000,
+                currentAmount: 67000,
+                rewardAmount: 4500,
+                targetDate: calendar.date(byAdding: .day, value: 35, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -6, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 9),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "피아노 발표회 의상 준비",
+                description: "발표회에서 입을 의상 비용 모으기",
+                targetAmount: 110000,
+                currentAmount: 51000,
+                rewardAmount: 4000,
+                targetDate: calendar.date(byAdding: .day, value: 22, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -8, to: today) ?? today,
+                completedAt: nil,
+                participants: []
             )
         ]
-        nextMockId += 7
+        nextMockId += 10
         debugLog("Created \(mockMissions.count) initial mock missions")
     }
     
