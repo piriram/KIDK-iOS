@@ -59,9 +59,15 @@ class BaseViewController: UIViewController {
         appearance.backgroundColor = .kidkDarkBackground
         appearance.titleTextAttributes = [.foregroundColor: UIColor.white]
         appearance.largeTitleTextAttributes = [.foregroundColor: UIColor.white]
-        
+
+        let backAppearance = UIBarButtonItemAppearance()
+        backAppearance.normal.titleTextAttributes = [.foregroundColor: UIColor.clear]
+        appearance.backButtonAppearance = backAppearance
+
+        navigationController?.navigationBar.prefersLargeTitles = false
         navigationController?.navigationBar.standardAppearance = appearance
         navigationController?.navigationBar.scrollEdgeAppearance = appearance
+        navigationController?.navigationBar.compactAppearance = appearance
         navigationController?.navigationBar.tintColor = .white
         
         view.addSubview(loadingOverlay)
