@@ -3,6 +3,7 @@ import Foundation
 enum FamilyAPI {
     case createFamily(userId: Int, familyName: String)
     case getFamilies
+    case getMyFamily
     case getFamilyById(familyId: Int)
     case joinFamily(userId: Int, inviteCode: String)
 }
@@ -14,6 +15,8 @@ extension FamilyAPI: APIEndpoint {
             return "/families"
         case .getFamilies:
             return "/families"
+        case .getMyFamily:
+            return "/families/me"
         case .getFamilyById(let familyId):
             return "/families/\(familyId)"
         case .joinFamily:
@@ -25,7 +28,7 @@ extension FamilyAPI: APIEndpoint {
         switch self {
         case .createFamily, .joinFamily:
             return .post
-        case .getFamilies, .getFamilyById:
+        case .getFamilies, .getMyFamily, .getFamilyById:
             return .get
         }
     }

@@ -1,0 +1,26 @@
+/Users/ram/2026/hub/docs/claude/CLAUDE문서모음/포트폴리오 작업 Strategy 가이드.md
+/Users/ram/25-2/AI/소소한 푸딩파이터_ AI 서비스 기획서 v1.0.docx
+/Users/ram/25-2/KIDK/.docs/MISSION_CODE_REF.md
+/Users/ram/25-2/KIDK/.docs/MISSION_TAB_HANDOFF.md
+/Users/ram/25-2/KIDK/.docs/MISSION_UI.md
+/Users/ram/25-2/KIDK/.docs/TODO.md
+/Users/ram/25-2/KIDK/.docs/클로드.md
+/Users/ram/25-2/KIDK/README.md
+/Users/ram/25-2/google-cloud-sdk/platform/gsutil/gslib/tests/test_data/test.txt
+/Users/ram/25-2/portfolio_piri/claude.md
+/Users/ram/25-2/portfolio_piri/docs/VSCode_작업환경.md
+/Users/ram/25-2/portfolio_piri/docs/archive/ai_지침서_old.md
+/Users/ram/25-2/portfolio_piri/docs/archive/portfolio_pages/portfolio_pages_compact_with_bangdari.md
+/Users/ram/25-2/portfolio_piri/docs/archive/portfolio_pages/portfolio_pages_full.md
+/Users/ram/25-2/portfolio_piri/docs/progress/PROGRESS.md
+/Users/ram/25-2/portfolio_piri/docs/백틱_HTML_변환_가이드.md
+/Users/ram/25-2/portfolio_piri/docs/프로젝트문서_스타일가이드_DoSurf기준.md
+/Users/ram/25-2/portfolio_piri/docs/핵심구현_스타일가이드_DoSurf기준.md
+/Users/ram/25-2/portfolio_piri/portfolio.md
+/Users/ram/25-2/portfolio_piri/projects/kidk.md
+/Users/ram/25-2/portfolio_piri/projects/kidk_docs/API_IMPLEMENTATION_GUIDE.md
+/Users/ram/25-2/portfolio_piri/projects/kidk_docs/API_SPECIFICATION.md
+/Users/ram/25-2/portfolio_piri/projects/kidk_docs/STORAGE_ARCHITECTURE.md
+/Users/ram/25-2/portfolio_piri/projects/kidk_html.md
+/Users/ram/Downloads/소소한 푸딩파이터_ AI 서비스 기획서 v1.0.docx
+/Users/ram/Downloads/소소한 푸딩파이터_ AI 서비스 기획서 v1.0.pdf

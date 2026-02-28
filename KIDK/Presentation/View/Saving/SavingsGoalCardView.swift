@@ -9,20 +9,36 @@ final class SavingsGoalCardView: UIView {
 
     private var goal: SavingsGoal?
     private let disposeBag = DisposeBag()
+    private var displayStyle: SavingsDisplayStyle = .neoBankClean
+    private var detailsHeightConstraint: Constraint?
+    private var isExpanded = false
 
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .cardBackground
-        view.layer.cornerRadius = 16
+        view.layer.cornerRadius = CornerRadius.large
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let accentBarView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkPink
+        return view
+    }()
+
+    private let iconContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkPink.withAlphaComponent(0.18)
+        view.layer.cornerRadius = CornerRadius.medium
         return view
     }()
 
     private let iconImageView: UIImageView = {
         let imageView = UIImageView()
         imageView.contentMode = .scaleAspectFit
-        imageView.backgroundColor = .kidkPink.withAlphaComponent(0.2)
-        imageView.layer.cornerRadius = 8
-        imageView.clipsToBounds = true
         imageView.tintColor = .kidkPink
         return imageView
     }()
@@ -34,31 +50,72 @@ final class SavingsGoalCardView: UIView {
             size: .s18,
             weight: .bold,
             color: .kidkTextWhite,
-            lineHeight: 140
+            lineHeight: 135
         )
+        label.numberOfLines = 1
         return label
     }()
+
+    private let chevronImageView: UIImageView = {
+        let imageView = UIImageView(image: UIImage(systemName: "chevron.down"))
+        imageView.contentMode = .scaleAspectFit
+        imageView.tintColor = .kidkGray
+        return imageView
+    }()
+
+    private let expandButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.backgroundColor = .clear
+        return button
+    }()
+
+    private let badgeStackView: UIStackView = {
+        let stackView = UIStackView()
+        stackView.axis = .horizontal
+        stackView.spacing = Spacing.xs
+        stackView.alignment = .leading
+        return stackView
+    }()
+
+    private let statusBadge = BadgeLabel()
+    private let dDayLabel = BadgeLabel()
+    private let progressBadge = BadgeLabel()
 
     private let progressLabel: UILabel = {
         let label = UILabel()
         label.applyTextStyle(
             text: "",
-            size: .s14,
+            size: .s12,
             weight: .medium,
             color: .kidkGray,
-            lineHeight: 140
+            lineHeight: 130
         )
+        return label
+    }()
+
+    private let remainingHighlightLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(
+            text: "",
+            size: .s22,
+            weight: .bold,
+            color: .kidkTextWhite,
+            lineHeight: 125
+        )
+        label.adjustsFontSizeToFitWidth = true
+        label.minimumScaleFactor = 0.75
         return label
     }()
 
     private let progressBar: UIProgressView = {
         let progressView = UIProgressView(progressViewStyle: .default)
         progressView.progressTintColor = .kidkPink
-        progressView.trackTintColor = UIColor.white.withAlphaComponent(0.1)
-        progressView.layer.cornerRadius = 4
+        progressView.trackTintColor = UIColor.white.withAlphaComponent(0.12)
+        progressView.transform = CGAffineTransform(scaleX: 1, y: 1.9)
+        progressView.layer.cornerRadius = 6
         progressView.clipsToBounds = true
         progressView.layer.sublayers?.forEach { layer in
-            layer.cornerRadius = 4
+            layer.cornerRadius = 6
             layer.masksToBounds = true
         }
         return progressView
@@ -68,54 +125,13 @@ final class SavingsGoalCardView: UIView {
         let stackView = UIStackView()
         stackView.axis = .horizontal
         stackView.distribution = .fillEqually
-        stackView.spacing = Spacing.sm
-        return stackView
-    }()
-
-    private let currentAmountView = AmountInfoView()
-    private let targetAmountView = AmountInfoView()
-    private let remainingAmountView = AmountInfoView()
-
-    private let badgeStackView: UIStackView = {
-        let stackView = UIStackView()
-        stackView.axis = .horizontal
         stackView.spacing = Spacing.xs
         return stackView
     }()
 
-    private let statusBadge: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "",
-            size: .s12,
-            weight: .medium,
-            color: .kidkTextWhite,
-            lineHeight: 140
-        )
-        label.backgroundColor = .kidkGreen
-        label.layer.cornerRadius = 8
-        label.clipsToBounds = true
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
-    }()
-
-    private let dDayLabel: UILabel = {
-        let label = UILabel()
-        label.applyTextStyle(
-            text: "",
-            size: .s12,
-            weight: .bold,
-            color: .kidkPink,
-            lineHeight: 140
-        )
-        label.backgroundColor = .kidkPink.withAlphaComponent(0.2)
-        label.layer.cornerRadius = 8
-        label.clipsToBounds = true
-        label.textAlignment = .center
-        label.isHidden = true
-        return label
-    }()
+    private let currentAmountView = AmountInfoView()
+    private let remainingAmountView = AmountInfoView()
+    private let targetAmountView = AmountInfoView()
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -127,68 +143,119 @@ final class SavingsGoalCardView: UIView {
         fatalError("init(coder:) has not been implemented")
     }
 
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        layer.shadowColor = UIColor.black.cgColor
+        layer.shadowOpacity = 0.2
+        layer.shadowRadius = 12
+        layer.shadowOffset = CGSize(width: 0, height: 6)
+        layer.shadowPath = UIBezierPath(roundedRect: bounds, cornerRadius: CornerRadius.large).cgPath
+    }
+
     private func setupUI() {
         addSubview(containerView)
-        containerView.addSubview(iconImageView)
+
+        containerView.addSubview(accentBarView)
+        containerView.addSubview(iconContainerView)
+        iconContainerView.addSubview(iconImageView)
+
         containerView.addSubview(nameLabel)
+        containerView.addSubview(chevronImageView)
+        containerView.addSubview(expandButton)
+        containerView.addSubview(badgeStackView)
+        containerView.addSubview(remainingHighlightLabel)
         containerView.addSubview(progressLabel)
+        containerView.addSubview(progressBadge)
         containerView.addSubview(progressBar)
         containerView.addSubview(amountStackView)
-        containerView.addSubview(badgeStackView)
 
         amountStackView.addArrangedSubview(currentAmountView)
         amountStackView.addArrangedSubview(remainingAmountView)
         amountStackView.addArrangedSubview(targetAmountView)
 
-        badgeStackView.addArrangedSubview(statusBadge)
         badgeStackView.addArrangedSubview(dDayLabel)
+        badgeStackView.addArrangedSubview(statusBadge)
+
+        statusBadge.isHidden = true
+        dDayLabel.isHidden = true
 
         containerView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
+        accentBarView.snp.makeConstraints { make in
+            make.top.bottom.leading.equalToSuperview()
+            make.width.equalTo(6)
+        }
+
+        iconContainerView.snp.makeConstraints { make in
+            make.top.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(accentBarView.snp.trailing).offset(Spacing.md)
+            make.width.height.equalTo(56)
+        }
+
         iconImageView.snp.makeConstraints { make in
-            make.top.leading.equalToSuperview().inset(Spacing.md)
-            make.width.height.equalTo(50)
+            make.center.equalToSuperview()
+            make.width.height.equalTo(26)
+        }
+
+        chevronImageView.snp.makeConstraints { make in
+            make.trailing.equalToSuperview().inset(Spacing.md)
+            make.centerY.equalTo(nameLabel.snp.centerY)
+            make.width.height.equalTo(12)
+        }
+
+        expandButton.snp.makeConstraints { make in
+            make.center.equalTo(chevronImageView)
+            make.width.height.equalTo(32)
         }
 
         nameLabel.snp.makeConstraints { make in
             make.top.equalToSuperview().inset(Spacing.md)
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.sm)
-            make.trailing.equalToSuperview().inset(Spacing.md)
+            make.leading.equalTo(iconContainerView.snp.trailing).offset(Spacing.sm)
+            make.trailing.equalTo(chevronImageView.snp.leading).offset(-Spacing.sm)
         }
 
         badgeStackView.snp.makeConstraints { make in
-            make.top.equalTo(nameLabel.snp.bottom).offset(Spacing.xs)
-            make.leading.equalTo(iconImageView.snp.trailing).offset(Spacing.sm)
+            make.top.equalTo(nameLabel.snp.bottom).offset(Spacing.xxs)
+            make.leading.equalTo(iconContainerView.snp.trailing).offset(Spacing.sm)
         }
 
-        statusBadge.snp.makeConstraints { make in
-            make.width.greaterThanOrEqualTo(60)
-            make.height.equalTo(24)
-        }
-
-        dDayLabel.snp.makeConstraints { make in
-            make.width.greaterThanOrEqualTo(50)
-            make.height.equalTo(24)
+        remainingHighlightLabel.snp.makeConstraints { make in
+            make.top.equalTo(badgeStackView.snp.bottom).offset(Spacing.sm)
+            make.leading.equalTo(iconContainerView.snp.trailing).offset(Spacing.sm)
+            make.trailing.lessThanOrEqualTo(progressBadge.snp.leading).offset(-Spacing.sm)
         }
 
         progressLabel.snp.makeConstraints { make in
-            make.top.equalTo(iconImageView.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.top.equalTo(remainingHighlightLabel.snp.bottom).offset(Spacing.xxs)
+            make.leading.equalTo(remainingHighlightLabel)
+            make.trailing.lessThanOrEqualTo(progressBadge.snp.leading).offset(-Spacing.sm)
+        }
+
+        progressBadge.snp.makeConstraints { make in
+            make.centerY.equalTo(remainingHighlightLabel)
+            make.trailing.equalToSuperview().inset(Spacing.md)
+            make.height.greaterThanOrEqualTo(24)
         }
 
         progressBar.snp.makeConstraints { make in
-            make.top.equalTo(progressLabel.snp.bottom).offset(Spacing.xs)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.height.equalTo(8)
+            make.top.equalTo(progressLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.equalTo(iconContainerView.snp.leading)
+            make.trailing.equalToSuperview().inset(Spacing.md)
+            make.height.equalTo(9)
         }
 
         amountStackView.snp.makeConstraints { make in
-            make.top.equalTo(progressBar.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
+            make.top.equalTo(progressBar.snp.bottom).offset(Spacing.sm)
+            make.leading.equalTo(iconContainerView.snp.leading)
+            make.trailing.equalToSuperview().inset(Spacing.md)
+            detailsHeightConstraint = make.height.equalTo(0).constraint
             make.bottom.equalToSuperview().inset(Spacing.md)
         }
+
+        accessibilityTraits = [.button]
+        setExpanded(false, animated: false)
     }
 
     private func bind() {
@@ -196,9 +263,55 @@ final class SavingsGoalCardView: UIView {
         containerView.addGestureRecognizer(tapGesture)
 
         tapGesture.rx.event
-            .compactMap { [weak self] _ in self?.goal }
-            .bind(to: cardTapped)
+            .subscribe(onNext: { [weak self] _ in
+                guard let self, let goal = self.goal else { return }
+
+                UIView.animate(withDuration: 0.12, animations: {
+                    self.containerView.transform = CGAffineTransform(scaleX: 0.98, y: 0.98)
+                }, completion: { _ in
+                    UIView.animate(withDuration: 0.15) {
+                        self.containerView.transform = .identity
+                    }
+                })
+
+                UISelectionFeedbackGenerator().selectionChanged()
+                self.cardTapped.accept(goal)
+            })
             .disposed(by: disposeBag)
+
+        expandButton.rx.tap
+            .subscribe(onNext: { [weak self] in
+                self?.toggleExpanded()
+            })
+            .disposed(by: disposeBag)
+    }
+
+    private func toggleExpanded() {
+        setExpanded(!isExpanded, animated: true)
+    }
+
+    private func setExpanded(_ expanded: Bool, animated: Bool) {
+        isExpanded = expanded
+        detailsHeightConstraint?.update(offset: expanded ? 58 : 0)
+
+        let animationBlock = {
+            self.amountStackView.alpha = expanded ? 1.0 : 0.0
+            self.chevronImageView.transform = expanded ? CGAffineTransform(rotationAngle: .pi) : .identity
+            self.layoutIfNeeded()
+        }
+
+        if animated {
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseInOut], animations: animationBlock)
+        } else {
+            animationBlock()
+        }
+    }
+
+    func applyStyle(_ style: SavingsDisplayStyle) {
+        displayStyle = style
+        if let goal {
+            configure(with: goal)
+        }
     }
 
     func configure(with goal: SavingsGoal) {
@@ -207,33 +320,51 @@ final class SavingsGoalCardView: UIView {
         nameLabel.text = goal.name
 
         if let imageName = goal.imageName {
-            iconImageView.image = UIImage(systemName: imageName) ?? UIImage(systemName: "dollarsign.circle.fill")
+            iconImageView.image = UIImage(systemName: imageName) ?? UIImage(systemName: "banknote.fill")
         } else {
-            iconImageView.image = UIImage(systemName: "dollarsign.circle.fill")
+            iconImageView.image = UIImage(systemName: "banknote.fill")
         }
 
+        containerView.backgroundColor = displayStyle.goalCardBackgroundColor
+        progressBar.trackTintColor = displayStyle.goalCardTrackColor
+        chevronImageView.tintColor = displayStyle.goalCardSecondaryTextColor
+
         let progressPercentage = goal.progressPercentage
-        progressLabel.text = String(format: "%.1f%% 달성", progressPercentage)
+        remainingHighlightLabel.text = goal.status == .completed
+            ? "목표 달성 완료"
+            : "남은 금액 \(goal.formattedRemainingAmount)"
+        progressLabel.text = "현재 \(goal.formattedCurrentAmount) · 목표 \(goal.formattedTargetAmount)"
+        progressBadge.text = String(format: "%.1f%%", progressPercentage)
         progressBar.setProgress(Float(progressPercentage / 100), animated: true)
 
-        currentAmountView.configure(title: "현재 금액", value: goal.formattedCurrentAmount, color: .kidkGreen)
-        remainingAmountView.configure(title: "남은 금액", value: goal.formattedRemainingAmount, color: .kidkGray)
-        targetAmountView.configure(title: "목표 금액", value: goal.formattedTargetAmount, color: .kidkPink)
+        currentAmountView.configure(title: "현재 금액", value: goal.formattedCurrentAmount, color: displayStyle.secondaryAccentColor)
+        remainingAmountView.isHidden = false
+        remainingAmountView.configure(title: "남은 금액", value: goal.formattedRemainingAmount, color: displayStyle.goalCardSecondaryTextColor)
+        targetAmountView.configure(title: "목표 금액", value: goal.formattedTargetAmount, color: displayStyle.primaryAccentColor)
 
+        let accentColor = displayStyle.accentColor(for: goal.status)
         switch goal.status {
         case .inProgress:
             statusBadge.isHidden = false
             statusBadge.text = "진행 중"
-            statusBadge.backgroundColor = .kidkGreen
         case .completed:
             statusBadge.isHidden = false
             statusBadge.text = "달성"
-            statusBadge.backgroundColor = .kidkPink
         case .cancelled:
             statusBadge.isHidden = false
             statusBadge.text = "취소"
-            statusBadge.backgroundColor = .kidkGray
         }
+
+        statusBadge.backgroundColor = displayStyle.statusBadgeBackground(for: goal.status)
+        statusBadge.textColor = displayStyle.statusBadgeColor(for: goal.status)
+
+        accentBarView.backgroundColor = accentColor
+        progressBar.progressTintColor = accentColor
+        progressBadge.backgroundColor = accentColor.withAlphaComponent(0.2)
+        progressBadge.textColor = accentColor
+        iconContainerView.backgroundColor = accentColor.withAlphaComponent(0.18)
+        iconImageView.tintColor = accentColor
+        containerView.layer.borderColor = accentColor.withAlphaComponent(0.35).cgColor
 
         if let daysRemaining = goal.daysRemaining {
             dDayLabel.isHidden = false
@@ -244,9 +375,14 @@ final class SavingsGoalCardView: UIView {
             } else {
                 dDayLabel.text = "D+\(-daysRemaining)"
             }
+            dDayLabel.backgroundColor = displayStyle.dDayBackground(daysRemaining: daysRemaining)
+            dDayLabel.textColor = displayStyle.dDayColor(daysRemaining: daysRemaining)
         } else {
             dDayLabel.isHidden = true
         }
+
+        setExpanded(false, animated: false)
+        accessibilityLabel = "\(goal.name), 진행률 \(String(format: "%.1f", progressPercentage))퍼센트, 현재 \(goal.formattedCurrentAmount), 목표 \(goal.formattedTargetAmount)"
     }
 }
 
@@ -259,7 +395,7 @@ private final class AmountInfoView: UIView {
             size: .s12,
             weight: .regular,
             color: .kidkGray,
-            lineHeight: 140
+            lineHeight: 130
         )
         label.textAlignment = .center
         return label
@@ -272,11 +408,11 @@ private final class AmountInfoView: UIView {
             size: .s14,
             weight: .bold,
             color: .kidkTextWhite,
-            lineHeight: 140
+            lineHeight: 130
         )
         label.textAlignment = .center
         label.adjustsFontSizeToFitWidth = true
-        label.minimumScaleFactor = 0.8
+        label.minimumScaleFactor = 0.75
         return label
     }()
 
@@ -290,17 +426,24 @@ private final class AmountInfoView: UIView {
     }
 
     private func setupUI() {
+        backgroundColor = UIColor.white.withAlphaComponent(0.05)
+        layer.cornerRadius = CornerRadius.small
+
         addSubview(titleLabel)
         addSubview(valueLabel)
 
         titleLabel.snp.makeConstraints { make in
-            make.top.leading.trailing.equalToSuperview()
+            make.top.leading.trailing.equalToSuperview().inset(6)
         }
 
         valueLabel.snp.makeConstraints { make in
             make.top.equalTo(titleLabel.snp.bottom).offset(4)
-            make.leading.trailing.equalToSuperview()
-            make.bottom.equalToSuperview()
+            make.leading.trailing.equalToSuperview().inset(6)
+            make.bottom.equalToSuperview().inset(6)
+        }
+
+        snp.makeConstraints { make in
+            make.height.greaterThanOrEqualTo(58)
         }
     }
 
@@ -311,3 +454,49 @@ private final class AmountInfoView: UIView {
     }
 }
 
+private final class BadgeLabel: UILabel {
+
+    private let horizontalPadding: CGFloat = 10
+    private let verticalPadding: CGFloat = 4
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        configureUI()
+    }
+
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+
+    override func drawText(in rect: CGRect) {
+        let insets = UIEdgeInsets(
+            top: verticalPadding,
+            left: horizontalPadding,
+            bottom: verticalPadding,
+            right: horizontalPadding
+        )
+        super.drawText(in: rect.inset(by: insets))
+    }
+
+    override var intrinsicContentSize: CGSize {
+        let size = super.intrinsicContentSize
+        return CGSize(
+            width: size.width + horizontalPadding * 2,
+            height: size.height + verticalPadding * 2
+        )
+    }
+
+    private func configureUI() {
+        applyTextStyle(
+            text: "",
+            size: .s12,
+            weight: .bold,
+            color: .kidkTextWhite,
+            lineHeight: 120
+        )
+        textAlignment = .center
+        layer.cornerRadius = 12
+        clipsToBounds = true
+        setContentCompressionResistancePriority(.required, for: .horizontal)
+    }
+}

@@ -66,7 +66,7 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "이메일을 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
-        textField.text = "test@kidk.com" // Firebase 테스트 계정
+        textField.text = "test@kidk.com" // 개발용 테스트 계정
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
@@ -98,7 +98,7 @@ final class LoginViewController: BaseViewController {
         let textField = UITextField()
         textField.placeholder = "비밀번호를 입력하세요"
         textField.font = .kidkFont(.s16, .regular)
-        textField.text = "test123456" // Firebase 테스트 계정 비밀번호
+        textField.text = "test123456" // 개발용 테스트 비밀번호
         textField.textColor = .kidkTextWhite
         textField.backgroundColor = .cardBackground
         textField.layer.cornerRadius = CornerRadius.medium
@@ -320,8 +320,49 @@ final class LoginViewController: BaseViewController {
         viewModel.error
             .observe(on: MainScheduler.instance)
             .subscribe(onNext: { [weak self] error in
-                self?.showError(message: error.localizedDescription)
+                self?.showLoginFailureAlert(error: error)
             })
             .disposed(by: disposeBag)
+    }
+
+    private func showLoginFailureAlert(error: Error) {
+        let message = loginFailureMessage(from: error)
+        let alert = UIAlertController(
+            title: "로그인에 실패했어요",
+            message: message,
+            preferredStyle: .alert
+        )
+
+        alert.addAction(UIAlertAction(title: "다시 시도", style: .default, handler: { [weak self] _ in
+            self?.loginButton.sendActions(for: .touchUpInside)
+        }))
+        alert.addAction(UIAlertAction(title: "확인", style: .cancel))
+
+        present(alert, animated: true)
+    }
+
+    private func loginFailureMessage(from error: Error) -> String {
+        if let networkError = error as? NetworkError {
+            switch networkError {
+            case .noInternetConnection:
+                return "인터넷 연결 상태를 확인한 뒤 다시 시도해주세요."
+            case .timeout:
+                return "요청 시간이 초과되었어요. 잠시 후 다시 시도해주세요."
+            case .serverError(_, let code, _):
+                if code == "SYS_002" {
+                    return "현재 서버 로그인 처리 중 오류가 발생하고 있어요. 잠시 후 다시 시도해주세요."
+                }
+                return "서버 응답 처리 중 문제가 발생했어요. 잠시 후 다시 시도해주세요."
+            default:
+                break
+            }
+        }
+
+        if let repositoryError = error as? RepositoryError,
+           case .deferredInMVP(let feature) = repositoryError {
+            return "\(feature)은(는) 현재 MVP 범위에서 제외되어 있어요."
+        }
+
+        return error.localizedDescription
     }
 }

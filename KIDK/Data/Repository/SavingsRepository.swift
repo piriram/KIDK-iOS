@@ -114,80 +114,14 @@ final class SavingsRepository: BaseRepository, SavingsRepositoryProtocol {
         }
     }
 
-    func deposit(savingsId: String, amount: Int, accountId: String) -> Single<SavingsGoal> {
-        return Single.create { [weak self] (single: @escaping (SingleEvent<SavingsGoal>) -> Void) -> Disposable in
-            guard let self = self else {
-                single(.failure(RepositoryError.unknown(NSError(domain: "SavingsRepository", code: -1))))
-                return Disposables.create()
-            }
-
-            guard let savingsIdInt = Int(savingsId), let accountIdInt = Int(accountId) else {
-                single(.failure(RepositoryError.invalidParameter))
-                return Disposables.create()
-            }
-
-            // 실제 API 호출
-            self.networkService.request(
-                SavingsAPI.deposit(
-                    savingsId: savingsIdInt,
-                    amount: Double(amount),
-                    accountId: accountIdInt
-                )
-            )
-            .subscribe(onNext: { (result: Result<SavingsResponse, NetworkError>) in
-                switch result {
-                case .success(let savingsResponse):
-                    let updatedGoal = savingsResponse.toDomain()
-                    self.debugSuccess("Deposited \(amount)원 to savings goal via API")
-                    single(.success(updatedGoal))
-
-                case .failure(let error):
-                    self.debugError("Failed to deposit to savings goal via API", error: error)
-                    single(.failure(RepositoryError.networkError(error)))
-                }
-            })
-            .disposed(by: self.disposeBag)
-
-            return Disposables.create()
-        }
+    func deposit(savingsId _: String, amount _: Int, accountId _: String) -> Single<SavingsGoal> {
+        debugWarning("Deposit API is deferred in MVP. Blocked request.")
+        return .error(RepositoryError.deferredInMVP(feature: "저축 입금"))
     }
 
-    func withdraw(savingsId: String, amount: Int, accountId: String) -> Single<SavingsGoal> {
-        return Single.create { [weak self] (single: @escaping (SingleEvent<SavingsGoal>) -> Void) -> Disposable in
-            guard let self = self else {
-                single(.failure(RepositoryError.unknown(NSError(domain: "SavingsRepository", code: -1))))
-                return Disposables.create()
-            }
-
-            guard let savingsIdInt = Int(savingsId), let accountIdInt = Int(accountId) else {
-                single(.failure(RepositoryError.invalidParameter))
-                return Disposables.create()
-            }
-
-            // 실제 API 호출
-            self.networkService.request(
-                SavingsAPI.withdraw(
-                    savingsId: savingsIdInt,
-                    amount: Double(amount),
-                    accountId: accountIdInt
-                )
-            )
-            .subscribe(onNext: { (result: Result<SavingsResponse, NetworkError>) in
-                switch result {
-                case .success(let savingsResponse):
-                    let updatedGoal = savingsResponse.toDomain()
-                    self.debugSuccess("Withdrew \(amount)원 from savings goal via API")
-                    single(.success(updatedGoal))
-
-                case .failure(let error):
-                    self.debugError("Failed to withdraw from savings goal via API", error: error)
-                    single(.failure(RepositoryError.networkError(error)))
-                }
-            })
-            .disposed(by: self.disposeBag)
-
-            return Disposables.create()
-        }
+    func withdraw(savingsId _: String, amount _: Int, accountId _: String) -> Single<SavingsGoal> {
+        debugWarning("Withdraw API is deferred in MVP. Blocked request.")
+        return .error(RepositoryError.deferredInMVP(feature: "저축 출금"))
     }
 
     func fetchTotalSavings() -> Single<Int> {

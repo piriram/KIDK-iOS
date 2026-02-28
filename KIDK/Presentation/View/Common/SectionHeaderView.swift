@@ -61,5 +61,10 @@ final class SectionHeaderView: UIView {
             subtitleLabel.isHidden = true
         }
     }
+
+    func applyStyle(titleColor: UIColor, subtitleColor: UIColor) {
+        titleLabel.textColor = titleColor
+        subtitleLabel.textColor = subtitleColor
+    }
 }
 
