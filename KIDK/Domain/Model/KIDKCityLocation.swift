@@ -1,7 +1,7 @@
 import Foundation
 import CoreGraphics
 
-enum KIDKCityLocationType: Hashable {
+enum KIDKCityLocationType: String, Hashable {
     case home
     case school
     case mart

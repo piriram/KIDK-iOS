@@ -9,7 +9,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private let viewModel: KIDKCityViewModel
     private let user: User
     private let viewDidAppearSubject = PublishSubject<Void>()
-    private let missionCompletedSubject = PublishSubject<String>()
+    private let missionCompletedSubject = PublishSubject<MissionRewardCompletedEvent>()
 
     private let gameView: SKView = {
         let view = SKView()
@@ -22,15 +22,17 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
     private let hudContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2A2A35")
-        view.layer.cornerRadius = 20
+        view.backgroundColor = UIColor(hex: "#2A2A35").withAlphaComponent(0.94)
+        view.layer.cornerRadius = 24
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         return view
     }()
 
     private let ddayBadgeLabel: UILabel = {
         let label = UILabel()
         label.text = "D - 30"
-        label.applyTextStyle(text: "D - 30", size: .s20, weight: .bold, color: .kidkTextPrimary)
+        label.applyTextStyle(text: "D - 30", size: .s16, weight: .bold, color: .kidkTextPrimary)
         label.backgroundColor = .kidkPinkLight
         label.textAlignment = .center
         label.layer.cornerRadius = 26 / 2
@@ -40,48 +42,57 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
     private let missionTitleLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "여름방학 놀이공원 가기", size: .s20, weight: .bold, color: .kidkTextWhite)
+        label.applyTextStyle(text: PortfolioCaptureMock.primaryMissionTitle, size: .s18, weight: .bold, color: .kidkTextWhite)
         label.numberOfLines = 1
         return label
     }()
 
     private let currentAmountLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "0원", size: .s22, weight: .bold, color: .kidkTextWhite)
+        label.applyTextStyle(text: "0원", size: .s20, weight: .bold, color: .kidkTextWhite)
         return label
     }()
 
     private let targetAmountLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "/ 50,000원", size: .s22, weight: .bold, color: .kidkGray)
+        label.applyTextStyle(text: "/ 50,000원", size: .s18, weight: .bold, color: .kidkGray)
         return label
     }()
 
     private let progressTrackView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.88)
-        view.layer.cornerRadius = 20
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.22)
+        view.layer.cornerRadius = 7
+        view.clipsToBounds = true
+        return view
+    }()
+
+    private let progressTrackInnerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.10)
         view.clipsToBounds = true
         return view
     }()
 
     private let progressMintView: UIView = {
         let view = UIView()
-        view.backgroundColor = .kidkGreen
+        view.backgroundColor = .clear
         return view
     }()
 
     private let progressPinkDeltaView: UIView = {
         let view = UIView()
-        view.backgroundColor = .kidkPink
+        view.backgroundColor = UIColor.kidkPink.withAlphaComponent(0.88)
         return view
     }()
+
+    private let progressMintGradientLayer = CAGradientLayer()
 
     private let amountStackView: UIStackView = {
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.alignment = .firstBaseline
-        stack.spacing = 8
+        stack.spacing = 4
         return stack
     }()
 
@@ -89,7 +100,11 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private var progressPinkLeadingConstraint: Constraint?
     private var progressPinkWidthConstraint: Constraint?
     private var previousGaugeProgress: CGFloat = 0
-    private let savingsTargetAmount: Int = 50_000
+    private let savingsTargetAmount: Int = PortfolioCaptureMock.primaryMissionTargetAmount
+
+    #if DEBUG
+    private let debugMockProgress: CGFloat = CGFloat(PortfolioCaptureMock.primaryMissionCurrentAmount) / CGFloat(PortfolioCaptureMock.primaryMissionTargetAmount)
+    #endif
 
     private let homeButton: IconContainerView = {
         let button = IconContainerView(
@@ -103,6 +118,44 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         button.isUserInteractionEnabled = true
         return button
     }()
+
+    private let speechBubbleView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hex: "#2A2A35").withAlphaComponent(0.94)
+        view.layer.cornerRadius = 18
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
+        view.layer.shadowColor = UIColor.black.withAlphaComponent(0.20).cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowRadius = 8
+        view.layer.shadowOffset = CGSize(width: 0, height: 3)
+        view.alpha = 0
+        return view
+    }()
+
+    private let speechBubbleLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(text: "", size: .s14, weight: .medium, color: .white)
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private let speechBubbleAvatarStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = -8
+        return stack
+    }()
+
+    private lazy var speechBubbleAvatarViews: [UIView] = [
+        makeSpeechBubbleAvatar(imageName: "kidk_friend_avatar_1"),
+        makeSpeechBubbleAvatar(imageName: "kidk_friend_avatar_2"),
+        makeSpeechBubbleAvatar(imageName: "kidk_friend_avatar_3")
+    ]
+
+    private let persistentSpeechBubbleText = "와 함께 목표 진행중"
+    private var speechBubbleHideWorkItem: DispatchWorkItem?
 
     private weak var currentSheetViewController: UIViewController?
     private var cityScene: KidkCityScene?
@@ -150,6 +203,10 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        speechBubbleHideWorkItem?.cancel()
+    }
+
     var prefersNavigationBarHidden: Bool { true }
     var prefersTabBarHidden: Bool { true }
 
@@ -165,11 +222,17 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         configureSceneIfNeeded()
+        applyProgressTrackMockStyle()
     }
 
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
         viewDidAppearSubject.onNext(())
+
+        showSpeechBubble(
+            text: persistentSpeechBubbleText,
+            autoHideAfter: nil
+        )
 
         #if DEBUG
         runDebugSnapshotActionIfNeeded()
@@ -182,6 +245,11 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         view.addSubview(gameView)
         view.addSubview(hudContainerView)
         view.addSubview(homeButton)
+        view.addSubview(speechBubbleView)
+
+        speechBubbleView.addSubview(speechBubbleAvatarStackView)
+        speechBubbleView.addSubview(speechBubbleLabel)
+        speechBubbleAvatarViews.forEach { speechBubbleAvatarStackView.addArrangedSubview($0) }
 
         hudContainerView.addSubview(ddayBadgeLabel)
         hudContainerView.addSubview(missionTitleLabel)
@@ -191,42 +259,47 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         amountStackView.addArrangedSubview(currentAmountLabel)
         amountStackView.addArrangedSubview(targetAmountLabel)
 
-        progressTrackView.addSubview(progressMintView)
-        progressTrackView.addSubview(progressPinkDeltaView)
+        progressTrackView.addSubview(progressTrackInnerView)
+        progressTrackInnerView.addSubview(progressMintView)
+        progressTrackInnerView.addSubview(progressPinkDeltaView)
 
         gameView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
         hudContainerView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-            make.height.equalTo(125)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-10)
+            make.height.equalTo(136)
         }
 
         ddayBadgeLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.top.equalToSuperview().offset(12)
-            make.width.equalTo(74)
-            make.height.equalTo(30)
+            make.leading.equalToSuperview().offset(18)
+            make.top.equalToSuperview().offset(14)
+            make.width.equalTo(72)
+            make.height.equalTo(28)
         }
 
         missionTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(ddayBadgeLabel.snp.trailing).offset(12)
+            make.leading.equalTo(ddayBadgeLabel.snp.trailing).offset(10)
             make.centerY.equalTo(ddayBadgeLabel)
-            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.trailing.lessThanOrEqualToSuperview().inset(18)
         }
 
         amountStackView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.top.equalTo(ddayBadgeLabel.snp.bottom).offset(8)
-            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.leading.equalToSuperview().offset(18)
+            make.top.equalTo(ddayBadgeLabel.snp.bottom).offset(14)
+            make.trailing.lessThanOrEqualToSuperview().inset(18)
         }
 
         progressTrackView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().inset(12)
-            make.height.equalTo(24)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalToSuperview().inset(18)
+            make.height.equalTo(16)
+        }
+
+        progressTrackInnerView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(2)
         }
 
         progressMintView.snp.makeConstraints { make in
@@ -244,6 +317,28 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             make.leading.equalToSuperview().offset(Spacing.md)
             make.top.equalTo(view.safeAreaLayoutGuide).offset(Spacing.md)
             make.width.height.equalTo(48)
+        }
+
+        speechBubbleView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            make.leading.greaterThanOrEqualTo(homeButton.snp.trailing).offset(10)
+            make.trailing.equalToSuperview().inset(16)
+            make.height.greaterThanOrEqualTo(42)
+        }
+
+        speechBubbleAvatarStackView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+            make.width.equalTo(54)
+            make.height.equalTo(24)
+        }
+
+        speechBubbleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(speechBubbleAvatarStackView.snp.trailing).offset(8)
+            make.trailing.equalToSuperview().inset(14)
+            make.top.greaterThanOrEqualToSuperview().offset(10)
+            make.bottom.lessThanOrEqualToSuperview().inset(10)
+            make.centerY.equalToSuperview()
         }
 
         let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
@@ -290,6 +385,13 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
                 self.cityScene?.setUnlockedLocations(self.latestUnlockedLocations)
             })
             .disposed(by: disposeBag)
+
+        missionCompletedSubject
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] event in
+                self?.showMissionCompletedSpeechBubble(event)
+            })
+            .disposed(by: disposeBag)
     }
 
     private func configureSceneIfNeeded() {
@@ -315,19 +417,52 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         #endif
     }
 
+    private func applyProgressTrackMockStyle() {
+        progressTrackView.layer.cornerRadius = progressTrackView.bounds.height / 2
+        progressTrackView.layer.borderWidth = 1
+        progressTrackView.layer.borderColor = UIColor.white.withAlphaComponent(0.20).cgColor
+        progressTrackView.layer.shadowColor = UIColor.black.withAlphaComponent(0.22).cgColor
+        progressTrackView.layer.shadowOpacity = 1
+        progressTrackView.layer.shadowRadius = 8
+        progressTrackView.layer.shadowOffset = CGSize(width: 0, height: 3)
+
+        progressTrackInnerView.layer.cornerRadius = progressTrackInnerView.bounds.height / 2
+        progressMintView.layer.cornerRadius = progressTrackInnerView.bounds.height / 2
+        progressPinkDeltaView.layer.cornerRadius = progressTrackInnerView.bounds.height / 2
+
+        if progressMintGradientLayer.superlayer == nil {
+            progressMintGradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+            progressMintGradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+            progressMintGradientLayer.colors = [
+                UIColor(hex: "#31D1A6").cgColor,
+                UIColor(hex: "#7CF0CC").cgColor
+            ]
+            progressMintView.layer.insertSublayer(progressMintGradientLayer, at: 0)
+        }
+        progressMintGradientLayer.frame = progressMintView.bounds
+        progressMintGradientLayer.cornerRadius = progressMintView.bounds.height / 2
+    }
+
     private func updateGauge(progress: Float) {
-        let clamped = CGFloat(max(0, min(progress, 1)))
+        var clamped = CGFloat(max(0, min(progress, 1)))
+
+        #if DEBUG
+        if clamped == 0 {
+            clamped = debugMockProgress
+        }
+        #endif
+
         let amount = Int((clamped * CGFloat(savingsTargetAmount)).rounded())
 
         currentAmountLabel.applyTextStyle(
             text: "\(amount.formattedWithComma)원",
-            size: .s22,
+            size: .s20,
             weight: .bold,
             color: .kidkTextWhite
         )
         targetAmountLabel.applyTextStyle(
             text: "/ \(savingsTargetAmount.formattedWithComma)원",
-            size: .s22,
+            size: .s18,
             weight: .bold,
             color: .kidkGray
         )
@@ -335,19 +470,20 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         view.layoutIfNeeded()
         let effectivePrevious = previousGaugeProgress == 0 ? clamped : previousGaugeProgress
         let delta = max(0, clamped - effectivePrevious)
-        let trackWidth = max(progressTrackView.bounds.width, 1)
+        let trackWidth = max(progressTrackInnerView.bounds.width, 1)
         progressMintWidthConstraint?.update(offset: trackWidth * effectivePrevious)
         progressPinkLeadingConstraint?.update(offset: 0)
         progressPinkWidthConstraint?.update(offset: trackWidth * delta)
 
         UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
             self.progressTrackView.layoutIfNeeded()
+            self.applyProgressTrackMockStyle()
         }
 
         if delta > 0 {
             currentAmountLabel.applyTextStyle(
                 text: "\(amount.formattedWithComma)원",
-                size: .s22,
+                size: .s20,
                 weight: .bold,
                 color: .kidkPink
             )
@@ -361,11 +497,77 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         if percent == 0 {
             currentAmountLabel.applyTextStyle(
                 text: currentAmountLabel.text ?? "0원",
-                size: .s22,
+                size: .s20,
                 weight: .bold,
                 color: .kidkTextWhite
             )
         }
+    }
+
+    private func showMissionCompletedSpeechBubble(_ event: MissionRewardCompletedEvent) {
+        let amountText = event.rewardAmount.formattedWithComma
+        showSpeechBubble(text: "+\(amountText)원 적립 완료", autoHideAfter: nil)
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.showSpeechBubble(text: self.persistentSpeechBubbleText, autoHideAfter: nil)
+        }
+        speechBubbleHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2, execute: workItem)
+    }
+
+    private func makeSpeechBubbleAvatar(imageName: String) -> UIView {
+        let container = UIView()
+        container.layer.cornerRadius = 12
+        container.layer.borderWidth = 2
+        container.layer.borderColor = UIColor(hex: "#2A2A35").cgColor
+        container.clipsToBounds = true
+
+        let avatarImage = UIImageView(image: UIImage(named: imageName))
+        avatarImage.contentMode = .scaleAspectFill
+        container.addSubview(avatarImage)
+        avatarImage.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        container.snp.makeConstraints { make in
+            make.width.height.equalTo(24)
+        }
+
+        return container
+    }
+
+    private func showSpeechBubble(text: String, autoHideAfter duration: TimeInterval?) {
+        speechBubbleHideWorkItem?.cancel()
+        speechBubbleHideWorkItem = nil
+        speechBubbleLabel.text = text
+
+        let reveal = {
+            self.speechBubbleView.alpha = 1
+            self.speechBubbleView.transform = .identity
+        }
+
+        if speechBubbleView.alpha == 0 {
+            speechBubbleView.transform = CGAffineTransform(translationX: 0, y: -6)
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut], animations: reveal)
+        } else {
+            reveal()
+        }
+
+        guard let duration else { return }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.hideSpeechBubble()
+        }
+        speechBubbleHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: workItem)
+    }
+
+    private func hideSpeechBubble() {
+        UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseInOut], animations: {
+            self.speechBubbleView.alpha = 0
+            self.speechBubbleView.transform = CGAffineTransform(translationX: 0, y: -4)
+        })
     }
 
     @objc private func homeButtonTapped() {
@@ -432,9 +634,17 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         }
 
         creationVC.missionCreated
-            .subscribe(onNext: { [weak self] (_: Mission) in
-                let eventId = UUID().uuidString
-                self?.missionCompletedSubject.onNext(eventId)
+            .subscribe(onNext: { [weak self] (mission: Mission) in
+                guard let self else { return }
+                let event = MissionRewardCompletedEvent(
+                    missionId: mission.id,
+                    rewardAmount: mission.rewardAmount,
+                    rewardType: .missionApproved,
+                    childId: self.user.id,
+                    timestamp: Date(),
+                    idempotencyKey: UUID().uuidString
+                )
+                self.missionCompletedSubject.onNext(event)
                 creationVC.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
@@ -500,7 +710,16 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         case .none:
             break
         case .showMissionCompletedPopup:
-            missionCompletedSubject.onNext(UUID().uuidString)
+            missionCompletedSubject.onNext(
+                MissionRewardCompletedEvent(
+                    missionId: "debug-mission-completed",
+                    rewardAmount: PortfolioCaptureMock.primaryMissionRewardAmount,
+                    rewardType: .missionApproved,
+                    childId: user.id,
+                    timestamp: Date(),
+                    idempotencyKey: UUID().uuidString
+                )
+            )
         case .showBuildingDetail:
             showLockedLocationToast(location: .mart)
         case .showMissionSelection:
@@ -704,6 +923,18 @@ private final class KidkCityScene: SKScene {
         var xRatio: CGFloat
         var yRatio: CGFloat
         var scale: CGFloat
+
+        init(xRatio: CGFloat, yRatio: CGFloat, scale: CGFloat) {
+            self.xRatio = xRatio
+            self.yRatio = yRatio
+            self.scale = scale
+        }
+
+        init(config: KIDKCityLayoutConfig.BuildingConfig) {
+            self.xRatio = CGFloat(config.xRatio)
+            self.yRatio = CGFloat(config.yRatio)
+            self.scale = CGFloat(config.scale)
+        }
     }
 
     var onHomeTapped: (() -> Void)?
@@ -737,6 +968,31 @@ private final class KidkCityScene: SKScene {
         return node
     }()
 
+    private let schoolSelectionOutlineNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school_outline")
+        node.zPosition = 1.8
+        node.alpha = 0
+        return node
+    }()
+
+    private let schoolMissionBannerOutlineNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school_mission_banner")
+        node.zPosition = 2.55
+        node.color = .black
+        node.colorBlendFactor = 1.0
+        node.alpha = 0
+        return node
+    }()
+
+    private let schoolMissionBannerFillNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school_mission_banner")
+        node.zPosition = 2.6
+        node.alpha = 0
+        return node
+    }()
+
+    private var isSchoolSelected = false
+
     private let characterNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_character_side_walk_1")
         node.zPosition = 3
@@ -746,22 +1002,36 @@ private final class KidkCityScene: SKScene {
     private var unlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
 
     // NOTE: 좌표는 "scene size"가 아니라 "배경 표시 영역(frame)" 기준 ratio로 관리한다.
-    private var backgroundScale: CGFloat = 1.0
-    private var backgroundOffset: CGPoint = .zero
-    private var homeLayout = BuildingLayout(xRatio: 0.0060, yRatio: 0.4447, scale: 1.173)
-    private var schoolLayout = BuildingLayout(xRatio: 0.3964, yRatio: 0.7712, scale: 1.269)
-    private var martLayout = BuildingLayout(xRatio: 0.7781, yRatio: 0.2945, scale: 1.456)
-    private var characterLayout = BuildingLayout(xRatio: 0.20, yRatio: 0.38, scale: 1.0)
+    private let layoutConfig = KIDKCityLayoutConfig.loadFromBundle()
+
+    private lazy var backgroundScale: CGFloat = CGFloat(layoutConfig.map.bgScale)
+    private lazy var backgroundOffset: CGPoint = CGPoint(
+        x: CGFloat(layoutConfig.map.bgOffsetX),
+        y: CGFloat(layoutConfig.map.bgOffsetY)
+    )
+    private lazy var homeLayout = BuildingLayout(config: layoutConfig.buildings.home)
+    private lazy var schoolLayout = BuildingLayout(config: layoutConfig.buildings.school)
+    private lazy var martLayout = BuildingLayout(config: layoutConfig.buildings.mart)
+    private lazy var characterLayout = BuildingLayout(
+        config: layoutConfig.buildings.character ?? KIDKCityLayoutConfig.fallback.buildings.character!
+    )
+
+    private var mapDisplayRect: CGRect = .zero
+    private let movementSpeed: CGFloat = 220
 
     override func didMove(to view: SKView) {
         backgroundColor = .clear
         addChild(backgroundNode)
+        addChild(schoolSelectionOutlineNode)
         addChild(homeNode)
         addChild(schoolNode)
         addChild(martNode)
+        addChild(schoolMissionBannerOutlineNode)
+        addChild(schoolMissionBannerFillNode)
         addChild(characterNode)
         layoutScene()
         applyUnlockState()
+        updateSchoolSelectionVisual(animated: false)
         startIdleAnimation()
     }
 
@@ -769,6 +1039,7 @@ private final class KidkCityScene: SKScene {
         super.didChangeSize(oldSize)
         layoutScene()
         applyUnlockState()
+        updateSchoolSelectionVisual(animated: false)
     }
 
     private func layoutScene() {
@@ -784,6 +1055,7 @@ private final class KidkCityScene: SKScene {
         backgroundNode.size = CGSize(width: fillSize.width * backgroundScale, height: fillSize.height * backgroundScale)
 
         let displayRect = backgroundNode.frame
+        mapDisplayRect = displayRect
 
         homeNode.position = point(in: displayRect, layout: homeLayout)
         homeNode.size = aspectFitSize(
@@ -797,17 +1069,55 @@ private final class KidkCityScene: SKScene {
             in: CGSize(width: size.width * 0.5 * schoolLayout.scale, height: size.height * 0.25 * schoolLayout.scale)
         )
 
+        schoolSelectionOutlineNode.position = schoolNode.position
+        schoolSelectionOutlineNode.size = CGSize(
+            width: schoolNode.size.width * 1.14,
+            height: schoolNode.size.height * 1.14
+        )
+
+        let missionBannerWidth = schoolNode.size.width
+        let textureAspect: CGFloat
+        if let texture = schoolMissionBannerFillNode.texture, texture.size().width > 0 {
+            textureAspect = texture.size().height / texture.size().width
+        } else {
+            textureAspect = 96.0 / 717.0
+        }
+        let missionBannerHeight = missionBannerWidth * textureAspect
+
+        schoolMissionBannerFillNode.size = CGSize(
+            width: missionBannerWidth,
+            height: missionBannerHeight
+        )
+
+        let missionBannerGap: CGFloat = 18
+        schoolMissionBannerFillNode.position = CGPoint(
+            x: schoolNode.position.x,
+            y: schoolNode.frame.minY - missionBannerGap - (missionBannerHeight / 2)
+        )
+
+        schoolMissionBannerOutlineNode.size = CGSize(
+            width: missionBannerWidth + 2,
+            height: missionBannerHeight + 2
+        )
+        schoolMissionBannerOutlineNode.position = schoolMissionBannerFillNode.position
+
         martNode.position = point(in: displayRect, layout: martLayout)
         martNode.size = aspectFitSize(
             for: martNode,
             in: CGSize(width: size.width * 0.30 * martLayout.scale, height: size.height * 0.20 * martLayout.scale)
         )
 
-        characterNode.position = point(in: displayRect, layout: characterLayout)
+        let previousCharacterPosition = characterNode.position
         characterNode.size = aspectFitSize(
             for: characterNode,
-            in: CGSize(width: 72 * characterLayout.scale, height: 72 * characterLayout.scale)
+            in: CGSize(width: 100 * characterLayout.scale, height: 100 * characterLayout.scale)
         )
+
+        if previousCharacterPosition == .zero {
+            characterNode.position = point(in: displayRect, layout: characterLayout)
+        } else {
+            characterNode.position = clampToMap(previousCharacterPosition)
+        }
     }
 
     private func point(in rect: CGRect, layout: BuildingLayout) -> CGPoint {
@@ -878,6 +1188,43 @@ private final class KidkCityScene: SKScene {
         martNode.alpha = 1.0
     }
 
+    private func setSchoolSelected(_ selected: Bool, animated: Bool = true) {
+        guard isSchoolSelected != selected else { return }
+        isSchoolSelected = selected
+        updateSchoolSelectionVisual(animated: animated)
+    }
+
+    private func updateSchoolSelectionVisual(animated: Bool) {
+        let schoolOutlineAlpha: CGFloat = isSchoolSelected ? 1.0 : 0.0
+        let missionBannerAlpha: CGFloat = 1.0
+
+        if animated {
+            schoolSelectionOutlineNode.removeAction(forKey: "schoolOutlineFade")
+            schoolMissionBannerOutlineNode.removeAction(forKey: "schoolMissionOutlineFade")
+            schoolMissionBannerFillNode.removeAction(forKey: "schoolMissionFillFade")
+
+            schoolSelectionOutlineNode.run(.fadeAlpha(to: schoolOutlineAlpha, duration: 0.16), withKey: "schoolOutlineFade")
+            schoolMissionBannerOutlineNode.run(.fadeAlpha(to: missionBannerAlpha, duration: 0.16), withKey: "schoolMissionOutlineFade")
+            schoolMissionBannerFillNode.run(.fadeAlpha(to: missionBannerAlpha, duration: 0.16), withKey: "schoolMissionFillFade")
+        } else {
+            schoolSelectionOutlineNode.alpha = schoolOutlineAlpha
+            schoolMissionBannerOutlineNode.alpha = missionBannerAlpha
+            schoolMissionBannerFillNode.alpha = missionBannerAlpha
+        }
+
+        schoolSelectionOutlineNode.removeAction(forKey: "schoolOutlinePulse")
+        if isSchoolSelected {
+            schoolSelectionOutlineNode.setScale(1)
+            let pulse = SKAction.sequence([
+                .scale(to: 1.015, duration: 0.9),
+                .scale(to: 1.0, duration: 0.9)
+            ])
+            schoolSelectionOutlineNode.run(.repeatForever(pulse), withKey: "schoolOutlinePulse")
+        } else {
+            schoolSelectionOutlineNode.setScale(1)
+        }
+    }
+
     private func startIdleAnimation() {
         let frame1 = SKTexture(imageNamed: "kidk_character_side_walk_1")
         let frame2 = SKTexture(imageNamed: "kidk_character_side_walk_2")
@@ -886,27 +1233,81 @@ private final class KidkCityScene: SKScene {
         characterNode.run(forever, withKey: "walk")
     }
 
+    private func clampToMap(_ point: CGPoint) -> CGPoint {
+        guard mapDisplayRect != .zero else { return point }
+
+        let insetX = characterNode.size.width * 0.35
+        let insetY = characterNode.size.height * 0.25
+        let safeRect = mapDisplayRect.insetBy(dx: insetX, dy: insetY)
+
+        return CGPoint(
+            x: min(max(point.x, safeRect.minX), safeRect.maxX),
+            y: min(max(point.y, safeRect.minY), safeRect.maxY)
+        )
+    }
+
+    private func moveCharacter(to target: CGPoint, completion: (() -> Void)? = nil) {
+        let destination = clampToMap(target)
+        let current = characterNode.position
+        let dx = destination.x - current.x
+        let dy = destination.y - current.y
+        let distance = hypot(dx, dy)
+
+        if distance < 1 {
+            completion?()
+            return
+        }
+
+        characterNode.xScale = dx < 0 ? -abs(characterNode.xScale) : abs(characterNode.xScale)
+        characterNode.removeAction(forKey: "move")
+
+        let duration = max(0.15, TimeInterval(distance / movementSpeed))
+        let move = SKAction.move(to: destination, duration: duration)
+        move.timingMode = .easeInEaseOut
+
+        let sequence = SKAction.sequence([move, .run { completion?() }])
+        characterNode.run(sequence, withKey: "move")
+    }
+
+    private func interactionPoint(for buildingNode: SKSpriteNode) -> CGPoint {
+        CGPoint(x: buildingNode.position.x, y: buildingNode.position.y - (buildingNode.size.height * 0.25))
+    }
+
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         let node = atPoint(location)
 
         if node.name == "home" || node.parent?.name == "home" {
-            onHomeTapped?()
+            setSchoolSelected(false)
+            moveCharacter(to: interactionPoint(for: homeNode)) { [weak self] in
+                self?.onHomeTapped?()
+            }
             return
         }
 
         if node.name == "school" || node.parent?.name == "school" {
-            onSchoolTapped?()
+            setSchoolSelected(true)
+            moveCharacter(to: interactionPoint(for: schoolNode)) { [weak self] in
+                self?.onSchoolTapped?()
+            }
             return
         }
 
         if node.name == "mart" || node.parent?.name == "mart" {
-            if unlockedLocations.contains(.mart) {
-                // TODO: 마트 컨텐츠 연결(서버 API 문서 기준)
-            } else {
-                onLockedLocationTapped?(.mart)
+            setSchoolSelected(false)
+            moveCharacter(to: interactionPoint(for: martNode)) { [weak self] in
+                guard let self else { return }
+                if self.unlockedLocations.contains(.mart) {
+                    // TODO: 마트 컨텐츠 연결(서버 API 문서 기준)
+                } else {
+                    self.onLockedLocationTapped?(.mart)
+                }
             }
+            return
         }
+
+        setSchoolSelected(false)
+        moveCharacter(to: location)
     }
 }
