@@ -151,6 +151,7 @@ final class MissionViewController: BaseViewController, NavigationChromeConfigura
         output.missions
             .drive(onNext: { [weak self] missions in
                 self?.missions = missions
+                self?.sectionTitleLabel.text = missions.isEmpty ? "저축 미션" : "저축 미션 현황"
                 self?.tableView.reloadData()
             })
             .disposed(by: disposeBag)
@@ -190,7 +191,7 @@ final class MissionViewController: BaseViewController, NavigationChromeConfigura
 extension MissionViewController: UITableViewDataSource {
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return missions.count
+        return max(missions.count, 1)
     }
 
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -198,19 +199,21 @@ extension MissionViewController: UITableViewDataSource {
             return UITableViewCell()
         }
 
-        let mission = missions[indexPath.row]
+        let mission = missions.indices.contains(indexPath.row) ? missions[indexPath.row] : nil
         let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
 
         cell.configure(with: mission, isCollapsed: isCollapsed)
 
         cell.collapseButtonTapped
             .subscribe(onNext: { [weak self] in
+                guard self?.missions.indices.contains(indexPath.row) == true else { return }
                 self?.collapseButtonTappedSubject.onNext(indexPath.row)
             })
             .disposed(by: cell.disposeBag)
 
         cell.verifyButtonTapped
             .subscribe(onNext: { [weak self] in
+                guard let mission else { return }
                 self?.showVerificationScreen(for: mission)
             })
             .disposed(by: cell.disposeBag)
@@ -227,8 +230,9 @@ extension MissionViewController: UITableViewDelegate {
     }
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        if missions.isEmpty { return 460 }
         let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
-        return isCollapsed ? 80 : 500
+        return isCollapsed ? 84 : 500
     }
 
     // MARK: - Navigation

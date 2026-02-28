@@ -5,6 +5,13 @@ import RxCocoa
 
 final class MissionCardView: UIView {
 
+    private enum CardVisualState {
+        case beforeMission
+        case afterMissionCreated
+        case inProgress
+        case completed
+    }
+
     private let containerView: UIView = {
         let view = UIView()
         view.backgroundColor = .cardBackground
@@ -25,6 +32,17 @@ final class MissionCardView: UIView {
         let label = UILabel()
         label.font = .kidkSubtitle
         label.textColor = .kidkTextWhite
+        label.numberOfLines = 2
+        return label
+    }()
+
+    private let statusBadgeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .kidkFont(.s10, .bold)
+        label.textAlignment = .center
+        label.layer.cornerRadius = 10
+        label.layer.masksToBounds = true
+        label.isHidden = true
         return label
     }()
 
@@ -38,7 +56,7 @@ final class MissionCardView: UIView {
     private let subtitleLabel: UILabel = {
         let label = UILabel()
         label.font = .kidkBody
-        label.textColor = .kidkTextWhite.withAlphaComponent(0.7)
+        label.textColor = .kidkTextWhite.withAlphaComponent(0.78)
         label.numberOfLines = 0
         return label
     }()
@@ -86,8 +104,6 @@ final class MissionCardView: UIView {
     private let whatMissionButton: UIButton = {
         let button = UIButton(type: .system)
         button.titleLabel?.font = .kidkBody
-        button.setTitleColor(.kidkPink, for: .normal)
-        button.backgroundColor = .kidkBlack
         button.layer.cornerRadius = 18
         button.contentEdgeInsets = UIEdgeInsets(top: 6, left: 18, bottom: 6, right: 18)
         return button
@@ -162,6 +178,7 @@ final class MissionCardView: UIView {
         headerStackView.addArrangedSubview(participantsRowView)
 
         titleRowView.addSubview(titleLabel)
+        titleRowView.addSubview(statusBadgeLabel)
         titleRowView.addSubview(collapseButton)
 
         participantsRowView.addArrangedSubview(participantsStackView)
@@ -193,11 +210,19 @@ final class MissionCardView: UIView {
         }
 
         titleRowView.snp.makeConstraints { make in
-            make.height.equalTo(44)
+            make.height.greaterThanOrEqualTo(44)
         }
 
         titleLabel.snp.makeConstraints { make in
             make.leading.centerY.equalToSuperview()
+            make.trailing.lessThanOrEqualTo(statusBadgeLabel.snp.leading).offset(-Spacing.xs)
+        }
+
+        statusBadgeLabel.snp.makeConstraints { make in
+            make.trailing.equalTo(collapseButton.snp.leading).offset(-8)
+            make.centerY.equalToSuperview()
+            make.height.equalTo(20)
+            make.width.greaterThanOrEqualTo(48)
         }
 
         collapseButton.snp.makeConstraints { make in
@@ -274,14 +299,124 @@ final class MissionCardView: UIView {
     }
 
     func configure(with mission: Mission?, isCollapsed: Bool) {
-        guard let mission = mission else {
+        guard let mission else {
             showEmptyState()
-            updateCollapseState(isCollapsed: isCollapsed)
+            updateCollapseState(isCollapsed: false)
             return
         }
 
-        showActiveMission(mission: mission)
+        let state = visualState(for: mission)
+        showMissionState(mission: mission, state: state)
         updateCollapseState(isCollapsed: isCollapsed)
+    }
+
+    private func visualState(for mission: Mission) -> CardVisualState {
+        if mission.status == .completed || mission.progressPercentage >= 100 {
+            return .completed
+        }
+
+        if mission.currentAmount <= 0 {
+            return .afterMissionCreated
+        }
+
+        return .inProgress
+    }
+
+    private func showMissionState(mission: Mission, state: CardVisualState) {
+        titleLabel.text = mission.title
+
+        subtitleLabel.isHidden = true
+        participantsRowView.isHidden = false
+        missionSectionView.isHidden = false
+        collapseButton.isHidden = false
+        collapseButton.isEnabled = true
+
+        setupParticipants(mission.participants)
+        missionItemIconView.image = missionIcon(for: mission.missionType)
+        missionItemIconView.tintColor = .kidkTextWhite
+        missionItemIconContainer.backgroundColor = .cardBackground
+        whatMissionButton.isUserInteractionEnabled = false
+
+        switch state {
+        case .beforeMission:
+            showEmptyState()
+
+        case .afterMissionCreated:
+            statusBadgeLabel.isHidden = false
+            statusBadgeLabel.text = "시작 전"
+            statusBadgeLabel.textColor = .kidkPink
+            statusBadgeLabel.backgroundColor = .kidkPink.withAlphaComponent(0.16)
+
+            subtitleLabel.isHidden = false
+            subtitleLabel.text = "미션이 만들어졌어요. 첫 저축을 시작해봐요!"
+
+            circularProgressView.configure(
+                currentAmount: mission.currentAmount,
+                targetAmount: mission.targetAmount ?? 0,
+                image: UIImage(named: "kidk_city_school"),
+                accentColor: .kidkPink,
+                showsCompletionBadge: false
+            )
+
+            applyFilledGoalPill(text: "\(mission.title) GO", color: .kidkPink)
+            missionItemTitleLabel.text = mission.description ?? "첫 미션 인증을 시작해보세요"
+            applyVerifyButton(title: "시작", backgroundColor: .kidkPink, textColor: .kidkTextWhite, enabled: true)
+
+        case .inProgress:
+            statusBadgeLabel.isHidden = false
+            statusBadgeLabel.text = "진행 중"
+            statusBadgeLabel.textColor = .kidkPink
+            statusBadgeLabel.backgroundColor = .kidkPink.withAlphaComponent(0.16)
+
+            circularProgressView.configure(
+                currentAmount: mission.currentAmount,
+                targetAmount: mission.targetAmount ?? 0,
+                image: UIImage(named: "kidk_city_school"),
+                accentColor: .kidkPink,
+                showsCompletionBadge: false
+            )
+
+            let goalText: String
+            if let formattedDate = mission.formattedTargetDate,
+               let formattedTarget = mission.formattedTargetAmount {
+                goalText = "\(formattedDate) \(formattedTarget) 모으기"
+            } else {
+                goalText = "목표 달성까지 화이팅!"
+            }
+
+            applyOutlinedGoalPill(text: goalText, color: .kidkPink)
+            missionItemTitleLabel.text = mission.description ?? "미션을 인증해보세요"
+            applyVerifyButton(title: "인증하기", backgroundColor: .kidkPink, textColor: .kidkTextWhite, enabled: true)
+
+        case .completed:
+            statusBadgeLabel.isHidden = false
+            statusBadgeLabel.text = "완료"
+            statusBadgeLabel.textColor = .kidkGreen
+            statusBadgeLabel.backgroundColor = .kidkGreen.withAlphaComponent(0.18)
+
+            subtitleLabel.isHidden = false
+            subtitleLabel.text = "목표를 달성했어요! 정말 잘했어요 🎉"
+
+            circularProgressView.configure(
+                currentAmount: mission.targetAmount ?? mission.currentAmount,
+                targetAmount: mission.targetAmount ?? mission.currentAmount,
+                image: UIImage(named: "kidk_city_school"),
+                accentColor: .kidkGreen,
+                showsCompletionBadge: true
+            )
+
+            applyFilledGoalPill(text: "미션 완료!", color: .kidkGreen)
+            missionItemTitleLabel.text = mission.description ?? "성공적으로 미션을 완료했어요"
+            missionItemIconView.image = UIImage(systemName: "checkmark.seal.fill")
+            missionItemIconView.tintColor = .kidkGreen
+            missionItemIconContainer.backgroundColor = .kidkGreen.withAlphaComponent(0.16)
+            applyVerifyButton(
+                title: "완료",
+                backgroundColor: .kidkGreen.withAlphaComponent(0.2),
+                textColor: .kidkGreen,
+                enabled: false
+            )
+        }
     }
 
     private func showEmptyState() {
@@ -290,54 +425,75 @@ final class MissionCardView: UIView {
 
         subtitleLabel.isHidden = false
         participantsRowView.isHidden = true
-
         missionSectionView.isHidden = true
 
-        whatMissionButton.setTitle(Strings.Mission.whatMissionQuestion, for: .normal)
-        whatMissionButton.setTitleColor(.kidkPink, for: .normal)
+        collapseButton.isHidden = true
+        collapseButton.isEnabled = false
+        statusBadgeLabel.isHidden = true
+
+        applyOutlinedGoalPill(text: Strings.Mission.whatMissionQuestion, color: .kidkPink)
         whatMissionButton.isUserInteractionEnabled = true
 
         let placeholderImage = UIImage(named: "kidk_city_school")
         circularProgressView.configureEmpty(image: placeholderImage)
     }
 
-    private func showActiveMission(mission: Mission) {
-        titleLabel.text = mission.title
-
-        subtitleLabel.isHidden = true
-        participantsRowView.isHidden = false
-
-        missionSectionView.isHidden = false
-
-        setupParticipants(mission.participants)
-
-        let schoolImage = UIImage(named: "kidk_city_school")
-        circularProgressView.configure(
-            currentAmount: mission.currentAmount,
-            targetAmount: mission.targetAmount ?? 0,
-            image: schoolImage
+    private func applyOutlinedGoalPill(text: String, color: UIColor) {
+        whatMissionButton.backgroundColor = .kidkBlack
+        whatMissionButton.setAttributedTitle(
+            NSAttributedString(
+                string: text,
+                attributes: [
+                    .font: UIFont.kidkBody,
+                    .foregroundColor: color
+                ]
+            ),
+            for: .normal
         )
+    }
 
-        let goalText: String
-        if let formattedDate = mission.formattedTargetDate,
-           let formattedTarget = mission.formattedTargetAmount {
-            goalText = "\(formattedDate) \(formattedTarget) 모으기"
-        } else {
-            goalText = "목표 달성까지 화이팅!"
+    private func applyFilledGoalPill(text: String, color: UIColor) {
+        whatMissionButton.backgroundColor = color
+        whatMissionButton.setAttributedTitle(
+            NSAttributedString(
+                string: text,
+                attributes: [
+                    .font: UIFont.kidkBody,
+                    .foregroundColor: UIColor.kidkTextWhite
+                ]
+            ),
+            for: .normal
+        )
+    }
+
+    private func applyVerifyButton(title: String, backgroundColor: UIColor, textColor: UIColor, enabled: Bool) {
+        verifyButton.setTitle(title, for: .normal)
+        verifyButton.backgroundColor = backgroundColor
+        verifyButton.setTitleColor(textColor, for: .normal)
+        verifyButton.isEnabled = enabled
+        verifyButton.alpha = enabled ? 1.0 : 0.95
+    }
+
+    private func missionIcon(for missionType: MissionType) -> UIImage? {
+        switch missionType {
+        case .video:
+            return preferredImage(named: "kidk_mission_video", fallbackSystemName: "play.rectangle.fill")
+        case .study:
+            return preferredImage(named: "kidk_mission_study", fallbackSystemName: "pencil")
+        case .quiz:
+            return preferredImage(named: "kidk_mission_quiz", fallbackSystemName: "character.book.closed")
+        case .savings:
+            return preferredImage(named: "kidk_mission_savings", fallbackSystemName: "wallet.pass.fill")
+        case .custom:
+            return preferredImage(named: "kidk_icon_mission_new", fallbackSystemName: "flag.fill")
         }
+    }
 
-        let attributedGoal = NSMutableAttributedString(
-            string: goalText,
-            attributes: [
-                .font: UIFont.kidkBody,
-                .foregroundColor: UIColor.kidkPink
-            ]
-        )
-
-        whatMissionButton.setAttributedTitle(attributedGoal, for: .normal)
-        whatMissionButton.isUserInteractionEnabled = false
-
-        missionItemTitleLabel.text = mission.description ?? "미션을 인증해보세요"
+    private func preferredImage(named assetName: String, fallbackSystemName: String) -> UIImage? {
+        if let assetImage = UIImage(named: assetName) {
+            return assetImage
+        }
+        return UIImage(systemName: fallbackSystemName)
     }
 
     private func setupParticipants(_ participants: [MissionParticipant]) {
@@ -355,12 +511,20 @@ final class MissionCardView: UIView {
                 make.width.height.equalTo(18)
             }
 
-            imageView.backgroundColor = .kidkPink
+            imageView.image = UIImage(named: "kidk_profile_one")
+            if imageView.image == nil {
+                imageView.image = UIImage(systemName: "person.fill")
+                imageView.tintColor = .kidkTextWhite.withAlphaComponent(0.8)
+                imageView.backgroundColor = .kidkTextSecondary
+                imageView.contentMode = .center
+            }
 
             participantsStackView.addArrangedSubview(imageView)
         }
 
-        if participants.count > 3 {
+        if participants.isEmpty {
+            participantsLabel.text = "나의 목표 진행중"
+        } else if participants.count > 3 {
             participantsLabel.text = "와 \(participants.count - 3)명 목표 진행중"
         } else {
             participantsLabel.text = "와 함께 목표 진행중"
@@ -380,6 +544,11 @@ final class MissionCardView: UIView {
     }
 
     private func updateCollapseState(isCollapsed: Bool) {
+        guard !collapseButton.isHidden else {
+            contentStackView.isHidden = false
+            return
+        }
+
         let chevronImage = isCollapsed ? "chevron.down" : "chevron.up"
         collapseButton.setImage(UIImage(systemName: chevronImage), for: .normal)
 

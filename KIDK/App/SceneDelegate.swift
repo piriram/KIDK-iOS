@@ -15,9 +15,17 @@ class SceneDelegate: UIResponder, UIWindowSceneDelegate {
         let window = UIWindow(windowScene: windowScene)
         window.backgroundColor = .kidkDarkBackground
         self.window = window
+
+        #if DEBUG
+        if let scenario = FigmaSnapshotScenario.fromLaunchArguments() {
+            window.rootViewController = FigmaSnapshotBuilder.makeRootViewController(for: scenario)
+            window.makeKeyAndVisible()
+            return
+        }
+        #endif
+
         appCoordinator = AppCoordinator(window: window)
         appCoordinator?.start()
-        
     }
     
     func sceneDidDisconnect(_ scene: UIScene) {

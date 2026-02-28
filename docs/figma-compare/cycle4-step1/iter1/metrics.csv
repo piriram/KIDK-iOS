@@ -1,0 +1,4 @@
+screen,figma,scenario,ssim,psnr
+05-city-base,5. 기본 맵 화면.png,city-base,0.6529,10.52
+06-city-selection,6. 금액 가이드가 주어졌지만 직접 설정할 수 있는 화면.png,mission-selection,0.6647,12.46
+08-city-building-detail,8. 건물1 미션 화면.png,city-building-detail,0.5817,11.24

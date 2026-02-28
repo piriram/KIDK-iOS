@@ -15,6 +15,16 @@ final class MissionCreationViewController: BaseViewController {
     private let targetDateRelay = BehaviorRelay<Date?>(value: nil)
     private let rewardAmountRelay = BehaviorRelay<Int>(value: 500)
     private let participantIdsRelay = BehaviorRelay<[String]>(value: [])
+
+    private enum Layout {
+        static let horizontalInset = Spacing.md
+        static let compactGap: CGFloat = 16
+        static let sectionGap: CGFloat = 20
+        static let cardHeight: CGFloat = 72
+        static let inputHeight: CGFloat = 56
+        static let amountHeight: CGFloat = 88
+        static let avatarSize: CGFloat = 60
+    }
     
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -34,7 +44,6 @@ final class MissionCreationViewController: BaseViewController {
     
     private let schoolImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_city_school")
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
@@ -50,44 +59,50 @@ final class MissionCreationViewController: BaseViewController {
     private let friendsStackView: UIStackView = {
         let stackView = UIStackView()
         stackView.axis = .horizontal
-        stackView.spacing = 12
-        stackView.distribution = .fillEqually
+        stackView.spacing = 8
+        stackView.alignment = .center
+        stackView.distribution = .fill
         return stackView
     }()
     
     private let friend1ImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_friend_avatar_1")
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 30
+        imageView.layer.borderWidth = 1.2
+        imageView.layer.borderColor = UIColor(hex: "#1F1F27").cgColor
+        imageView.backgroundColor = UIColor(hex: "#25252D")
         imageView.clipsToBounds = true
         return imageView
-    }()
-    
+    }()    
     private let friend2ImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_friend_avatar_2")
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 30
+        imageView.layer.borderWidth = 1.2
+        imageView.layer.borderColor = UIColor(hex: "#1F1F27").cgColor
+        imageView.backgroundColor = UIColor(hex: "#25252D")
         imageView.clipsToBounds = true
         return imageView
-    }()
-    
+    }()    
     private let friend3ImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_friend_avatar_3")
         imageView.contentMode = .scaleAspectFill
         imageView.layer.cornerRadius = 30
+        imageView.layer.borderWidth = 1.2
+        imageView.layer.borderColor = UIColor(hex: "#1F1F27").cgColor
+        imageView.backgroundColor = UIColor(hex: "#25252D")
         imageView.clipsToBounds = true
         return imageView
-    }()
-    
+    }()    
     private let addFriendButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "plus"), for: .normal)
         button.tintColor = .kidkTextWhite
-        button.backgroundColor = .kidkPink
+        button.backgroundColor = UIColor(hex: "#25252D")
         button.layer.cornerRadius = 30
+        button.layer.borderWidth = 1.2
+        button.layer.borderColor = UIColor(hex: "#1F1F27").cgColor
         return button
     }()
     
@@ -101,23 +116,36 @@ final class MissionCreationViewController: BaseViewController {
     
     private let missionCardView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.medium
+        view.backgroundColor = UIColor(hex: "#2F2F36")
+        view.layer.cornerRadius = CornerRadius.large
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         return view
     }()
     
+    private let missionIconContainer: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkDarkBackground
+        view.layer.cornerRadius = 12
+        return view
+    }()
+
     private let missionIconImageView: UIImageView = {
         let imageView = UIImageView()
-        imageView.image = UIImage(named: "kidk_mission_video")
         imageView.contentMode = .scaleAspectFit
         return imageView
     }()
     
     private let missionDescriptionLabel: UILabel = {
         let label = UILabel()
-        label.text = "영상을 시청한 후 퀴즈를 풀어보세요"
-        label.font = .kidkBody
-        label.textColor = .kidkTextWhite
+        label.applyTextStyle(
+            text: "영상을 시청한 후 퀴즈를 풀어보세요",
+            size: .s16,
+            weight: .semibold,
+            color: .kidkTextWhite,
+            lineHeight: 120
+        )
+        label.numberOfLines = 1
         return label
     }()
     
@@ -131,11 +159,12 @@ final class MissionCreationViewController: BaseViewController {
     
     private let goalInputContainer: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.medium
+        view.backgroundColor = UIColor(hex: "#2F2F36")
+        view.layer.cornerRadius = CornerRadius.large
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         return view
-    }()
-    
+    }()    
     private let goalTextField: UITextField = {
         let textField = UITextField()
         textField.placeholder = "여름방학 놀이공원 가기"
@@ -166,11 +195,12 @@ final class MissionCreationViewController: BaseViewController {
     
     private let amountContainer: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2C2C2E")
-        view.layer.cornerRadius = CornerRadius.medium
+        view.backgroundColor = UIColor(hex: "#2F2F36")
+        view.layer.cornerRadius = CornerRadius.large
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         return view
-    }()
-    
+    }()    
     private let decreaseButton: UIButton = {
         let button = UIButton(type: .system)
         button.setImage(UIImage(systemName: "chevron.left"), for: .normal)
@@ -228,6 +258,7 @@ final class MissionCreationViewController: BaseViewController {
         super.viewDidLoad()
         setupNavigationBar()
         setupUI()
+        configureStaticAssets()
         configureMissionContent()
         bindViewModel()
         bindUIActions()
@@ -256,7 +287,8 @@ final class MissionCreationViewController: BaseViewController {
         
         contentView.addSubview(dailyMissionLabel)
         contentView.addSubview(missionCardView)
-        missionCardView.addSubview(missionIconImageView)
+        missionCardView.addSubview(missionIconContainer)
+        missionIconContainer.addSubview(missionIconImageView)
         missionCardView.addSubview(missionDescriptionLabel)
         
         contentView.addSubview(goalSettingLabel)
@@ -277,7 +309,7 @@ final class MissionCreationViewController: BaseViewController {
         scrollView.snp.makeConstraints { make in
             make.top.equalTo(view.safeAreaLayoutGuide)
             make.leading.trailing.equalToSuperview()
-            make.bottom.equalTo(previousButton.snp.top).offset(-Spacing.md)
+            make.bottom.equalTo(previousButton.snp.top).offset(-Spacing.xs)
         }
         
         contentView.snp.makeConstraints { make in
@@ -286,98 +318,105 @@ final class MissionCreationViewController: BaseViewController {
         }
         
         titleLabel.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(40)
-            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
+            make.top.equalToSuperview().offset(20)
+            make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset)
         }
-        
+
         schoolImageView.snp.makeConstraints { make in
-            make.top.equalTo(titleLabel.snp.bottom).offset(Spacing.xl)
+            make.top.equalTo(titleLabel.snp.bottom).offset(Layout.compactGap)
             make.centerX.equalToSuperview()
-            make.width.equalTo(200)
-            make.height.equalTo(120)
+            make.width.equalTo(230)
+            make.height.equalTo(136)
         }
-        
+
         participantsLabel.snp.makeConstraints { make in
-            make.top.equalTo(schoolImageView.snp.bottom).offset(Spacing.xl)
-            make.leading.equalToSuperview().offset(Spacing.xl)
+            make.top.equalTo(schoolImageView.snp.bottom).offset(Spacing.md)
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
         }
-        
+
         friendsStackView.snp.makeConstraints { make in
-            make.top.equalTo(participantsLabel.snp.bottom).offset(Spacing.md)
-            make.leading.equalToSuperview().offset(Spacing.xl)
-            make.height.equalTo(60)
+            make.top.equalTo(participantsLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
+            make.trailing.lessThanOrEqualToSuperview().offset(-Layout.horizontalInset)
+            make.height.equalTo(Layout.avatarSize)
         }
-        
+
         friend1ImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(60)
+            make.width.height.equalTo(Layout.avatarSize)
         }
-        
+
         friend2ImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(60)
+            make.width.height.equalTo(Layout.avatarSize)
         }
-        
+
         friend3ImageView.snp.makeConstraints { make in
-            make.width.height.equalTo(60)
+            make.width.height.equalTo(Layout.avatarSize)
         }
-        
+
         addFriendButton.snp.makeConstraints { make in
-            make.width.height.equalTo(60)
+            make.width.height.equalTo(Layout.avatarSize)
         }
-        
+
         dailyMissionLabel.snp.makeConstraints { make in
-            make.top.equalTo(friendsStackView.snp.bottom).offset(Spacing.xl)
-            make.leading.equalToSuperview().offset(Spacing.xl)
+            make.top.equalTo(friendsStackView.snp.bottom).offset(Spacing.lg)
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
         }
-        
+
         missionCardView.snp.makeConstraints { make in
-            make.top.equalTo(dailyMissionLabel.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
-            make.height.equalTo(60)
+            make.top.equalTo(dailyMissionLabel.snp.bottom).offset(Spacing.sm)
+            make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset)
+            make.height.equalTo(Layout.cardHeight)
         }
-        
+
+        missionIconContainer.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(Spacing.sm)
+            make.centerY.equalToSuperview()
+            make.width.height.equalTo(48)
+        }
+
         missionIconImageView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.md)
-            make.centerY.equalToSuperview()
-            make.width.height.equalTo(32)
+            make.center.equalToSuperview()
+            make.width.height.equalTo(28)
         }
-        
+
         missionDescriptionLabel.snp.makeConstraints { make in
-            make.leading.equalTo(missionIconImageView.snp.trailing).offset(Spacing.md)
+            make.leading.equalTo(missionIconContainer.snp.trailing).offset(Spacing.sm)
+            make.trailing.lessThanOrEqualToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
         }
-        
+
         goalSettingLabel.snp.makeConstraints { make in
-            make.top.equalTo(missionCardView.snp.bottom).offset(Spacing.xl)
-            make.leading.equalToSuperview().offset(Spacing.xl)
+            make.top.equalTo(missionCardView.snp.bottom).offset(Layout.sectionGap)
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
         }
-        
+
         goalInputContainer.snp.makeConstraints { make in
-            make.top.equalTo(goalSettingLabel.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
-            make.height.equalTo(50)
+            make.top.equalTo(goalSettingLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset)
+            make.height.equalTo(Layout.inputHeight)
         }
-        
+
         goalTextField.snp.makeConstraints { make in
             make.leading.equalToSuperview().offset(Spacing.md)
             make.trailing.equalTo(dateButton.snp.leading).offset(-Spacing.xs)
             make.centerY.equalToSuperview()
         }
-        
+
         dateButton.snp.makeConstraints { make in
             make.trailing.equalToSuperview().offset(-Spacing.md)
             make.centerY.equalToSuperview()
         }
-        
+
         amountSettingLabel.snp.makeConstraints { make in
-            make.top.equalTo(goalInputContainer.snp.bottom).offset(Spacing.xl)
-            make.leading.equalToSuperview().offset(Spacing.xl)
+            make.top.equalTo(goalInputContainer.snp.bottom).offset(Layout.sectionGap)
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
         }
-        
+
         amountContainer.snp.makeConstraints { make in
-            make.top.equalTo(amountSettingLabel.snp.bottom).offset(Spacing.md)
-            make.leading.trailing.equalToSuperview().inset(Spacing.xl)
-            make.height.equalTo(80)
-            make.bottom.equalToSuperview().offset(-Spacing.xl)
+            make.top.equalTo(amountSettingLabel.snp.bottom).offset(Spacing.xs)
+            make.leading.trailing.equalToSuperview().inset(Layout.horizontalInset)
+            make.height.equalTo(Layout.amountHeight)
+            make.bottom.equalToSuperview().offset(-Spacing.md)
         }
         
         amountLabel.snp.makeConstraints { make in
@@ -402,15 +441,15 @@ final class MissionCreationViewController: BaseViewController {
         }
         
         previousButton.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(Spacing.xl)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
+            make.leading.equalToSuperview().offset(Layout.horizontalInset)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.xs)
             make.height.equalTo(56)
             make.width.equalTo(120)
         }
-        
+
         nextButton.snp.makeConstraints { make in
             make.leading.equalTo(previousButton.snp.trailing).offset(Spacing.xs)
-            make.trailing.equalToSuperview().offset(-Spacing.xl)
+            make.trailing.equalToSuperview().offset(-Layout.horizontalInset)
             make.centerY.equalTo(previousButton)
             make.height.equalTo(56)
         }
@@ -419,27 +458,78 @@ final class MissionCreationViewController: BaseViewController {
     private func configureMissionContent() {
         switch missionType {
         case .video:
-            missionIconImageView.image = UIImage(named: "kidk_mission_video")
-            missionDescriptionLabel.text = "영상을 시청한 후 퀴즈를 풀어보세요"
-            
+            missionIconImageView.image = resolvedImage(named: "kidk_mission_video", fallbackSystemName: "play.rectangle.fill")
+            missionIconImageView.tintColor = missionIconImageView.image?.isSymbolImage == true ? .kidkPink : nil
+            applyMissionDescription("영상을 시청한 후 퀴즈를 풀어보세요")
+
         case .study:
-            missionIconImageView.image = UIImage(named: "kidk_mission_study")
-            missionDescriptionLabel.text = "1시간씩 수학 공부를 하기"
-            
+            missionIconImageView.image = resolvedImage(named: "kidk_mission_study", fallbackSystemName: "pencil")
+            missionIconImageView.tintColor = missionIconImageView.image?.isSymbolImage == true ? .kidkPink : nil
+            applyMissionDescription("1시간씩 수학 공부를 하기")
+
         case .quiz:
-            missionIconImageView.image = UIImage(named: "kidk_mission_quiz")
-            missionDescriptionLabel.text = "30개씩 영어 단어를 외우기"
-            
+            missionIconImageView.image = resolvedImage(named: "kidk_mission_quiz", fallbackSystemName: "character.book.closed")
+            missionIconImageView.tintColor = missionIconImageView.image?.isSymbolImage == true ? .kidkPink : nil
+            applyMissionDescription("30개씩 영어 단어를 외우기")
+
         case .custom:
             dailyMissionLabel.text = "미션 내용"
             missionCardView.isHidden = true
-            
+
         case .savings:
-            missionIconImageView.image = UIImage(named: "kidk_mission_savings")
-            missionDescriptionLabel.text = "목표 금액을 저축해보세요"
+            missionIconImageView.image = resolvedImage(named: "kidk_mission_savings", fallbackSystemName: "wallet.pass.fill")
+            missionIconImageView.tintColor = missionIconImageView.image?.isSymbolImage == true ? .kidkPink : nil
+            applyMissionDescription("목표 금액을 저축해보세요")
         }
     }
     
+    private func applyMissionDescription(_ text: String) {
+        missionDescriptionLabel.applyTextStyle(
+            text: text,
+            size: .s16,
+            weight: .semibold,
+            color: .kidkTextWhite,
+            lineHeight: 120
+        )
+    }
+
+    private func configureStaticAssets() {
+        schoolImageView.image = resolvedImage(named: "kidk_city_school", fallbackSystemName: "building.2.fill")
+        schoolImageView.tintColor = schoolImageView.image?.isSymbolImage == true ? .kidkGray : nil
+
+        applyFriendAsset(to: friend1ImageView, assetName: "kidk_friend_avatar_1")
+        applyFriendAsset(to: friend2ImageView, assetName: "kidk_friend_avatar_2")
+        applyFriendAsset(to: friend3ImageView, assetName: "kidk_friend_avatar_3")
+
+        if let addFriendAsset = UIImage(named: "kidk_friend_add_icon") {
+            addFriendButton.setImage(addFriendAsset, for: .normal)
+            addFriendButton.tintColor = nil
+        } else {
+            addFriendButton.setImage(UIImage(systemName: "person.badge.plus"), for: .normal)
+            addFriendButton.tintColor = .kidkPink
+        }
+    }
+
+    private func applyFriendAsset(to imageView: UIImageView, assetName: String) {
+        if let image = UIImage(named: assetName) ?? UIImage(named: "kidk_profile_one") {
+            imageView.image = image
+            imageView.contentMode = .scaleAspectFill
+            return
+        }
+
+        imageView.image = UIImage(systemName: "person.fill")
+        imageView.tintColor = .kidkGray
+        imageView.contentMode = .center
+    }
+
+    private func resolvedImage(named assetName: String, fallbackSystemName: String) -> UIImage {
+        if let image = UIImage(named: assetName) {
+            return image
+        }
+
+        return UIImage(systemName: fallbackSystemName) ?? UIImage()
+    }
+
     private func bindViewModel() {
         let input = MissionCreationViewModel.Input(
             goalTitle: goalTitleRelay.asObservable(),
