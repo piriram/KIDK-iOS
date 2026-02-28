@@ -20,8 +20,20 @@ final class CircularProgressView: UIView {
         return label
     }()
 
+    private let completionBadgeLabel: UILabel = {
+        let label = UILabel()
+        label.font = .kidkFont(.s12, .bold)
+        label.textColor = .kidkTextWhite
+        label.backgroundColor = .kidkGreen
+        label.layer.cornerRadius = 14
+        label.layer.masksToBounds = true
+        label.textAlignment = .center
+        label.text = "완료"
+        label.isHidden = true
+        return label
+    }()
+
     private let lineWidth: CGFloat = 22
-    private let progressColor: UIColor = .kidkPink
     private let backgroundCircleColor: UIColor = .kidkDarkBackground.withAlphaComponent(0.85)
     private let startDegree: CGFloat = 240
     private let sweepDegree: CGFloat = 240
@@ -46,6 +58,7 @@ final class CircularProgressView: UIView {
 
         addSubview(centerImageView)
         addSubview(amountLabel)
+        addSubview(completionBadgeLabel)
 
         backgroundCircleLayer.fillColor = UIColor.clear.cgColor
         backgroundCircleLayer.strokeColor = backgroundCircleColor.cgColor
@@ -54,11 +67,12 @@ final class CircularProgressView: UIView {
         backgroundCircleLayer.contentsScale = UIScreen.main.scale
 
         progressCircleLayer.fillColor = UIColor.clear.cgColor
-        progressCircleLayer.strokeColor = progressColor.cgColor
+        progressCircleLayer.strokeColor = UIColor.kidkPink.cgColor
         progressCircleLayer.lineWidth = lineWidth
         progressCircleLayer.lineCap = .round
         progressCircleLayer.strokeEnd = 0
         progressCircleLayer.contentsScale = UIScreen.main.scale
+
         progressGradientLayer.mask = progressCircleLayer
         progressGradientLayer.startPoint = CGPoint(x: 0.2, y: 0.0)
         progressGradientLayer.endPoint = CGPoint(x: 0.8, y: 1.0)
@@ -77,6 +91,13 @@ final class CircularProgressView: UIView {
             make.centerY.equalToSuperview().offset(Spacing.xl)
             make.width.equalTo(196)
             make.height.equalTo(132)
+        }
+
+        completionBadgeLabel.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(centerImageView.snp.top).offset(-10)
+            make.height.equalTo(28)
+            make.width.greaterThanOrEqualTo(72)
         }
     }
 
@@ -102,9 +123,13 @@ final class CircularProgressView: UIView {
     func configure(
         currentAmount: Int,
         targetAmount: Int,
-        image: UIImage?
+        image: UIImage?,
+        accentColor: UIColor = .kidkPink,
+        showsCompletionBadge: Bool = false
     ) {
         amountLabel.isHidden = false
+        completionBadgeLabel.isHidden = !showsCompletionBadge
+        completionBadgeLabel.backgroundColor = accentColor
 
         let percentage = targetAmount > 0
             ? min(Double(currentAmount) / Double(targetAmount), 1.0)
@@ -134,12 +159,18 @@ final class CircularProgressView: UIView {
         amountLabel.attributedText = amountAttributedString
         centerImageView.image = image
 
+        progressGradientLayer.colors = [accentColor.cgColor, accentColor.cgColor]
+        progressCircleLayer.strokeColor = accentColor.cgColor
+
         setProgress(to: CGFloat(percentage), animated: true)
     }
 
     func configureEmpty(image: UIImage?) {
         amountLabel.isHidden = true
+        completionBadgeLabel.isHidden = true
         centerImageView.image = image
+        progressGradientLayer.colors = [UIColor.kidkPink.cgColor, UIColor.kidkPink.cgColor]
+        progressCircleLayer.strokeColor = UIColor.kidkPink.cgColor
         setProgress(to: 0, animated: false)
     }
 

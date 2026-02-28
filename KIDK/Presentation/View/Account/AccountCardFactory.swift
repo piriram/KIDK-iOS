@@ -123,7 +123,7 @@ enum AccountCardFactory {
 
         let titleLabel = UILabel()
         titleLabel.text = data.title
-        titleLabel.font = .kidkBody
+        titleLabel.font = .kidkSubtitle
         titleLabel.textColor = .kidkGray
 
         let amountLabel = UILabel()
@@ -161,27 +161,71 @@ enum AccountCardFactory {
             make.width.height.equalTo(20)
         }
         
-        if let message = data.message {
+        if let goalSummary = data.goalSummary {
+            let summaryContainer = UIView()
+            summaryContainer.backgroundColor = .kidkDarkBackground
+            summaryContainer.layer.cornerRadius = 12
+
+            let dDayLabel = UILabel()
+            dDayLabel.text = goalSummary.dDayText
+            dDayLabel.font = .kidkFont(.s12, .bold)
+            dDayLabel.textColor = .kidkPink
+            dDayLabel.backgroundColor = .white
+            dDayLabel.layer.cornerRadius = 8
+            dDayLabel.layer.masksToBounds = true
+            dDayLabel.textAlignment = .center
+
+            let titleLabel = UILabel()
+            titleLabel.text = goalSummary.title
+            titleLabel.font = .kidkFont(.s14, .bold)
+            titleLabel.textColor = .kidkTextWhite
+            titleLabel.lineBreakMode = .byTruncatingTail
+
+            contentView.addSubview(summaryContainer)
+            summaryContainer.addSubview(dDayLabel)
+            summaryContainer.addSubview(titleLabel)
+
+            summaryContainer.snp.makeConstraints { make in
+                make.leading.trailing.equalToSuperview()
+                make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.md)
+                make.bottom.equalToSuperview()
+                make.height.greaterThanOrEqualTo(44)
+            }
+
+            dDayLabel.snp.makeConstraints { make in
+                make.leading.equalToSuperview().offset(10)
+                make.centerY.equalToSuperview()
+                make.width.greaterThanOrEqualTo(56)
+                make.height.equalTo(26)
+            }
+
+            titleLabel.snp.makeConstraints { make in
+                make.leading.equalTo(dDayLabel.snp.trailing).offset(8)
+                make.trailing.equalToSuperview().offset(-12)
+                make.centerY.equalToSuperview()
+            }
+
+        } else if let message = data.message {
             let messageContainer = UIView()
             messageContainer.backgroundColor = .kidkDarkBackground
             messageContainer.layer.cornerRadius = 10
-            
+
             let messageLabel = UILabel()
             messageLabel.text = message
             messageLabel.font = .spoqaHanSansNeo(size: 14, weight: .bold)
             messageLabel.textColor = .kidkGreen
             messageLabel.textAlignment = .center
             messageLabel.numberOfLines = 0
-            
+
             contentView.addSubview(messageContainer)
             messageContainer.addSubview(messageLabel)
-            
+
             messageContainer.snp.makeConstraints { make in
                 make.leading.trailing.equalToSuperview()
                 make.top.equalTo(amountLabel.snp.bottom).offset(Spacing.md)
                 make.bottom.equalToSuperview()
             }
-            
+
             messageLabel.snp.makeConstraints { make in
                 make.edges.equalToSuperview().inset(Spacing.md)
             }
