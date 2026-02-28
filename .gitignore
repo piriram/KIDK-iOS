@@ -129,3 +129,7 @@ KIDK/Config/API-Keys.plist
 kidk_api_documentation.md
 *api*_documentation*.md
 *api*_spec*.json
+
+# Local planning / imported document dumps (keep local only)
+/_found_planning/
+/_from_macbookair/
