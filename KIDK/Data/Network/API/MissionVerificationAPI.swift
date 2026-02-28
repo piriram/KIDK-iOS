@@ -2,9 +2,9 @@ import Foundation
 
 enum MissionVerificationAPI {
     case getVerifications(missionId: Int)
-    case submitVerification(missionId: Int, childId: Int, verificationType: String, content: String?)
-    case approveVerification(missionId: Int, verificationId: Int, parentId: Int)
-    case rejectVerification(missionId: Int, verificationId: Int, parentId: Int, reason: String)
+    case submitVerification(missionId: Int, verificationType: String, content: String?)
+    case approveVerification(missionId: Int, verificationId: Int)
+    case rejectVerification(missionId: Int, verificationId: Int, reason: String)
 }
 
 extension MissionVerificationAPI: APIEndpoint {
@@ -12,11 +12,11 @@ extension MissionVerificationAPI: APIEndpoint {
         switch self {
         case .getVerifications(let missionId):
             return "/missions/\(missionId)/verifications"
-        case .submitVerification(let missionId, _, _, _):
+        case .submitVerification(let missionId, _, _):
             return "/missions/\(missionId)/verifications"
-        case .approveVerification(let missionId, let verificationId, _):
+        case .approveVerification(let missionId, let verificationId):
             return "/missions/\(missionId)/verifications/\(verificationId)/approve"
-        case .rejectVerification(let missionId, let verificationId, _, _):
+        case .rejectVerification(let missionId, let verificationId, _):
             return "/missions/\(missionId)/verifications/\(verificationId)/reject"
         }
     }
@@ -34,9 +34,8 @@ extension MissionVerificationAPI: APIEndpoint {
 
     var parameters: [String: Any]? {
         switch self {
-        case .submitVerification(_, let childId, let verificationType, let content):
+        case .submitVerification(_, let verificationType, let content):
             var params: [String: Any] = [
-                "childId": childId,
                 "verificationType": verificationType
             ]
             if let text = content {
@@ -44,12 +43,11 @@ extension MissionVerificationAPI: APIEndpoint {
             }
             return params
 
-        case .approveVerification(_, _, let parentId):
-            return ["parentId": parentId]
+        case .approveVerification:
+            return nil
 
-        case .rejectVerification(_, _, let parentId, let reason):
+        case .rejectVerification(_, _, let reason):
             return [
-                "parentId": parentId,
                 "reason": reason
             ]
 
@@ -64,5 +62,14 @@ extension MissionVerificationAPI: APIEndpoint {
 
     var requiresAuth: Bool {
         return true
+    }
+
+    var parameterEncoding: ParameterEncoding {
+        switch self {
+        case .submitVerification, .approveVerification, .rejectVerification:
+            return .query
+        default:
+            return .methodDependent
+        }
     }
 }

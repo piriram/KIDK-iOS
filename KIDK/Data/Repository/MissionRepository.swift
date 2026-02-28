@@ -65,6 +65,38 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 id: String(nextMockId + 2),
                 creatorId: currentUserId,
                 ownerId: currentUserId,
+                missionType: .savings,
+                title: "친구와 캠핑 가기",
+                description: "캠핑 장비 대여비 모으기",
+                targetAmount: 220000,
+                currentAmount: 154000,
+                rewardAmount: 7000,
+                targetDate: calendar.date(byAdding: .day, value: 24, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -9, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 3),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "미니 드론 모으기",
+                description: "주말에 날릴 드론 구매하기",
+                targetAmount: 120000,
+                currentAmount: 48000,
+                rewardAmount: 4000,
+                targetDate: calendar.date(byAdding: .day, value: 40, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -3, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 4),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
                 missionType: .video,
                 title: "공룡 다큐멘터리 보기",
                 description: "공룡에 대해 배우기",
@@ -78,7 +110,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 participants: []
             ),
             Mission(
-                id: String(nextMockId + 3),
+                id: String(nextMockId + 5),
                 creatorId: currentUserId,
                 ownerId: currentUserId,
                 missionType: .study,
@@ -94,7 +126,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 participants: []
             ),
             Mission(
-                id: String(nextMockId + 4),
+                id: String(nextMockId + 6),
                 creatorId: currentUserId,
                 ownerId: currentUserId,
                 missionType: .savings,
@@ -108,9 +140,57 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 createdAt: calendar.date(byAdding: .month, value: -1, to: today) ?? today,
                 completedAt: calendar.date(byAdding: .day, value: -7, to: today),
                 participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 7),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "과학 실험 키트 사기",
+                description: "주말 과학 실험을 위한 키트 비용 모으기",
+                targetAmount: 90000,
+                currentAmount: 42000,
+                rewardAmount: 3500,
+                targetDate: calendar.date(byAdding: .day, value: 28, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -4, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 8),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "축구화 장만하기",
+                description: "동아리 경기용 축구화 구매하기",
+                targetAmount: 130000,
+                currentAmount: 67000,
+                rewardAmount: 4500,
+                targetDate: calendar.date(byAdding: .day, value: 35, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -6, to: today) ?? today,
+                completedAt: nil,
+                participants: []
+            ),
+            Mission(
+                id: String(nextMockId + 9),
+                creatorId: currentUserId,
+                ownerId: currentUserId,
+                missionType: .savings,
+                title: "피아노 발표회 의상 준비",
+                description: "발표회에서 입을 의상 비용 모으기",
+                targetAmount: 110000,
+                currentAmount: 51000,
+                rewardAmount: 4000,
+                targetDate: calendar.date(byAdding: .day, value: 22, to: today),
+                status: .inProgress,
+                createdAt: calendar.date(byAdding: .day, value: -8, to: today) ?? today,
+                completedAt: nil,
+                participants: []
             )
         ]
-        nextMockId += 5
+        nextMockId += 10
         debugLog("Created \(mockMissions.count) initial mock missions")
     }
     
@@ -434,7 +514,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
     // MARK: - Raw Response Helpers
 
-    /// Mission 생성 API는 공통 응답 포맷을 사용하지 않고 MissionResponse 객체를 직접 반환
+    /// Mission 생성 API 응답(ApiResponse<MissionResponse>)을 파싱
     private func createMissionRaw(
         creatorId: Int,
         ownerId: Int,
@@ -466,6 +546,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             // Request Body 생성
+            // NOTE: 미션 생성은 POST
             var params: [String: Any] = [
                 "creatorId": creatorId,
                 "ownerId": ownerId,
@@ -540,7 +621,20 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                     return
                 }
 
-                // MissionResponse 직접 파싱
+                // ApiResponse<MissionResponse> 파싱 (호환용 direct 파싱 fallback 포함)
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<MissionResponse>.self, from: data)
+                    if apiResponse.success, let missionResponse = apiResponse.data {
+                        single(.success(missionResponse))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("Mission create api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode create response as ApiResponse, trying direct MissionResponse")
+                }
+
                 do {
                     let missionResponse = try JSONDecoder().decode(MissionResponse.self, from: data)
                     single(.success(missionResponse))
@@ -638,7 +732,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Mission Progress API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            // Mission Progress API 응답 파싱 (ApiResponse 우선 + direct fallback)
             self.getMissionProgressRaw(missionId: missionIdInt)
                 .subscribe(onSuccess: { progressResponses in
                     // Return first progress (there should be only one per mission)
@@ -674,7 +768,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Mission Progress API는 배열을 직접 반환 (ApiResponse 래퍼 없음)
+            // Mission Progress API 응답 파싱 (ApiResponse 우선 + direct fallback)
             self.getMissionProgressByUserRaw(userId: userIdInt)
                 .subscribe(onSuccess: { progressResponses in
                     let progressList = progressResponses.map { $0.toDomain() }
@@ -710,7 +804,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 return Disposables.create()
             }
 
-            // Mission Progress API는 객체를 직접 반환 (ApiResponse 래퍼 없음)
+            // Mission Progress API 응답 파싱 (ApiResponse 우선 + direct fallback)
             self.updateMissionProgressRaw(
                 missionId: missionIdInt,
                 userId: userIdInt,
@@ -749,7 +843,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/mission-progress/\(missionId)") else {
+            guard let url = URL(string: "\(baseURL)/missions/\(missionId)/progress") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
                 return Disposables.create()
             }
@@ -775,6 +869,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 }
 
                 do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<[MissionProgressResponse]>.self, from: data)
+                    if apiResponse.success, let progressList = apiResponse.data {
+                        single(.success(progressList))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("Mission progress api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode mission progress as ApiResponse, trying direct array")
+                }
+
+                do {
                     let progressList = try JSONDecoder().decode([MissionProgressResponse].self, from: data)
                     single(.success(progressList))
                 } catch {
@@ -796,7 +903,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/mission-progress/user/\(userId)") else {
+            guard let url = URL(string: "\(baseURL)/missions/progress/user/\(userId)") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
                 return Disposables.create()
             }
@@ -822,6 +929,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 }
 
                 do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<[MissionProgressResponse]>.self, from: data)
+                    if apiResponse.success, let progressList = apiResponse.data {
+                        single(.success(progressList))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("User mission progress api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode user mission progress as ApiResponse, trying direct array")
+                }
+
+                do {
                     let progressList = try JSONDecoder().decode([MissionProgressResponse].self, from: data)
                     single(.success(progressList))
                 } catch {
@@ -837,7 +957,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
 
     private func updateMissionProgressRaw(
         missionId: Int,
-        userId: Int,
+        userId _: Int,
         progressAmount: Double?,
         progressPercentage: Double?
     ) -> Single<MissionProgressResponse> {
@@ -848,32 +968,31 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             }
 
             let baseURL = Environment.current.baseURL
-            guard let url = URL(string: "\(baseURL)/mission-progress/\(missionId)") else {
+            guard var components = URLComponents(string: "\(baseURL)/missions/\(missionId)/progress") else {
                 single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -2))))
                 return Disposables.create()
             }
 
+            var queryItems: [URLQueryItem] = []
+            if let amount = progressAmount {
+                queryItems.append(URLQueryItem(name: "progressAmount", value: "\(amount)"))
+            }
+            if let percentage = progressPercentage {
+                queryItems.append(URLQueryItem(name: "progressPercentage", value: "\(percentage)"))
+            }
+            components.queryItems = queryItems.isEmpty ? nil : queryItems
+
+            guard let url = components.url else {
+                single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -5))))
+                return Disposables.create()
+            }
+
             var request = URLRequest(url: url)
-            request.httpMethod = "POST"
+            request.httpMethod = "PATCH"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
             if let accessToken = self.tokenManager.accessToken {
                 request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
-
-            var params: [String: Any] = ["userId": userId]
-            if let amount = progressAmount {
-                params["progressAmount"] = amount
-            }
-            if let percentage = progressPercentage {
-                params["progressPercentage"] = percentage
-            }
-
-            do {
-                request.httpBody = try JSONSerialization.data(withJSONObject: params)
-            } catch {
-                single(.failure(RepositoryError.unknown(error)))
-                return Disposables.create()
             }
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
@@ -886,6 +1005,19 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
                 guard let data = data else {
                     single(.failure(RepositoryError.unknown(NSError(domain: "MissionRepository", code: -3))))
                     return
+                }
+
+                do {
+                    let apiResponse = try JSONDecoder().decode(ApiResponse<MissionProgressResponse>.self, from: data)
+                    if apiResponse.success, let progress = apiResponse.data {
+                        single(.success(progress))
+                        return
+                    }
+                    if let errorInfo = apiResponse.error {
+                        self.debugError("Update mission progress api error: \(errorInfo.code) - \(errorInfo.message)", error: nil)
+                    }
+                } catch {
+                    self.debugWarning("Failed to decode mission progress update as ApiResponse, trying direct object")
                 }
 
                 do {

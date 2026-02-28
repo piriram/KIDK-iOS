@@ -87,6 +87,10 @@ Temporary Items
 # API Keys & Secrets
 Config/Secrets.plist
 Config/API-Keys.plist
+KIDK/Config/Secrets.plist
+KIDK/Config/API-Keys.plist
+**/Secrets.plist
+**/API-Keys.plist
 *.env
 .env
 
@@ -114,12 +118,14 @@ Config/API-Keys.plist
 .vscode/
 .idea/
 
-# Firebase
-GoogleService-Info.plist
-
 # Backup files
 *.backup
-KIDK/GoogleService-Info.plist
 
 # Private documentation
 .docs/
+
+# Local API docs / server spec snapshots (do not commit)
+.private_handoff/
+kidk_api_documentation.md
+*api*_documentation*.md
+*api*_spec*.json

@@ -61,10 +61,8 @@ final class LoginViewModel: BaseViewModel {
             })
             .flatMapLatest { [weak self] email, password, userType -> Observable<User> in
                 guard let self = self else { return .empty() }
-                // 🔥 Firebase + Backend API 로그인 활성화
-                return self.realLogin(email: email, password: password, userType: userType)
                 // Mock 로그인 (개발용)
-                // return self.mockLogin(email: email, password: password, userType: userType)
+                return self.mockLogin(email: email, password: password, userType: userType)
             }
             .do(onNext: { [weak self] user in
                 self?.stopLoading()
@@ -98,12 +96,13 @@ final class LoginViewModel: BaseViewModel {
         )
     }
     
-    // MARK: - Real Login (Firebase + Backend API)
+    // MARK: - Real Login (Backend Only)
 
     private func realLogin(email: String, password: String, userType: UserType) -> Observable<User> {
-        debugLog("Starting dev login flow (Firebase temporarily disabled)")
+        debugLog("Starting backend-only login flow")
+        debugLog("Login input received (email: \(email), userType: \(userType))")
+        _ = password
 
-        // 🚧 임시: Dev Login 사용 (백엔드 Firebase 연동 문제 해결 시 원래대로 복구)
         return authRepository.devLogin()
             .flatMap { result -> Observable<User> in
                 switch result {
@@ -115,45 +114,12 @@ final class LoginViewModel: BaseViewModel {
             }
             .do(onNext: { [weak self] user in
                 self?.authRepository.setFirstLaunchComplete()
-                self?.debugSuccess("Dev login success with userId: \(user.id)")
+                self?.debugSuccess("Backend login success with userId: \(user.id)")
 
-                // UserProfileManager에 사용자 정보 저장
                 Task {
                     await UserProfileManager.shared.saveProfile(user)
                 }
             })
-
-        /* 🔥 원래 코드 (백엔드 Firebase 문제 해결 후 복구)
-        debugLog("Starting real login flow")
-
-        // 1. Firebase Authentication으로 로그인
-        return FirebaseAuthService.shared.signIn(email: email, password: password)
-            .do(onNext: { [weak self] result in
-                self?.debugLog("Firebase login success, token: \(result.token.prefix(20))..., UID: \(result.uid)")
-            })
-            .flatMap { [weak self] result -> Observable<Result<User, NetworkError>> in
-                guard let self = self else { return .empty() }
-                // 2. 백엔드 API에 Firebase Token과 UID로 로그인
-                return self.authRepository.login(firebaseToken: result.token, firebaseUID: result.uid)
-            }
-            .flatMap { result -> Observable<User> in
-                switch result {
-                case .success(let user):
-                    return .just(user)
-                case .failure(let error):
-                    return .error(error)
-                }
-            }
-            .do(onNext: { [weak self] user in
-                self?.authRepository.setFirstLaunchComplete()
-                self?.debugSuccess("Backend login success with firebaseUID: \(user.firebaseUID)")
-
-                // UserProfileManager에 사용자 정보 저장
-                Task {
-                    await UserProfileManager.shared.saveProfile(user)
-                }
-            })
-        */
     }
 
     // MARK: - Mock Login (개발용)
