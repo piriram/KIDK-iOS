@@ -11,6 +11,7 @@ import RxSwift
 import RxCocoa
 import Vision
 import VisionKit
+import CoreImage
 
 final class ReceiptScanViewController: BaseViewController {
 
@@ -21,6 +22,7 @@ final class ReceiptScanViewController: BaseViewController {
     private var scannedText: String = ""
     private var extractedAmount: Int?
     private var extractedDescription: String?
+    private var autoFillConfirmed = false
 
     // MARK: - UI Components
     private let scrollView: UIScrollView = {
@@ -170,6 +172,26 @@ final class ReceiptScanViewController: BaseViewController {
         return textField
     }()
 
+    private let autoFillStatusLabel: UILabel = {
+        let label = UILabel()
+        label.font = .kidkFont(.s12, .medium)
+        label.textColor = .kidkGray
+        label.numberOfLines = 2
+        label.isHidden = true
+        return label
+    }()
+
+    private let confirmAutoFillButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setTitle("OCR 입력 확인 완료", for: .normal)
+        button.setTitleColor(.kidkTextWhite, for: .normal)
+        button.titleLabel?.font = .kidkFont(.s14, .bold)
+        button.backgroundColor = UIColor(hex: "#3A3A3C")
+        button.layer.cornerRadius = 10
+        button.isHidden = true
+        return button
+    }()
+
     // 카테고리 선택
     private let categoryLabel: UILabel = {
         let label = UILabel()
@@ -230,6 +252,9 @@ final class ReceiptScanViewController: BaseViewController {
         super.viewDidLoad()
         setupUI()
         setupActions()
+#if DEBUG
+        ReceiptOCRParser.runSmokeTests()
+#endif
     }
 
     // MARK: - Setup
@@ -242,7 +267,8 @@ final class ReceiptScanViewController: BaseViewController {
 
         [titleLabel, instructionLabel, imagePreview, cameraButton, photoButton,
          accountLabel, accountButton, amountLabel, amountTextField, wonLabel,
-         descriptionLabel, descriptionTextField, categoryLabel, categoryScrollView, saveButton].forEach {
+         descriptionLabel, descriptionTextField, autoFillStatusLabel, confirmAutoFillButton,
+         categoryLabel, categoryScrollView, saveButton].forEach {
             contentView.addSubview($0)
         }
         categoryScrollView.addSubview(categoryStackView)
@@ -324,8 +350,19 @@ final class ReceiptScanViewController: BaseViewController {
             make.height.equalTo(50)
         }
 
+        autoFillStatusLabel.snp.makeConstraints { make in
+            make.top.equalTo(descriptionTextField.snp.bottom).offset(12)
+            make.leading.trailing.equalToSuperview().inset(20)
+        }
+
+        confirmAutoFillButton.snp.makeConstraints { make in
+            make.top.equalTo(autoFillStatusLabel.snp.bottom).offset(8)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.equalTo(44)
+        }
+
         categoryLabel.snp.makeConstraints { make in
-            make.top.equalTo(descriptionTextField.snp.bottom).offset(24)
+            make.top.equalTo(confirmAutoFillButton.snp.bottom).offset(24)
             make.leading.trailing.equalToSuperview().inset(20)
         }
 
@@ -353,9 +390,10 @@ final class ReceiptScanViewController: BaseViewController {
         photoButton.addTarget(self, action: #selector(openPhotoLibrary), for: .touchUpInside)
         accountButton.addTarget(self, action: #selector(selectAccount), for: .touchUpInside)
         saveButton.addTarget(self, action: #selector(saveTransaction), for: .touchUpInside)
+        confirmAutoFillButton.addTarget(self, action: #selector(confirmAutoFill), for: .touchUpInside)
 
-        amountTextField.addTarget(self, action: #selector(validateForm), for: .editingChanged)
-        descriptionTextField.addTarget(self, action: #selector(validateForm), for: .editingChanged)
+        amountTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
+        descriptionTextField.addTarget(self, action: #selector(textFieldDidChange), for: .editingChanged)
 
         setupCategoryButtons()
     }
@@ -475,6 +513,18 @@ final class ReceiptScanViewController: BaseViewController {
         present(alert, animated: true)
     }
 
+    @objc private func textFieldDidChange() {
+        autoFillConfirmed = false
+        updateAutoFillStatusLabel()
+        validateForm()
+    }
+
+    @objc private func confirmAutoFill() {
+        autoFillConfirmed = true
+        updateAutoFillStatusLabel()
+        validateForm()
+    }
+
     @objc private func validateForm() {
         let hasAccount = selectedAccount != nil
         let hasValidAmount = {
@@ -487,13 +537,35 @@ final class ReceiptScanViewController: BaseViewController {
         let hasDescription = !(descriptionTextField.text?.isEmpty ?? true)
         let hasCategory = selectedCategory != nil
 
-        let isValid = hasAccount && hasValidAmount && hasDescription && hasCategory
+        let isValid = hasAccount && hasValidAmount && hasDescription && hasCategory && autoFillConfirmed
 
         saveButton.isEnabled = isValid
         saveButton.alpha = isValid ? 1.0 : 0.5
     }
 
+    private func updateAutoFillStatusLabel() {
+        autoFillStatusLabel.isHidden = false
+        confirmAutoFillButton.isHidden = false
+
+        if autoFillConfirmed {
+            autoFillStatusLabel.textColor = .systemGreen
+            autoFillStatusLabel.text = "확인 완료: OCR 자동 입력값을 검토하고 확정했습니다."
+            confirmAutoFillButton.backgroundColor = .systemGreen
+            confirmAutoFillButton.setTitle("확인 완료됨", for: .normal)
+        } else {
+            autoFillStatusLabel.textColor = .kidkGray
+            autoFillStatusLabel.text = "안내: 자동 입력값을 확인 후 'OCR 입력 확인 완료'를 눌러야 저장할 수 있어요."
+            confirmAutoFillButton.backgroundColor = UIColor(hex: "#3A3A3C")
+            confirmAutoFillButton.setTitle("OCR 입력 확인 완료", for: .normal)
+        }
+    }
+
     @objc private func saveTransaction() {
+        guard autoFillConfirmed else {
+            showAlert(title: "확인 필요", message: "OCR 자동 입력값 확인 완료 후 저장할 수 있습니다.")
+            return
+        }
+
         guard let account = selectedAccount,
               let amountText = amountTextField.text,
               let amount = Int(amountText),
@@ -545,38 +617,67 @@ final class ReceiptScanViewController: BaseViewController {
     }
 
     // MARK: - Vision Processing
-    private func processImage(_ image: UIImage) {
+    private enum ScanSource {
+        case documentCamera
+        case photoLibrary
+    }
+
+    private func processImage(_ image: UIImage, source: ScanSource) {
         showLoading()
 
+        let preferredImage = source == .documentCamera ? enhanceForDocumentOCR(image) : image
+        let fallbackImage = source == .documentCamera ? image : nil
+        let parser = ReceiptOCRParser()
+
+        recognizeText(from: preferredImage) { [weak self] observations in
+            guard let self = self else { return }
+
+            if observations.isEmpty, let fallbackImage {
+                self.recognizeText(from: fallbackImage) { [weak self] fallbackObservations in
+                    self?.handleOCRResult(observations: fallbackObservations, parser: parser)
+                }
+            } else {
+                self.handleOCRResult(observations: observations, parser: parser)
+            }
+        }
+    }
+
+    private func handleOCRResult(observations: [VNRecognizedTextObservation], parser: ReceiptOCRParser) {
+        DispatchQueue.main.async {
+            self.hideLoading()
+
+            guard !observations.isEmpty else {
+                self.showEditableInputsWithFallback(message: "텍스트를 인식하지 못했어요. 직접 입력해 주세요.")
+                return
+            }
+
+            let result = parser.parse(observations: observations)
+            self.scannedText = result.recognizedText
+            self.extractedAmount = result.amount
+            self.extractedDescription = result.merchantName
+            self.showExtractedData(result: result)
+        }
+    }
+
+    private func recognizeText(from image: UIImage, completion: @escaping ([VNRecognizedTextObservation]) -> Void) {
         guard let cgImage = image.cgImage else {
-            hideLoading()
-            showAlert(title: "오류", message: "이미지를 처리할 수 없습니다.")
+            DispatchQueue.main.async { [weak self] in
+                self?.hideLoading()
+                self?.showAlert(title: "오류", message: "이미지를 처리할 수 없습니다.")
+            }
+            completion([])
             return
         }
 
-        let request = VNRecognizeTextRequest { [weak self] request, error in
-            guard let self = self else { return }
-
-            DispatchQueue.main.async {
-                self.hideLoading()
-
-                if let error = error {
-                    self.showAlert(title: "인식 실패", message: "텍스트 인식 중 오류가 발생했습니다.")
-                    return
-                }
-
-                guard let observations = request.results as? [VNRecognizedTextObservation] else {
-                    self.showAlert(title: "인식 실패", message: "텍스트를 찾을 수 없습니다.")
-                    return
-                }
-
-                self.extractDataFromObservations(observations)
-            }
+        let request = VNRecognizeTextRequest { request, _ in
+            let observations = request.results as? [VNRecognizedTextObservation] ?? []
+            completion(observations)
         }
 
         request.recognitionLevel = .accurate
         request.recognitionLanguages = ["ko-KR", "en-US"]
         request.usesLanguageCorrection = true
+        request.minimumTextHeight = 0.012
 
         let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
 
@@ -584,98 +685,36 @@ final class ReceiptScanViewController: BaseViewController {
             do {
                 try handler.perform([request])
             } catch {
-                DispatchQueue.main.async { [weak self] in
-                    self?.hideLoading()
-                    self?.showAlert(title: "인식 실패", message: "이미지 분석 중 오류가 발생했습니다.")
-                }
+                completion([])
             }
         }
     }
 
-    private func extractDataFromObservations(_ observations: [VNRecognizedTextObservation]) {
-        var recognizedText = ""
+    private func enhanceForDocumentOCR(_ image: UIImage) -> UIImage {
+        guard let ciImage = CIImage(image: image) else { return image }
 
-        for observation in observations {
-            guard let topCandidate = observation.topCandidates(1).first else { continue }
-            recognizedText += topCandidate.string + "\n"
+        let exposureAdjusted = ciImage.applyingFilter("CIExposureAdjust", parameters: [kCIInputEVKey: 0.5])
+        let contrastAdjusted = exposureAdjusted.applyingFilter("CIColorControls", parameters: [kCIInputContrastKey: 1.15])
+
+        let context = CIContext(options: nil)
+        guard let cgImage = context.createCGImage(contrastAdjusted, from: contrastAdjusted.extent) else {
+            return image
         }
 
-        scannedText = recognizedText
-
-        // 금액 추출 (숫자,숫자 패턴 또는 큰 숫자)
-        extractedAmount = extractAmount(from: recognizedText)
-
-        // 상호명 추출 (첫 번째 줄 또는 가장 긴 줄)
-        extractedDescription = extractDescription(from: observations)
-
-        // UI 업데이트
-        showExtractedData()
+        return UIImage(cgImage: cgImage, scale: image.scale, orientation: image.imageOrientation)
     }
 
-    private func extractAmount(from text: String) -> Int? {
-        // "합계", "총액", "결제금액" 등의 키워드 근처 숫자 찾기
-        let lines = text.components(separatedBy: .newlines)
-
-        for (index, line) in lines.enumerated() {
-            let lowercased = line.lowercased()
-            if lowercased.contains("합계") || lowercased.contains("총액") ||
-               lowercased.contains("결제") || lowercased.contains("total") {
-                // 현재 줄과 다음 줄에서 숫자 찾기
-                for i in index..<min(index + 3, lines.count) {
-                    if let amount = extractNumberFromLine(lines[i]) {
-                        return amount
-                    }
-                }
-            }
-        }
-
-        // 키워드를 못 찾으면 가장 큰 숫자 반환
-        var maxAmount = 0
-        for line in lines {
-            if let amount = extractNumberFromLine(line), amount > maxAmount {
-                maxAmount = amount
-            }
-        }
-
-        return maxAmount > 0 ? maxAmount : nil
+    private func showEditableInputsWithFallback(message: String) {
+        extractedAmount = nil
+        extractedDescription = nil
+        showExtractedData(result: nil)
+        autoFillStatusLabel.textColor = .systemOrange
+        autoFillStatusLabel.text = message
+        autoFillConfirmed = false
+        validateForm()
     }
 
-    private func extractNumberFromLine(_ line: String) -> Int? {
-        // 숫자와 쉼표만 추출
-        let numbers = line.components(separatedBy: CharacterSet.decimalDigits.inverted).joined()
-        let commaRemoved = line.replacingOccurrences(of: ",", with: "")
-
-        // 숫자 패턴 찾기
-        let pattern = "\\d{1,3}(,\\d{3})*|\\d+"
-        if let regex = try? NSRegularExpression(pattern: pattern),
-           let match = regex.firstMatch(in: line, range: NSRange(line.startIndex..., in: line)),
-           let range = Range(match.range, in: line) {
-            let numberString = String(line[range]).replacingOccurrences(of: ",", with: "")
-            if let amount = Int(numberString), amount >= 100 { // 최소 100원
-                return amount
-            }
-        }
-
-        return nil
-    }
-
-    private func extractDescription(from observations: [VNRecognizedTextObservation]) -> String? {
-        // 첫 번째 몇 줄 중 가장 긴 줄을 상호명으로 간주
-        var candidates: [String] = []
-
-        for i in 0..<min(5, observations.count) {
-            if let text = observations[i].topCandidates(1).first?.string {
-                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                if trimmed.count >= 2 && trimmed.count <= 30 {
-                    candidates.append(trimmed)
-                }
-            }
-        }
-
-        return candidates.max(by: { $0.count < $1.count })
-    }
-
-    private func showExtractedData() {
+    private func showExtractedData(result: ReceiptOCRResult?) {
         // UI 요소 표시
         accountLabel.isHidden = false
         accountButton.isHidden = false
@@ -684,6 +723,8 @@ final class ReceiptScanViewController: BaseViewController {
         wonLabel.isHidden = false
         descriptionLabel.isHidden = false
         descriptionTextField.isHidden = false
+        autoFillStatusLabel.isHidden = false
+        confirmAutoFillButton.isHidden = false
         categoryLabel.isHidden = false
         categoryScrollView.isHidden = false
         saveButton.isHidden = false
@@ -691,10 +732,24 @@ final class ReceiptScanViewController: BaseViewController {
         // 추출된 데이터 채우기
         if let amount = extractedAmount {
             amountTextField.text = "\(amount)"
+        } else {
+            amountTextField.text = nil
         }
 
         if let description = extractedDescription {
             descriptionTextField.text = description
+        } else {
+            descriptionTextField.text = nil
+        }
+
+        autoFillConfirmed = false
+        updateAutoFillStatusLabel()
+
+        if let result {
+            if result.amount == nil || result.merchantName == nil {
+                autoFillStatusLabel.textColor = .systemOrange
+                autoFillStatusLabel.text = "일부 항목 인식이 불완전해요. 직접 수정 후 확인 버튼을 눌러주세요."
+            }
         }
 
         validateForm()
@@ -703,6 +758,132 @@ final class ReceiptScanViewController: BaseViewController {
         scrollView.setContentOffset(.zero, animated: true)
     }
 }
+
+private struct ReceiptOCRResult {
+    let amount: Int?
+    let merchantName: String?
+    let recognizedText: String
+}
+
+private struct ReceiptOCRParser {
+    private let amountKeywords = ["합계", "총액", "결제", "total", "amount", "sum"]
+
+    func parse(observations: [VNRecognizedTextObservation]) -> ReceiptOCRResult {
+        let lines = observations
+            .compactMap { observation -> (text: String, box: CGRect)? in
+                guard let text = observation.topCandidates(1).first?.string.trimmingCharacters(in: .whitespacesAndNewlines),
+                      !text.isEmpty else { return nil }
+                return (text: text, box: observation.boundingBox)
+            }
+            .sorted { lhs, rhs in
+                if abs(lhs.box.midY - rhs.box.midY) > 0.02 {
+                    return lhs.box.midY > rhs.box.midY
+                }
+                return lhs.box.minX < rhs.box.minX
+            }
+
+        let recognizedText = lines.map(\.text).joined(separator: "\n")
+        let amount = extractAmount(from: lines)
+        let merchantName = extractMerchantName(from: lines)
+
+        return ReceiptOCRResult(amount: amount, merchantName: merchantName, recognizedText: recognizedText)
+    }
+
+    private func extractAmount(from lines: [(text: String, box: CGRect)]) -> Int? {
+        var allCandidates: [Int] = []
+        var prioritized: [(amount: Int, score: Int)] = []
+
+        for (index, line) in lines.enumerated() {
+            let amounts = amountsInLine(line.text)
+            allCandidates.append(contentsOf: amounts)
+
+            let lower = line.text.lowercased()
+            if amountKeywords.contains(where: { lower.contains($0) }) {
+                let nearby = [index - 1, index, index + 1].compactMap { i -> String? in
+                    guard lines.indices.contains(i) else { return nil }
+                    return lines[i].text
+                }
+
+                for target in nearby {
+                    for amount in amountsInLine(target) {
+                        var score = amount
+                        if target.contains(",") { score += 5_000_000 }
+                        if amount % 10 == 0 { score += 1_000 }
+                        prioritized.append((amount, score))
+                    }
+                }
+            }
+        }
+
+        let keywordAmount = prioritized.sorted { $0.score > $1.score }.first?.amount
+        if let keywordAmount {
+            if keywordAmount < 10_000, allCandidates.contains(keywordAmount * 10) {
+                return keywordAmount * 10
+            }
+            return keywordAmount
+        }
+
+        return allCandidates.max()
+    }
+
+    private func amountsInLine(_ line: String) -> [Int] {
+        let pattern = "[0-9OolI]{1,3}(?:,[0-9OolI]{3})+|[0-9OolI]{3,}"
+        guard let regex = try? NSRegularExpression(pattern: pattern) else { return [] }
+        let nsRange = NSRange(line.startIndex..., in: line)
+
+        return regex.matches(in: line, range: nsRange)
+            .compactMap { match -> Int? in
+                guard let range = Range(match.range, in: line) else { return nil }
+                return normalizeAmountToken(String(line[range]))
+            }
+            .filter { 100...5_000_000 ~= $0 }
+    }
+
+    private func normalizeAmountToken(_ token: String) -> Int? {
+        let normalized = token
+            .replacingOccurrences(of: "O", with: "0")
+            .replacingOccurrences(of: "o", with: "0")
+            .replacingOccurrences(of: "I", with: "1")
+            .replacingOccurrences(of: "l", with: "1")
+            .replacingOccurrences(of: ",", with: "")
+            .replacingOccurrences(of: " ", with: "")
+
+        return Int(normalized)
+    }
+
+    private func extractMerchantName(from lines: [(text: String, box: CGRect)]) -> String? {
+        let topLines = lines.filter { $0.box.midY > 0.6 }
+
+        let filteredCandidates = topLines
+            .map(\.text)
+            .filter { text in
+                let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+                if trimmed.count < 2 || trimmed.count > 32 { return false }
+                if trimmed.range(of: #"\d{2,3}-\d{3,4}-\d{4}"#, options: .regularExpression) != nil { return false }
+                if trimmed.contains("도로") || trimmed.contains("길") || trimmed.contains("번지") || trimmed.contains("층") { return false }
+                let digitCount = trimmed.filter { $0.isNumber }.count
+                return digitCount < max(4, trimmed.count / 2)
+            }
+
+        return filteredCandidates.max(by: { $0.count < $1.count })
+    }
+}
+
+#if DEBUG
+private extension ReceiptOCRParser {
+    static func runSmokeTests() {
+        let parser = ReceiptOCRParser()
+        let sampleLines: [(text: String, box: CGRect)] = [
+            ("키드키드 편의점", CGRect(x: 0.1, y: 0.88, width: 0.5, height: 0.04)),
+            ("합계 10,000", CGRect(x: 0.1, y: 0.35, width: 0.5, height: 0.04))
+        ]
+        let amount = parser.extractAmount(from: sampleLines)
+        assert(amount == 10000, "ReceiptOCRParser 금액 파싱 테스트 실패")
+        let merchant = parser.extractMerchantName(from: sampleLines)
+        assert(merchant == "키드키드 편의점", "ReceiptOCRParser 상호명 파싱 테스트 실패")
+    }
+}
+#endif
 
 // MARK: - VNDocumentCameraViewControllerDelegate
 extension ReceiptScanViewController: VNDocumentCameraViewControllerDelegate {
@@ -715,7 +896,7 @@ extension ReceiptScanViewController: VNDocumentCameraViewControllerDelegate {
         imagePreview.image = image
         imagePreview.isHidden = false
 
-        processImage(image)
+        processImage(image, source: .documentCamera)
     }
 
     func documentCameraViewControllerDidCancel(_ controller: VNDocumentCameraViewController) {
@@ -738,7 +919,7 @@ extension ReceiptScanViewController: UIImagePickerControllerDelegate, UINavigati
         imagePreview.image = image
         imagePreview.isHidden = false
 
-        processImage(image)
+        processImage(image, source: .photoLibrary)
     }
 
     func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
