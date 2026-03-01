@@ -92,6 +92,8 @@ final class MissionCardView: UIView {
         return stackView
     }()
 
+    private var contentHeightZeroConstraint: Constraint?
+
     private let progressContainer = UIView()
 
     private let circularProgressView: CircularProgressView = {
@@ -234,7 +236,9 @@ final class MissionCardView: UIView {
             make.top.equalTo(headerStackView.snp.bottom).offset(Spacing.lg)
             make.leading.trailing.equalToSuperview()
             make.bottom.equalToSuperview().inset(Spacing.md)
+            contentHeightZeroConstraint = make.height.equalTo(0).constraint
         }
+        contentHeightZeroConstraint?.deactivate()
 
         progressContainer.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview()
@@ -552,10 +556,12 @@ final class MissionCardView: UIView {
         let chevronImage = isCollapsed ? "chevron.down" : "chevron.up"
         collapseButton.setImage(UIImage(systemName: chevronImage), for: .normal)
 
-        UIView.animate(withDuration: 0.25, delay: 0, options: .curveEaseInOut, animations: { [weak self] in
-            guard let self = self else { return }
-            self.contentStackView.isHidden = isCollapsed
-            self.layoutIfNeeded()
-        })
+        if isCollapsed {
+            contentHeightZeroConstraint?.activate()
+        } else {
+            contentHeightZeroConstraint?.deactivate()
+        }
+
+        contentStackView.isHidden = isCollapsed
     }
 }

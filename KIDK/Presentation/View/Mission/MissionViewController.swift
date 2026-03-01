@@ -8,9 +8,10 @@ final class MissionViewController: BaseViewController, NavigationChromeConfigura
     private let viewModel: MissionViewModel
 
     private var missions: [Mission] = []
-    private var collapseStates: [Bool] = []
+    private var expandedIndex: Int?
 
     private let collapseButtonTappedSubject = PublishSubject<Int>()
+    private var isAnimatingCardHeights = false
 
     private lazy var tableView: UITableView = {
         let tableView = UITableView()
@@ -156,21 +157,15 @@ final class MissionViewController: BaseViewController, NavigationChromeConfigura
             })
             .disposed(by: disposeBag)
 
-        output.collapseStates
-            .drive(onNext: { [weak self] states in
+        output.expandedIndex
+            .drive(onNext: { [weak self] expandedIndex in
                 guard let self = self else { return }
-                let previousStates = self.collapseStates
-                self.collapseStates = states
+                let previousIndex = self.expandedIndex
+                self.expandedIndex = expandedIndex
 
-                // Find which index changed and animate only that cell
-                if previousStates.count == states.count {
-                    for (index, (previous, current)) in zip(previousStates, states).enumerated() {
-                        if previous != current {
-                            self.animateCellHeightChange(at: index)
-                            break
-                        }
-                    }
-                }
+                guard previousIndex != expandedIndex else { return }
+                let affectedIndexes = Set([previousIndex, expandedIndex].compactMap { $0 })
+                self.animateCellHeightChange(at: Array(affectedIndexes))
             })
             .disposed(by: disposeBag)
 
@@ -179,11 +174,34 @@ final class MissionViewController: BaseViewController, NavigationChromeConfigura
             .disposed(by: disposeBag)
     }
 
-    private func animateCellHeightChange(at index: Int) {
-        tableView.performBatchUpdates({
-            // Force the table view to recalculate the cell height
-            tableView.reloadRows(at: [IndexPath(row: index, section: 0)], with: .automatic)
-        }, completion: nil)
+    private func animateCellHeightChange(at indexes: [Int]) {
+        guard !isAnimatingCardHeights else { return }
+        let validIndexes = indexes.filter { missions.indices.contains($0) }
+        guard !validIndexes.isEmpty else { return }
+
+        isAnimatingCardHeights = true
+        for index in validIndexes {
+            let indexPath = IndexPath(row: index, section: 0)
+            if let cell = tableView.cellForRow(at: indexPath) as? MissionCardCell {
+                let mission = missions.indices.contains(index) ? missions[index] : nil
+                let isCollapsed = isCollapsed(at: index)
+                cell.configure(with: mission, isCollapsed: isCollapsed)
+            }
+        }
+
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseInOut, .allowUserInteraction]) { [weak self] in
+            guard let self = self else { return }
+            self.tableView.beginUpdates()
+            self.tableView.endUpdates()
+            self.tableView.layoutIfNeeded()
+        } completion: { [weak self] _ in
+            self?.isAnimatingCardHeights = false
+        }
+    }
+
+    private func isCollapsed(at row: Int) -> Bool {
+        guard !missions.isEmpty else { return false }
+        return expandedIndex != row
     }
 }
 
@@ -200,13 +218,14 @@ extension MissionViewController: UITableViewDataSource {
         }
 
         let mission = missions.indices.contains(indexPath.row) ? missions[indexPath.row] : nil
-        let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
+        let isCollapsed = isCollapsed(at: indexPath.row)
 
         cell.configure(with: mission, isCollapsed: isCollapsed)
 
         cell.collapseButtonTapped
             .subscribe(onNext: { [weak self] in
                 guard self?.missions.indices.contains(indexPath.row) == true else { return }
+                guard self?.isAnimatingCardHeights == false else { return }
                 self?.collapseButtonTappedSubject.onNext(indexPath.row)
             })
             .disposed(by: cell.disposeBag)
@@ -231,7 +250,7 @@ extension MissionViewController: UITableViewDelegate {
 
     func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
         if missions.isEmpty { return 460 }
-        let isCollapsed = indexPath.row < collapseStates.count ? collapseStates[indexPath.row] : false
+        let isCollapsed = isCollapsed(at: indexPath.row)
         return isCollapsed ? 84 : 500
     }
 
