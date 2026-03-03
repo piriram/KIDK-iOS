@@ -74,6 +74,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private weak var currentSheetViewController: UIViewController?
     private var cityScene: KidkCityScene?
     private var latestUnlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
+    private var homeTapGestureRecognizer: UITapGestureRecognizer?
 
     #if DEBUG
     enum DebugSnapshotAction {
@@ -92,8 +93,8 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private var debugBgScale: CGFloat = 1.0
     private var debugBgOffsetX: CGFloat = 0
     private var debugBgOffsetY: CGFloat = 0
-    private var debugSchoolX: CGFloat = 0.50
-    private var debugSchoolY: CGFloat = 0.62
+    private var debugSchoolX: CGFloat = 0.3169
+    private var debugSchoolY: CGFloat = 0.7401
     private var debugMartX: CGFloat = 0.80
     private var debugMartY: CGFloat = 0.33
 
@@ -193,6 +194,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         }
 
         let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
+        homeTapGestureRecognizer = homeTapGesture
         homeButton.addGestureRecognizer(homeTapGesture)
 
         schoolMissionButton.rx.tap
@@ -415,6 +417,9 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private func setupDebugUI() {
         let toggleGesture = UITapGestureRecognizer(target: self, action: #selector(toggleDebugPanel))
         toggleGesture.numberOfTapsRequired = 2
+        if let homeTapGestureRecognizer {
+            homeTapGestureRecognizer.require(toFail: toggleGesture)
+        }
         homeButton.addGestureRecognizer(toggleGesture)
 
         debugPanel.axis = .vertical
@@ -528,8 +533,8 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         debugBgScale = 1.0
         debugBgOffsetX = 0
         debugBgOffsetY = 0
-        debugSchoolX = 0.50
-        debugSchoolY = 0.62
+        debugSchoolX = 0.3169
+        debugSchoolY = 0.7401
         debugMartX = 0.80
         debugMartY = 0.33
         applyDebugLayoutToScene()
@@ -623,7 +628,7 @@ private final class KidkCityScene: SKScene {
     // NOTE: 좌표는 "scene size"가 아니라 "배경 표시 영역(frame)" 기준 ratio로 관리한다.
     private var backgroundScale: CGFloat = 1.0
     private var backgroundOffset: CGPoint = .zero
-    private var schoolLayout = BuildingLayout(xRatio: 0.50, yRatio: 0.62, scale: 1.0)
+    private var schoolLayout = BuildingLayout(xRatio: 0.3169, yRatio: 0.7401, scale: 1.0)
     private var martLayout = BuildingLayout(xRatio: 0.80, yRatio: 0.33, scale: 1.0)
     private var characterLayout = BuildingLayout(xRatio: 0.20, yRatio: 0.38, scale: 1.0)
 
