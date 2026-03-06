@@ -20,43 +20,76 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         return view
     }()
 
-    private let hudContainerView = UIView()
+    private let hudContainerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hex: "#2A2A35")
+        view.layer.cornerRadius = 20
+        return view
+    }()
 
-    private let gaugeTitleLabel: UILabel = {
+    private let ddayBadgeLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "미션 게이지", size: .s14, weight: .bold, color: .kidkTextWhite)
+        label.text = "D - 30"
+        label.applyTextStyle(text: "D - 30", size: .s20, weight: .bold, color: .kidkTextPrimary)
+        label.backgroundColor = .kidkPinkLight
+        label.textAlignment = .center
+        label.layer.cornerRadius = 26 / 2
+        label.clipsToBounds = true
         return label
     }()
 
-    private let gaugeValueLabel: UILabel = {
+    private let missionTitleLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "0%", size: .s14, weight: .bold, color: .kidkPink)
+        label.applyTextStyle(text: "여름방학 놀이공원 가기", size: .s20, weight: .bold, color: .kidkTextWhite)
+        label.numberOfLines = 1
         return label
     }()
 
-    private let levelLabel: UILabel = {
+    private let currentAmountLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "Lv.1", size: .s12, weight: .medium, color: .kidkTextWhite.withAlphaComponent(0.8))
+        label.applyTextStyle(text: "0원", size: .s22, weight: .bold, color: .kidkTextWhite)
         return label
     }()
 
-    private let gaugeProgressView: UIProgressView = {
-        let progress = UIProgressView(progressViewStyle: .default)
-        progress.progressTintColor = .kidkPink
-        progress.trackTintColor = UIColor.white.withAlphaComponent(0.2)
-        progress.layer.cornerRadius = 4
-        progress.clipsToBounds = true
-        return progress
+    private let targetAmountLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(text: "/ 50,000원", size: .s22, weight: .bold, color: .kidkGray)
+        return label
     }()
 
-    private let schoolMissionButton: UIButton = {
-        let button = UIButton(type: .system)
-        button.setTitle("학교 미션 시작", for: .normal)
-        button.setTitleColor(.kidkTextWhite, for: .normal)
-        button.backgroundColor = .kidkPink
-        button.layer.cornerRadius = CornerRadius.medium
-        return button
+    private let progressTrackView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.88)
+        view.layer.cornerRadius = 20
+        view.clipsToBounds = true
+        return view
     }()
+
+    private let progressMintView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkGreen
+        return view
+    }()
+
+    private let progressPinkDeltaView: UIView = {
+        let view = UIView()
+        view.backgroundColor = .kidkPink
+        return view
+    }()
+
+    private let amountStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .firstBaseline
+        stack.spacing = 8
+        return stack
+    }()
+
+    private var progressMintWidthConstraint: Constraint?
+    private var progressPinkLeadingConstraint: Constraint?
+    private var progressPinkWidthConstraint: Constraint?
+    private var previousGaugeProgress: CGFloat = 0
+    private let savingsTargetAmount: Int = 50_000
 
     private let homeButton: IconContainerView = {
         let button = IconContainerView(
@@ -150,46 +183,61 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         view.addSubview(hudContainerView)
         view.addSubview(homeButton)
 
-        hudContainerView.addSubview(gaugeTitleLabel)
-        hudContainerView.addSubview(gaugeValueLabel)
-        hudContainerView.addSubview(levelLabel)
-        hudContainerView.addSubview(gaugeProgressView)
-        hudContainerView.addSubview(schoolMissionButton)
+        hudContainerView.addSubview(ddayBadgeLabel)
+        hudContainerView.addSubview(missionTitleLabel)
+        hudContainerView.addSubview(amountStackView)
+        hudContainerView.addSubview(progressTrackView)
+
+        amountStackView.addArrangedSubview(currentAmountLabel)
+        amountStackView.addArrangedSubview(targetAmountLabel)
+
+        progressTrackView.addSubview(progressMintView)
+        progressTrackView.addSubview(progressPinkDeltaView)
 
         gameView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
         }
 
         hudContainerView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(Spacing.md)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-Spacing.md)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
+            make.height.equalTo(125)
         }
 
-        gaugeTitleLabel.snp.makeConstraints { make in
-            make.leading.top.equalToSuperview()
+        ddayBadgeLabel.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.top.equalToSuperview().offset(12)
+            make.width.equalTo(74)
+            make.height.equalTo(30)
         }
 
-        gaugeValueLabel.snp.makeConstraints { make in
-            make.trailing.equalToSuperview()
-            make.centerY.equalTo(gaugeTitleLabel)
+        missionTitleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(ddayBadgeLabel.snp.trailing).offset(12)
+            make.centerY.equalTo(ddayBadgeLabel)
+            make.trailing.lessThanOrEqualToSuperview().inset(16)
         }
 
-        levelLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview()
-            make.top.equalTo(gaugeTitleLabel.snp.bottom).offset(4)
+        amountStackView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(16)
+            make.top.equalTo(ddayBadgeLabel.snp.bottom).offset(8)
+            make.trailing.lessThanOrEqualToSuperview().inset(16)
         }
 
-        gaugeProgressView.snp.makeConstraints { make in
-            make.top.equalTo(levelLabel.snp.bottom).offset(8)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(8)
+        progressTrackView.snp.makeConstraints { make in
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalToSuperview().inset(12)
+            make.height.equalTo(24)
         }
 
-        schoolMissionButton.snp.makeConstraints { make in
-            make.top.equalTo(gaugeProgressView.snp.bottom).offset(12)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(44)
-            make.bottom.equalToSuperview()
+        progressMintView.snp.makeConstraints { make in
+            make.leading.top.bottom.equalToSuperview()
+            self.progressMintWidthConstraint = make.width.equalTo(0).constraint
+        }
+
+        progressPinkDeltaView.snp.makeConstraints { make in
+            make.top.bottom.equalToSuperview()
+            self.progressPinkLeadingConstraint = make.leading.equalTo(progressMintView.snp.trailing).constraint
+            self.progressPinkWidthConstraint = make.width.equalTo(0).constraint
         }
 
         homeButton.snp.makeConstraints { make in
@@ -202,11 +250,6 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         homeTapGestureRecognizer = homeTapGesture
         homeButton.addGestureRecognizer(homeTapGesture)
 
-        schoolMissionButton.rx.tap
-            .subscribe(onNext: { [weak self] in
-                self?.showMissionSelectionSheet()
-            })
-            .disposed(by: disposeBag)
 
         #if DEBUG
         setupDebugUI()
@@ -231,11 +274,13 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             .disposed(by: disposeBag)
 
         output.gaugeText
-            .drive(gaugeValueLabel.rx.text)
+            .drive(onNext: { [weak self] text in
+                self?.applyGaugeAccentByGaugeText(text)
+            })
             .disposed(by: disposeBag)
 
         output.levelText
-            .drive(levelLabel.rx.text)
+            .drive(onNext: { _ in })
             .disposed(by: disposeBag)
 
         output.locations
@@ -271,9 +316,56 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     }
 
     private func updateGauge(progress: Float) {
-        let clamped = max(0, min(progress, 1))
-        gaugeProgressView.setProgress(clamped, animated: true)
-        gaugeValueLabel.text = "\(Int(clamped * 100))%"
+        let clamped = CGFloat(max(0, min(progress, 1)))
+        let amount = Int((clamped * CGFloat(savingsTargetAmount)).rounded())
+
+        currentAmountLabel.applyTextStyle(
+            text: "\(amount.formattedWithComma)원",
+            size: .s22,
+            weight: .bold,
+            color: .kidkTextWhite
+        )
+        targetAmountLabel.applyTextStyle(
+            text: "/ \(savingsTargetAmount.formattedWithComma)원",
+            size: .s22,
+            weight: .bold,
+            color: .kidkGray
+        )
+
+        view.layoutIfNeeded()
+        let effectivePrevious = previousGaugeProgress == 0 ? clamped : previousGaugeProgress
+        let delta = max(0, clamped - effectivePrevious)
+        let trackWidth = max(progressTrackView.bounds.width, 1)
+        progressMintWidthConstraint?.update(offset: trackWidth * effectivePrevious)
+        progressPinkLeadingConstraint?.update(offset: 0)
+        progressPinkWidthConstraint?.update(offset: trackWidth * delta)
+
+        UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
+            self.progressTrackView.layoutIfNeeded()
+        }
+
+        if delta > 0 {
+            currentAmountLabel.applyTextStyle(
+                text: "\(amount.formattedWithComma)원",
+                size: .s22,
+                weight: .bold,
+                color: .kidkPink
+            )
+        }
+
+        previousGaugeProgress = clamped
+    }
+
+    private func applyGaugeAccentByGaugeText(_ gaugeText: String) {
+        guard let percent = Int(gaugeText.replacingOccurrences(of: "%", with: "")) else { return }
+        if percent == 0 {
+            currentAmountLabel.applyTextStyle(
+                text: currentAmountLabel.text ?? "0원",
+                size: .s22,
+                weight: .bold,
+                color: .kidkTextWhite
+            )
+        }
     }
 
     @objc private func homeButtonTapped() {
