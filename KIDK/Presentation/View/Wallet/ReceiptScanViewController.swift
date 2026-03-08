@@ -799,7 +799,7 @@ private struct ReceiptOCRParser {
 
             let lower = line.text.lowercased()
             if amountKeywords.contains(where: { lower.contains($0) }) {
-                let nearby = [index - 1, index, index + 1].compactMap { i -> String? in
+                let nearby = (index - 3...index + 3).compactMap { i -> String? in
                     guard lines.indices.contains(i) else { return nil }
                     return lines[i].text
                 }
