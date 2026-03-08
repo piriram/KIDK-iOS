@@ -272,9 +272,7 @@ final class TransactionRepository: BaseRepository, TransactionRepositoryProtocol
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let params: [String: Any] = [
                 "fromAccountId": fromAccountId,
