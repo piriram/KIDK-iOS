@@ -43,4 +43,20 @@ final class AuthRequestInterceptor: RequestInterceptor {
 
         return request
     }
+
+    func applyAuthHeader(to request: URLRequest, usesRefreshToken: Bool = false) -> URLRequest {
+        var request = request
+
+        if usesRefreshToken {
+            if let refreshToken = tokenManager.refreshToken {
+                request.setValue(refreshToken, forHTTPHeaderField: "Refresh-Token")
+            }
+        } else {
+            if let accessToken = tokenManager.accessToken {
+                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+            }
+        }
+
+        return request
+    }
 }

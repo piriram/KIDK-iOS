@@ -541,9 +541,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             request.httpMethod = "POST"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             // Request Body 생성
             // NOTE: 미션 생성은 POST
@@ -671,9 +669,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -852,9 +848,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -912,9 +906,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             request.httpMethod = "GET"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
@@ -991,9 +983,7 @@ final class MissionRepository: BaseRepository, MissionRepositoryProtocol {
             request.httpMethod = "PATCH"
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-            if let accessToken = self.tokenManager.accessToken {
-                request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
-            }
+            request = self.applyAuthHeader(to: request)
 
             let task = URLSession.shared.dataTask(with: request) { data, response, error in
                 if let error = error {
