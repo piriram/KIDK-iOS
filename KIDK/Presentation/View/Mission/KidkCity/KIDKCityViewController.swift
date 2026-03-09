@@ -42,7 +42,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
     private let missionTitleLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "여름방학 놀이공원 가기", size: .s18, weight: .bold, color: .kidkTextWhite)
+        label.applyTextStyle(text: PortfolioCaptureMock.primaryMissionTitle, size: .s18, weight: .bold, color: .kidkTextWhite)
         label.numberOfLines = 1
         return label
     }()
@@ -100,10 +100,10 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private var progressPinkLeadingConstraint: Constraint?
     private var progressPinkWidthConstraint: Constraint?
     private var previousGaugeProgress: CGFloat = 0
-    private let savingsTargetAmount: Int = 50_000
+    private let savingsTargetAmount: Int = PortfolioCaptureMock.primaryMissionTargetAmount
 
     #if DEBUG
-    private let debugMockProgress: CGFloat = 0.8
+    private let debugMockProgress: CGFloat = CGFloat(PortfolioCaptureMock.primaryMissionCurrentAmount) / CGFloat(PortfolioCaptureMock.primaryMissionTargetAmount)
     #endif
 
     private let homeButton: IconContainerView = {
@@ -566,7 +566,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             missionCompletedSubject.onNext(
                 MissionRewardCompletedEvent(
                     missionId: "debug-mission-completed",
-                    rewardAmount: 1000,
+                    rewardAmount: PortfolioCaptureMock.primaryMissionRewardAmount,
                     rewardType: .missionApproved,
                     childId: user.id,
                     timestamp: Date(),
