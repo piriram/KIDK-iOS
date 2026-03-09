@@ -22,15 +22,17 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
     private let hudContainerView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor(hex: "#2A2A35")
-        view.layer.cornerRadius = 20
+        view.backgroundColor = UIColor(hex: "#2A2A35").withAlphaComponent(0.94)
+        view.layer.cornerRadius = 24
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
         return view
     }()
 
     private let ddayBadgeLabel: UILabel = {
         let label = UILabel()
         label.text = "D - 30"
-        label.applyTextStyle(text: "D - 30", size: .s20, weight: .bold, color: .kidkTextPrimary)
+        label.applyTextStyle(text: "D - 30", size: .s16, weight: .bold, color: .kidkTextPrimary)
         label.backgroundColor = .kidkPinkLight
         label.textAlignment = .center
         label.layer.cornerRadius = 26 / 2
@@ -40,27 +42,27 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
     private let missionTitleLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "여름방학 놀이공원 가기", size: .s20, weight: .bold, color: .kidkTextWhite)
+        label.applyTextStyle(text: "여름방학 놀이공원 가기", size: .s18, weight: .bold, color: .kidkTextWhite)
         label.numberOfLines = 1
         return label
     }()
 
     private let currentAmountLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "0원", size: .s22, weight: .bold, color: .kidkTextWhite)
+        label.applyTextStyle(text: "0원", size: .s20, weight: .bold, color: .kidkTextWhite)
         return label
     }()
 
     private let targetAmountLabel: UILabel = {
         let label = UILabel()
-        label.applyTextStyle(text: "/ 50,000원", size: .s22, weight: .bold, color: .kidkGray)
+        label.applyTextStyle(text: "/ 50,000원", size: .s18, weight: .bold, color: .kidkGray)
         return label
     }()
 
     private let progressTrackView: UIView = {
         let view = UIView()
-        view.backgroundColor = UIColor.white.withAlphaComponent(0.88)
-        view.layer.cornerRadius = 20
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.22)
+        view.layer.cornerRadius = 7
         view.clipsToBounds = true
         return view
     }()
@@ -81,7 +83,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         let stack = UIStackView()
         stack.axis = .horizontal
         stack.alignment = .firstBaseline
-        stack.spacing = 8
+        stack.spacing = 4
         return stack
     }()
 
@@ -199,34 +201,34 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         }
 
         hudContainerView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(20)
-            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-12)
-            make.height.equalTo(125)
+            make.leading.trailing.equalToSuperview().inset(16)
+            make.bottom.equalTo(view.safeAreaLayoutGuide).offset(-10)
+            make.height.equalTo(136)
         }
 
         ddayBadgeLabel.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.top.equalToSuperview().offset(12)
-            make.width.equalTo(74)
-            make.height.equalTo(30)
+            make.leading.equalToSuperview().offset(18)
+            make.top.equalToSuperview().offset(14)
+            make.width.equalTo(72)
+            make.height.equalTo(28)
         }
 
         missionTitleLabel.snp.makeConstraints { make in
-            make.leading.equalTo(ddayBadgeLabel.snp.trailing).offset(12)
+            make.leading.equalTo(ddayBadgeLabel.snp.trailing).offset(10)
             make.centerY.equalTo(ddayBadgeLabel)
-            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.trailing.lessThanOrEqualToSuperview().inset(18)
         }
 
         amountStackView.snp.makeConstraints { make in
-            make.leading.equalToSuperview().offset(16)
-            make.top.equalTo(ddayBadgeLabel.snp.bottom).offset(8)
-            make.trailing.lessThanOrEqualToSuperview().inset(16)
+            make.leading.equalToSuperview().offset(18)
+            make.top.equalTo(ddayBadgeLabel.snp.bottom).offset(14)
+            make.trailing.lessThanOrEqualToSuperview().inset(18)
         }
 
         progressTrackView.snp.makeConstraints { make in
-            make.leading.trailing.equalToSuperview().inset(16)
-            make.bottom.equalToSuperview().inset(12)
-            make.height.equalTo(24)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.bottom.equalToSuperview().inset(18)
+            make.height.equalTo(14)
         }
 
         progressMintView.snp.makeConstraints { make in
@@ -321,13 +323,13 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
 
         currentAmountLabel.applyTextStyle(
             text: "\(amount.formattedWithComma)원",
-            size: .s22,
+            size: .s20,
             weight: .bold,
             color: .kidkTextWhite
         )
         targetAmountLabel.applyTextStyle(
             text: "/ \(savingsTargetAmount.formattedWithComma)원",
-            size: .s22,
+            size: .s18,
             weight: .bold,
             color: .kidkGray
         )
@@ -347,7 +349,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         if delta > 0 {
             currentAmountLabel.applyTextStyle(
                 text: "\(amount.formattedWithComma)원",
-                size: .s22,
+                size: .s20,
                 weight: .bold,
                 color: .kidkPink
             )
@@ -361,7 +363,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         if percent == 0 {
             currentAmountLabel.applyTextStyle(
                 text: currentAmountLabel.text ?? "0원",
-                size: .s22,
+                size: .s20,
                 weight: .bold,
                 color: .kidkTextWhite
             )
