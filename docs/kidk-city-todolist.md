@@ -56,7 +56,7 @@
 - [x] `CityProgress` 모델 정의 (`currentLevel`, `exp`, `unlockedZones`, `lastRewardedMissionId`, `updatedAt`)
 - [x] `missionRewardCompleted` payload 스키마 정의 (`missionId`, `rewardAmount`, `rewardType`, `childId`, `timestamp`, `idempotencyKey`)
 - [ ] 보상→성장 매핑 테이블(JSON/표) v1 작성
-- [ ] 승인/이체/연출 실패 분기 UX 1차 적용
+- [x] 승인/이체/연출 실패 분기 UX 1차 적용
 - [ ] 시티 정합 기준값 JSON v1 + 스모크 리포트 v1
 
 ### G-2. Sprint 2 (관측 + 포트폴리오 완성)
@@ -73,5 +73,5 @@
 - [x] `CityProgress` 데이터 모델 + 이벤트 payload 스키마 확정
 - [x] `kidk_city_layout.json` 파일 분리 및 scene 로더 연결
 - [ ] 기준 3기기 튜닝 1차 (값 수집/반영)
-- [ ] 실패 분기 UI 메시지 표준화
-- [ ] 스모크 리포트 + 포트폴리오 문서 1차 업데이트
+- [x] 실패 분기 UI 메시지 표준화
+- [x] 스모크 리포트 + 포트폴리오 문서 1차 업데이트
