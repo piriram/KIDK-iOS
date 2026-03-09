@@ -254,6 +254,7 @@ final class ReceiptScanViewController: BaseViewController {
         setupActions()
 #if DEBUG
         ReceiptOCRParser.runSmokeTests()
+        applyPortfolioCaptureMockIfNeeded()
 #endif
     }
 
@@ -384,6 +385,28 @@ final class ReceiptScanViewController: BaseViewController {
             make.bottom.equalToSuperview().offset(-24)
         }
     }
+
+#if DEBUG
+    private func applyPortfolioCaptureMockIfNeeded() {
+        guard PortfolioCaptureMock.enabled else { return }
+
+        extractedAmount = PortfolioCaptureMock.primaryMissionRewardAmount
+        extractedDescription = "키드키드 편의점"
+        selectedCategory = .shopping
+
+        accountLabel.isHidden = false
+        accountButton.isHidden = false
+        accountButton.setTitle("내 지갑 (\(PortfolioCaptureMock.spendingWalletAmount.formattedWithComma)원)", for: .normal)
+
+        showExtractedData(
+            result: ReceiptOCRResult(
+                amount: extractedAmount,
+                merchantName: extractedDescription,
+                recognizedText: "키드키드 편의점\n합계 \(PortfolioCaptureMock.primaryMissionRewardAmount.formattedWithComma)"
+            )
+        )
+    }
+#endif
 
     private func setupActions() {
         cameraButton.addTarget(self, action: #selector(openCamera), for: .touchUpInside)
