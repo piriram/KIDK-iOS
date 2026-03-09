@@ -67,17 +67,26 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         return view
     }()
 
+    private let progressTrackInnerView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor.white.withAlphaComponent(0.10)
+        view.clipsToBounds = true
+        return view
+    }()
+
     private let progressMintView: UIView = {
         let view = UIView()
-        view.backgroundColor = .kidkGreen
+        view.backgroundColor = .clear
         return view
     }()
 
     private let progressPinkDeltaView: UIView = {
         let view = UIView()
-        view.backgroundColor = .kidkPink
+        view.backgroundColor = UIColor.kidkPink.withAlphaComponent(0.88)
         return view
     }()
+
+    private let progressMintGradientLayer = CAGradientLayer()
 
     private let amountStackView: UIStackView = {
         let stack = UIStackView()
@@ -167,6 +176,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
         configureSceneIfNeeded()
+        applyProgressTrackMockStyle()
     }
 
     override func viewDidAppear(_ animated: Bool) {
@@ -193,8 +203,9 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         amountStackView.addArrangedSubview(currentAmountLabel)
         amountStackView.addArrangedSubview(targetAmountLabel)
 
-        progressTrackView.addSubview(progressMintView)
-        progressTrackView.addSubview(progressPinkDeltaView)
+        progressTrackView.addSubview(progressTrackInnerView)
+        progressTrackInnerView.addSubview(progressMintView)
+        progressTrackInnerView.addSubview(progressPinkDeltaView)
 
         gameView.snp.makeConstraints { make in
             make.edges.equalToSuperview()
@@ -228,7 +239,11 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         progressTrackView.snp.makeConstraints { make in
             make.leading.trailing.equalToSuperview().inset(20)
             make.bottom.equalToSuperview().inset(18)
-            make.height.equalTo(14)
+            make.height.equalTo(16)
+        }
+
+        progressTrackInnerView.snp.makeConstraints { make in
+            make.edges.equalToSuperview().inset(2)
         }
 
         progressMintView.snp.makeConstraints { make in
@@ -317,6 +332,32 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         #endif
     }
 
+    private func applyProgressTrackMockStyle() {
+        progressTrackView.layer.cornerRadius = progressTrackView.bounds.height / 2
+        progressTrackView.layer.borderWidth = 1
+        progressTrackView.layer.borderColor = UIColor.white.withAlphaComponent(0.20).cgColor
+        progressTrackView.layer.shadowColor = UIColor.black.withAlphaComponent(0.22).cgColor
+        progressTrackView.layer.shadowOpacity = 1
+        progressTrackView.layer.shadowRadius = 8
+        progressTrackView.layer.shadowOffset = CGSize(width: 0, height: 3)
+
+        progressTrackInnerView.layer.cornerRadius = progressTrackInnerView.bounds.height / 2
+        progressMintView.layer.cornerRadius = progressTrackInnerView.bounds.height / 2
+        progressPinkDeltaView.layer.cornerRadius = progressTrackInnerView.bounds.height / 2
+
+        if progressMintGradientLayer.superlayer == nil {
+            progressMintGradientLayer.startPoint = CGPoint(x: 0, y: 0.5)
+            progressMintGradientLayer.endPoint = CGPoint(x: 1, y: 0.5)
+            progressMintGradientLayer.colors = [
+                UIColor(hex: "#31D1A6").cgColor,
+                UIColor(hex: "#7CF0CC").cgColor
+            ]
+            progressMintView.layer.insertSublayer(progressMintGradientLayer, at: 0)
+        }
+        progressMintGradientLayer.frame = progressMintView.bounds
+        progressMintGradientLayer.cornerRadius = progressMintView.bounds.height / 2
+    }
+
     private func updateGauge(progress: Float) {
         let clamped = CGFloat(max(0, min(progress, 1)))
         let amount = Int((clamped * CGFloat(savingsTargetAmount)).rounded())
@@ -337,13 +378,14 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         view.layoutIfNeeded()
         let effectivePrevious = previousGaugeProgress == 0 ? clamped : previousGaugeProgress
         let delta = max(0, clamped - effectivePrevious)
-        let trackWidth = max(progressTrackView.bounds.width, 1)
+        let trackWidth = max(progressTrackInnerView.bounds.width, 1)
         progressMintWidthConstraint?.update(offset: trackWidth * effectivePrevious)
         progressPinkLeadingConstraint?.update(offset: 0)
         progressPinkWidthConstraint?.update(offset: trackWidth * delta)
 
         UIView.animate(withDuration: 0.25, delay: 0, options: [.curveEaseOut]) {
             self.progressTrackView.layoutIfNeeded()
+            self.applyProgressTrackMockStyle()
         }
 
         if delta > 0 {
