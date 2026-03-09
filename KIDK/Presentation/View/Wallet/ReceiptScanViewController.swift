@@ -83,6 +83,16 @@ final class ReceiptScanViewController: BaseViewController {
         return button
     }()
 
+    private let sampleReceiptButton: UIButton = {
+        let button = UIButton()
+        button.setTitle("🇰🇷 샘플 영수증 불러오기", for: .normal)
+        button.setTitleColor(.kidkTextWhite, for: .normal)
+        button.titleLabel?.font = .kidkFont(.s14, .medium)
+        button.backgroundColor = UIColor(hex: "#3A3A3C")
+        button.layer.cornerRadius = 12
+        return button
+    }()
+
     // 계좌 선택
     private let accountLabel: UILabel = {
         let label = UILabel()
@@ -266,7 +276,7 @@ final class ReceiptScanViewController: BaseViewController {
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
 
-        [titleLabel, instructionLabel, imagePreview, cameraButton, photoButton,
+        [titleLabel, instructionLabel, imagePreview, cameraButton, photoButton, sampleReceiptButton,
          accountLabel, accountButton, amountLabel, amountTextField, wonLabel,
          descriptionLabel, descriptionTextField, autoFillStatusLabel, confirmAutoFillButton,
          categoryLabel, categoryScrollView, saveButton].forEach {
@@ -311,8 +321,14 @@ final class ReceiptScanViewController: BaseViewController {
             make.height.equalTo(56)
         }
 
+        sampleReceiptButton.snp.makeConstraints { make in
+            make.top.equalTo(photoButton.snp.bottom).offset(10)
+            make.leading.trailing.equalToSuperview().inset(20)
+            make.height.equalTo(48)
+        }
+
         accountLabel.snp.makeConstraints { make in
-            make.top.equalTo(photoButton.snp.bottom).offset(32)
+            make.top.equalTo(sampleReceiptButton.snp.bottom).offset(32)
             make.leading.trailing.equalToSuperview().inset(20)
         }
 
@@ -411,6 +427,7 @@ final class ReceiptScanViewController: BaseViewController {
     private func setupActions() {
         cameraButton.addTarget(self, action: #selector(openCamera), for: .touchUpInside)
         photoButton.addTarget(self, action: #selector(openPhotoLibrary), for: .touchUpInside)
+        sampleReceiptButton.addTarget(self, action: #selector(useSampleKoreanReceipt), for: .touchUpInside)
         accountButton.addTarget(self, action: #selector(selectAccount), for: .touchUpInside)
         saveButton.addTarget(self, action: #selector(saveTransaction), for: .touchUpInside)
         confirmAutoFillButton.addTarget(self, action: #selector(confirmAutoFill), for: .touchUpInside)
@@ -483,6 +500,16 @@ final class ReceiptScanViewController: BaseViewController {
 
     // MARK: - Actions
     @objc private func openCamera() {
+#if targetEnvironment(simulator)
+        presentSampleCameraMock()
+        return
+#else
+#if DEBUG
+        if PortfolioCaptureMock.enabled {
+            presentSampleCameraMock()
+            return
+        }
+#endif
         if VNDocumentCameraViewController.isSupported {
             let documentCamera = VNDocumentCameraViewController()
             documentCamera.delegate = self
@@ -491,13 +518,99 @@ final class ReceiptScanViewController: BaseViewController {
             // Document camera not supported, use regular camera
             openImagePicker(sourceType: .camera)
         }
+#endif
     }
 
     @objc private func openPhotoLibrary() {
         openImagePicker(sourceType: .photoLibrary)
     }
 
+    @objc private func useSampleKoreanReceipt() {
+        let sampleImage = makeKoreanReceiptMockImage(includeBackground: true)
+        imagePreview.image = sampleImage
+        imagePreview.isHidden = false
+        processImage(sampleImage, source: .photoLibrary)
+    }
+
+    private func presentSampleCameraMock() {
+        let cameraMockVC = SampleReceiptCameraMockViewController()
+        cameraMockVC.onCapture = { [weak self] capturedImage in
+            guard let self = self else { return }
+            self.imagePreview.image = capturedImage
+            self.imagePreview.isHidden = false
+            self.processImage(capturedImage, source: .photoLibrary)
+        }
+        present(cameraMockVC, animated: true)
+    }
+
+    private func makeKoreanReceiptMockImage(includeBackground: Bool) -> UIImage {
+        let size = CGSize(width: 1080, height: 1920)
+        let renderer = UIGraphicsImageRenderer(size: size)
+
+        return renderer.image { context in
+            let cg = context.cgContext
+
+            if includeBackground {
+                let colors = [UIColor(hex: "#2A2A2D").cgColor, UIColor(hex: "#1A1A1C").cgColor] as CFArray
+                let locations: [CGFloat] = [0, 1]
+                if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: locations) {
+                    cg.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: size.width, y: size.height), options: [])
+                }
+            } else {
+                UIColor(hex: "#F5F5F0").setFill()
+                context.fill(CGRect(origin: .zero, size: size))
+            }
+
+            let receiptRect = CGRect(x: 110, y: 180, width: size.width - 220, height: size.height - 360)
+
+            if includeBackground {
+                cg.setShadow(offset: CGSize(width: 0, height: 18), blur: 28, color: UIColor.black.withAlphaComponent(0.45).cgColor)
+            }
+
+            UIBezierPath(roundedRect: receiptRect, cornerRadius: 10).addClip()
+            UIColor(hex: "#F7F4EC").setFill()
+            context.fill(receiptRect)
+            cg.setShadow(offset: .zero, blur: 0, color: nil)
+
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .left
+
+            func draw(_ text: String, y: CGFloat, font: UIFont, color: UIColor = .black) {
+                let attrs: [NSAttributedString.Key: Any] = [
+                    .font: font,
+                    .foregroundColor: color,
+                    .paragraphStyle: paragraph
+                ]
+                text.draw(in: CGRect(x: receiptRect.minX + 40, y: y, width: receiptRect.width - 80, height: 44), withAttributes: attrs)
+            }
+
+            draw("이마트24 강남역점", y: receiptRect.minY + 40, font: .boldSystemFont(ofSize: 48))
+            draw("서울 강남구 테헤란로 123", y: receiptRect.minY + 105, font: .systemFont(ofSize: 28))
+            draw("사업자번호 123-45-67890", y: receiptRect.minY + 145, font: .systemFont(ofSize: 26))
+            draw("TEL 02-1234-5678", y: receiptRect.minY + 185, font: .systemFont(ofSize: 26))
+            draw("----------------------------------------", y: receiptRect.minY + 245, font: .monospacedSystemFont(ofSize: 24, weight: .regular))
+            draw("새우깡 90g                1    1,500", y: receiptRect.minY + 300, font: .monospacedSystemFont(ofSize: 32, weight: .regular))
+            draw("바나나우유                 1    1,800", y: receiptRect.minY + 355, font: .monospacedSystemFont(ofSize: 32, weight: .regular))
+            draw("초코파이                   1    3,200", y: receiptRect.minY + 410, font: .monospacedSystemFont(ofSize: 32, weight: .regular))
+            draw("----------------------------------------", y: receiptRect.minY + 470, font: .monospacedSystemFont(ofSize: 24, weight: .regular))
+            draw("과세물품가액                    5,909", y: receiptRect.minY + 530, font: .monospacedSystemFont(ofSize: 32, weight: .regular))
+            draw("부가세                            591", y: receiptRect.minY + 585, font: .monospacedSystemFont(ofSize: 32, weight: .regular))
+            draw("합계                            6,500", y: receiptRect.minY + 645, font: .boldSystemFont(ofSize: 40))
+            draw("신용카드                        6,500", y: receiptRect.minY + 710, font: .monospacedSystemFont(ofSize: 32, weight: .regular))
+            draw("거래일시 2026-03-10 14:16", y: receiptRect.minY + 785, font: .systemFont(ofSize: 28))
+            draw("승인번호 84736291", y: receiptRect.minY + 825, font: .systemFont(ofSize: 28))
+            draw("----------------------------------------", y: receiptRect.minY + 885, font: .monospacedSystemFont(ofSize: 24, weight: .regular))
+            draw("감사합니다. 또 방문해주세요.", y: receiptRect.minY + 945, font: .systemFont(ofSize: 28))
+        }
+    }
+
     private func openImagePicker(sourceType: UIImagePickerController.SourceType) {
+#if targetEnvironment(simulator)
+        if sourceType == .camera {
+            presentSampleCameraMock()
+            return
+        }
+#endif
         guard UIImagePickerController.isSourceTypeAvailable(sourceType) else {
             showAlert(title: "오류", message: "카메라를 사용할 수 없습니다.")
             return
@@ -908,6 +1021,163 @@ private extension ReceiptOCRParser {
 }
 #endif
 
+private final class SampleReceiptCameraMockViewController: UIViewController {
+
+    var onCapture: ((UIImage) -> Void)?
+
+    private let previewImageView: UIImageView = {
+        let iv = UIImageView()
+        iv.contentMode = .scaleAspectFill
+        iv.clipsToBounds = true
+        return iv
+    }()
+
+    private let overlayTop = UIView()
+    private let overlayBottom = UIView()
+
+    private let documentGuideView: UIView = {
+        let view = UIView()
+        view.layer.borderWidth = 3
+        view.layer.borderColor = UIColor.systemOrange.cgColor
+        view.layer.cornerRadius = 12
+        view.backgroundColor = .clear
+        return view
+    }()
+
+    private let closeButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.setImage(UIImage(systemName: "xmark"), for: .normal)
+        button.tintColor = .white
+        return button
+    }()
+
+    private let shutterButton: UIButton = {
+        let button = UIButton(type: .system)
+        button.backgroundColor = .white
+        button.layer.cornerRadius = 36
+        button.layer.borderWidth = 6
+        button.layer.borderColor = UIColor.white.withAlphaComponent(0.35).cgColor
+        return button
+    }()
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupUI()
+    }
+
+    private func setupUI() {
+        view.backgroundColor = .black
+
+        view.addSubview(previewImageView)
+        view.addSubview(documentGuideView)
+        view.addSubview(overlayTop)
+        view.addSubview(overlayBottom)
+        view.addSubview(closeButton)
+        view.addSubview(shutterButton)
+
+        overlayTop.backgroundColor = UIColor.black.withAlphaComponent(0.35)
+        overlayBottom.backgroundColor = UIColor.black.withAlphaComponent(0.35)
+
+        previewImageView.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        documentGuideView.snp.makeConstraints { make in
+            make.center.equalToSuperview()
+            make.width.equalToSuperview().multipliedBy(0.78)
+            make.height.equalToSuperview().multipliedBy(0.62)
+        }
+
+        overlayTop.snp.makeConstraints { make in
+            make.top.leading.trailing.equalToSuperview()
+            make.height.equalTo(120)
+        }
+
+        overlayBottom.snp.makeConstraints { make in
+            make.leading.trailing.bottom.equalToSuperview()
+            make.height.equalTo(180)
+        }
+
+        closeButton.snp.makeConstraints { make in
+            make.leading.equalToSuperview().inset(20)
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(8)
+            make.width.height.equalTo(32)
+        }
+
+        shutterButton.snp.makeConstraints { make in
+            make.centerX.equalToSuperview()
+            make.bottom.equalTo(view.safeAreaLayoutGuide).inset(24)
+            make.width.height.equalTo(72)
+        }
+
+        closeButton.addTarget(self, action: #selector(closeTapped), for: .touchUpInside)
+        shutterButton.addTarget(self, action: #selector(shutterTapped), for: .touchUpInside)
+
+        previewImageView.image = makeCameraLikeReceiptScene()
+    }
+
+    @objc private func closeTapped() {
+        dismiss(animated: true)
+    }
+
+    @objc private func shutterTapped() {
+        let image = makeCameraLikeReceiptScene()
+        dismiss(animated: true) { [weak self] in
+            self?.onCapture?(image)
+        }
+    }
+
+    private func makeCameraLikeReceiptScene() -> UIImage {
+        let size = CGSize(width: 1080, height: 1920)
+        let renderer = UIGraphicsImageRenderer(size: size)
+        return renderer.image { context in
+            let cg = context.cgContext
+
+            let colors = [UIColor(hex: "#303236").cgColor, UIColor(hex: "#151618").cgColor] as CFArray
+            let locations: [CGFloat] = [0, 1]
+            if let gradient = CGGradient(colorsSpace: CGColorSpaceCreateDeviceRGB(), colors: colors, locations: locations) {
+                cg.drawLinearGradient(gradient, start: CGPoint(x: 0, y: 0), end: CGPoint(x: size.width, y: size.height), options: [])
+            }
+
+            let receiptRect = CGRect(x: 130, y: 210, width: 820, height: 1420)
+            cg.saveGState()
+            cg.translateBy(x: size.width / 2, y: size.height / 2)
+            cg.rotate(by: -.pi / 60)
+            cg.translateBy(x: -size.width / 2, y: -size.height / 2)
+
+            cg.setShadow(offset: CGSize(width: 0, height: 20), blur: 30, color: UIColor.black.withAlphaComponent(0.55).cgColor)
+            UIColor(hex: "#F7F4EC").setFill()
+            UIBezierPath(roundedRect: receiptRect, cornerRadius: 10).fill()
+            cg.setShadow(offset: .zero, blur: 0, color: nil)
+
+            let paragraph = NSMutableParagraphStyle()
+            paragraph.alignment = .left
+            func draw(_ text: String, y: CGFloat, font: UIFont) {
+                text.draw(in: CGRect(x: receiptRect.minX + 38, y: y, width: receiptRect.width - 76, height: 44), withAttributes: [
+                    .font: font,
+                    .foregroundColor: UIColor.black,
+                    .paragraphStyle: paragraph
+                ])
+            }
+
+            draw("GS25 선릉역점", y: receiptRect.minY + 44, font: .boldSystemFont(ofSize: 46))
+            draw("서울 강남구 선릉로 501", y: receiptRect.minY + 106, font: .systemFont(ofSize: 27))
+            draw("사업자번호 214-86-43121", y: receiptRect.minY + 146, font: .systemFont(ofSize: 25))
+            draw("----------------------------------------", y: receiptRect.minY + 214, font: .monospacedSystemFont(ofSize: 24, weight: .regular))
+            draw("삼각김밥                   2    2,400", y: receiptRect.minY + 270, font: .monospacedSystemFont(ofSize: 31, weight: .regular))
+            draw("콜라 355ml                 1    2,000", y: receiptRect.minY + 324, font: .monospacedSystemFont(ofSize: 31, weight: .regular))
+            draw("초코바                     1    1,200", y: receiptRect.minY + 378, font: .monospacedSystemFont(ofSize: 31, weight: .regular))
+            draw("----------------------------------------", y: receiptRect.minY + 438, font: .monospacedSystemFont(ofSize: 24, weight: .regular))
+            draw("합계                            5,600", y: receiptRect.minY + 510, font: .boldSystemFont(ofSize: 40))
+            draw("거래일시 2026-03-10 16:20", y: receiptRect.minY + 580, font: .systemFont(ofSize: 27))
+            draw("승인번호 31094726", y: receiptRect.minY + 620, font: .systemFont(ofSize: 27))
+            draw("감사합니다.", y: receiptRect.minY + 700, font: .systemFont(ofSize: 27))
+
+            cg.restoreGState()
+        }
+    }
+}
+
 // MARK: - VNDocumentCameraViewControllerDelegate
 extension ReceiptScanViewController: VNDocumentCameraViewControllerDelegate {
     func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFinishWith scan: VNDocumentCameraScan) {
@@ -928,7 +1198,20 @@ extension ReceiptScanViewController: VNDocumentCameraViewControllerDelegate {
 
     func documentCameraViewController(_ controller: VNDocumentCameraViewController, didFailWithError error: Error) {
         controller.dismiss(animated: true)
-        showAlert(title: "스캔 실패", message: error.localizedDescription)
+
+        let lowercasedMessage = error.localizedDescription.lowercased()
+        if lowercasedMessage.contains("capture") || lowercasedMessage.contains("미디어") {
+            showAlert(
+                title: "카메라 스캔을 시작할 수 없어요",
+                message: "현재 기기에서 카메라 캡처를 사용할 수 없습니다.\n\n실기기에서 카메라 권한을 확인하거나, 아래의 '🇰🇷 샘플 영수증 불러오기' 버튼으로 포트폴리오 캡처를 진행해 주세요."
+            )
+            return
+        }
+
+        showAlert(
+            title: "스캔 실패",
+            message: "문서 스캔 중 오류가 발생했습니다.\n\n다시 시도하거나 '🇰🇷 샘플 영수증 불러오기'를 사용해 주세요.\n\n상세: \(error.localizedDescription)"
+        )
     }
 }
 
