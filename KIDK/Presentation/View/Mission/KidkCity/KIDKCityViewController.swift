@@ -789,6 +789,9 @@ private final class KidkCityScene: SKScene {
         config: layoutConfig.buildings.character ?? KIDKCityLayoutConfig.fallback.buildings.character!
     )
 
+    private var mapDisplayRect: CGRect = .zero
+    private let movementSpeed: CGFloat = 220
+
     override func didMove(to view: SKView) {
         backgroundColor = .clear
         addChild(backgroundNode)
@@ -820,6 +823,7 @@ private final class KidkCityScene: SKScene {
         backgroundNode.size = CGSize(width: fillSize.width * backgroundScale, height: fillSize.height * backgroundScale)
 
         let displayRect = backgroundNode.frame
+        mapDisplayRect = displayRect
 
         homeNode.position = point(in: displayRect, layout: homeLayout)
         homeNode.size = aspectFitSize(
@@ -839,11 +843,17 @@ private final class KidkCityScene: SKScene {
             in: CGSize(width: size.width * 0.30 * martLayout.scale, height: size.height * 0.20 * martLayout.scale)
         )
 
-        characterNode.position = point(in: displayRect, layout: characterLayout)
+        let previousCharacterPosition = characterNode.position
         characterNode.size = aspectFitSize(
             for: characterNode,
             in: CGSize(width: 72 * characterLayout.scale, height: 72 * characterLayout.scale)
         )
+
+        if previousCharacterPosition == .zero {
+            characterNode.position = point(in: displayRect, layout: characterLayout)
+        } else {
+            characterNode.position = clampToMap(previousCharacterPosition)
+        }
     }
 
     private func point(in rect: CGRect, layout: BuildingLayout) -> CGPoint {
@@ -922,27 +932,77 @@ private final class KidkCityScene: SKScene {
         characterNode.run(forever, withKey: "walk")
     }
 
+    private func clampToMap(_ point: CGPoint) -> CGPoint {
+        guard mapDisplayRect != .zero else { return point }
+
+        let insetX = characterNode.size.width * 0.35
+        let insetY = characterNode.size.height * 0.25
+        let safeRect = mapDisplayRect.insetBy(dx: insetX, dy: insetY)
+
+        return CGPoint(
+            x: min(max(point.x, safeRect.minX), safeRect.maxX),
+            y: min(max(point.y, safeRect.minY), safeRect.maxY)
+        )
+    }
+
+    private func moveCharacter(to target: CGPoint, completion: (() -> Void)? = nil) {
+        let destination = clampToMap(target)
+        let current = characterNode.position
+        let dx = destination.x - current.x
+        let dy = destination.y - current.y
+        let distance = hypot(dx, dy)
+
+        if distance < 1 {
+            completion?()
+            return
+        }
+
+        characterNode.xScale = dx < 0 ? -abs(characterNode.xScale) : abs(characterNode.xScale)
+        characterNode.removeAction(forKey: "move")
+
+        let duration = max(0.15, TimeInterval(distance / movementSpeed))
+        let move = SKAction.move(to: destination, duration: duration)
+        move.timingMode = .easeInEaseOut
+
+        let sequence = SKAction.sequence([move, .run { completion?() }])
+        characterNode.run(sequence, withKey: "move")
+    }
+
+    private func interactionPoint(for buildingNode: SKSpriteNode) -> CGPoint {
+        CGPoint(x: buildingNode.position.x, y: buildingNode.position.y - (buildingNode.size.height * 0.25))
+    }
+
     override func touchesEnded(_ touches: Set<UITouch>, with event: UIEvent?) {
         guard let touch = touches.first else { return }
         let location = touch.location(in: self)
         let node = atPoint(location)
 
         if node.name == "home" || node.parent?.name == "home" {
-            onHomeTapped?()
+            moveCharacter(to: interactionPoint(for: homeNode)) { [weak self] in
+                self?.onHomeTapped?()
+            }
             return
         }
 
         if node.name == "school" || node.parent?.name == "school" {
-            onSchoolTapped?()
+            moveCharacter(to: interactionPoint(for: schoolNode)) { [weak self] in
+                self?.onSchoolTapped?()
+            }
             return
         }
 
         if node.name == "mart" || node.parent?.name == "mart" {
-            if unlockedLocations.contains(.mart) {
-                // TODO: 마트 컨텐츠 연결(서버 API 문서 기준)
-            } else {
-                onLockedLocationTapped?(.mart)
+            moveCharacter(to: interactionPoint(for: martNode)) { [weak self] in
+                guard let self else { return }
+                if self.unlockedLocations.contains(.mart) {
+                    // TODO: 마트 컨텐츠 연결(서버 API 문서 기준)
+                } else {
+                    self.onLockedLocationTapped?(.mart)
+                }
             }
+            return
         }
+
+        moveCharacter(to: location)
     }
 }
