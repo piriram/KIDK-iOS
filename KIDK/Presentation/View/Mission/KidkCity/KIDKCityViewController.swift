@@ -359,7 +359,14 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     }
 
     private func updateGauge(progress: Float) {
-        let clamped = CGFloat(max(0, min(progress, 1)))
+        var clamped = CGFloat(max(0, min(progress, 1)))
+
+        #if DEBUG
+        if clamped == 0 {
+            clamped = 0.8
+        }
+        #endif
+
         let amount = Int((clamped * CGFloat(savingsTargetAmount)).rounded())
 
         currentAmountLabel.applyTextStyle(
