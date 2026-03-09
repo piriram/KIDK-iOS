@@ -153,7 +153,7 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
         let missionData = MissionCardData(
             iconName: "kidk_icon_mission_new",
             title: "새로운 미션이 있어요!",
-            subtitle: "\(PortfolioCaptureMock.primaryMissionTitle) · \(PortfolioCaptureMock.primaryMissionRewardAmount.formattedWithComma)원 보상",
+            subtitle: "\(PortfolioCaptureMock.primaryMissionTitle) - \(PortfolioCaptureMock.primaryMissionRewardAmount.formattedWithComma)원 보상",
             buttonTitle: "미션 하러 가기"
         )
         newMissionCard = AccountCardFactory.makeNewMissionCard(data: missionData)

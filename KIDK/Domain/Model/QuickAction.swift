@@ -16,7 +16,7 @@ enum QuickActionType {
         case .transfer:
             return "송금하기"
         case .scanReceipt:
-            return "영수증 스캔"
+            return "영수증\n스캔"
         }
     }
 
