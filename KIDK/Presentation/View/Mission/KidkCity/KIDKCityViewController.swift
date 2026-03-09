@@ -9,7 +9,7 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
     private let viewModel: KIDKCityViewModel
     private let user: User
     private let viewDidAppearSubject = PublishSubject<Void>()
-    private let missionCompletedSubject = PublishSubject<String>()
+    private let missionCompletedSubject = PublishSubject<MissionRewardCompletedEvent>()
 
     private let gameView: SKView = {
         let view = SKView()
@@ -432,9 +432,17 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         }
 
         creationVC.missionCreated
-            .subscribe(onNext: { [weak self] (_: Mission) in
-                let eventId = UUID().uuidString
-                self?.missionCompletedSubject.onNext(eventId)
+            .subscribe(onNext: { [weak self] (mission: Mission) in
+                guard let self else { return }
+                let event = MissionRewardCompletedEvent(
+                    missionId: mission.id,
+                    rewardAmount: mission.rewardAmount,
+                    rewardType: .missionApproved,
+                    childId: self.user.id,
+                    timestamp: Date(),
+                    idempotencyKey: UUID().uuidString
+                )
+                self.missionCompletedSubject.onNext(event)
                 creationVC.dismiss(animated: true)
             })
             .disposed(by: disposeBag)
@@ -500,7 +508,16 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         case .none:
             break
         case .showMissionCompletedPopup:
-            missionCompletedSubject.onNext(UUID().uuidString)
+            missionCompletedSubject.onNext(
+                MissionRewardCompletedEvent(
+                    missionId: "debug-mission-completed",
+                    rewardAmount: 1000,
+                    rewardType: .missionApproved,
+                    childId: user.id,
+                    timestamp: Date(),
+                    idempotencyKey: UUID().uuidString
+                )
+            )
         case .showBuildingDetail:
             showLockedLocationToast(location: .mart)
         case .showMissionSelection:
