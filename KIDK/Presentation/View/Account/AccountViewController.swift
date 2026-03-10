@@ -9,6 +9,7 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
     weak var coordinator: AccountCoordinator?
 
     private let navigationHeaderView = KIDKNavigationHeaderView(title: Strings.TabBar.account)
+    private let showsNavigationHeader = false
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -91,7 +92,9 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
     private func setupUI() {
         view.backgroundColor = UIColor(hex: "#1C1C1E")
 
-        view.addSubview(navigationHeaderView)
+        if showsNavigationHeader {
+            view.addSubview(navigationHeaderView)
+        }
         view.addSubview(scrollView)
         scrollView.addSubview(contentView)
 
@@ -101,14 +104,20 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
 
         contentView.addSubview(cardsStackView)
 
-        navigationHeaderView.snp.makeConstraints { make in
-            make.top.equalTo(view.safeAreaLayoutGuide)
-            make.leading.trailing.equalToSuperview()
-            make.height.equalTo(KIDKNavigationHeaderView.height)
+        if showsNavigationHeader {
+            navigationHeaderView.snp.makeConstraints { make in
+                make.top.equalTo(view.safeAreaLayoutGuide)
+                make.leading.trailing.equalToSuperview()
+                make.height.equalTo(KIDKNavigationHeaderView.height)
+            }
         }
 
         scrollView.snp.makeConstraints { make in
-            make.top.equalTo(navigationHeaderView.snp.bottom)
+            if showsNavigationHeader {
+                make.top.equalTo(navigationHeaderView.snp.bottom)
+            } else {
+                make.top.equalTo(view.safeAreaLayoutGuide)
+            }
             make.leading.trailing.bottom.equalTo(view.safeAreaLayoutGuide)
         }
 
@@ -144,7 +153,7 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
         let missionData = MissionCardData(
             iconName: "kidk_icon_mission_new",
             title: "새로운 미션이 있어요!",
-            subtitle: "책 30분 읽고 1000원 받기",
+            subtitle: "\(PortfolioCaptureMock.primaryMissionTitle) - \(PortfolioCaptureMock.primaryMissionRewardAmount.formattedWithComma)원 보상",
             buttonTitle: "미션 하러 가기"
         )
         newMissionCard = AccountCardFactory.makeNewMissionCard(data: missionData)
@@ -152,7 +161,7 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
         let spendingData = AccountCardData(
             iconName: "kidk_icon_wallet",
             title: "내 지갑",
-            amount: 12450,
+            amount: PortfolioCaptureMock.spendingWalletAmount,
             message: nil
         )
         spendingAccountCard = AccountCardFactory.makeSpendingAccountCard(data: spendingData)
@@ -160,8 +169,8 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
         let savingsData = AccountCardData(
             iconName: "kidk_icon_piggy",
             title: "내 저금통",
-            amount: 50000,
-            message: "친구들과 함께 저축 목표를 설정해보세요!"
+            amount: PortfolioCaptureMock.savingsAccountAmount,
+            message: "\(PortfolioCaptureMock.primaryMissionTitle) 목표를 채워봐요!"
         )
         savingsAccountCard = AccountCardFactory.makeSavingsAccountCard(data: savingsData)
 
@@ -320,6 +329,11 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
     }
 
     private func loadUserProfile() {
+        if PortfolioCaptureMock.enabled {
+            nameLabel.text = PortfolioCaptureMock.childDisplayName
+            return
+        }
+
         // UserProfileManager에서 사용자 정보 가져오기
         Task { @MainActor in
             if let user = await UserProfileManager.shared.getCurrentUser() {
@@ -334,6 +348,10 @@ final class AccountViewController: BaseViewController, NavigationChromeConfigura
     }
 
     private func updateAccountCards(with accounts: [Account]) {
+        if PortfolioCaptureMock.enabled {
+            return
+        }
+
         debugLog("Updating account cards with \(accounts.count) accounts")
 
         // spending account (내 지갑) 업데이트

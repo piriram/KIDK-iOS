@@ -7,7 +7,7 @@ final class KIDKCityViewModel: BaseViewModel {
     struct Input {
         let viewDidAppear: Observable<Void>
         let locationTapped: Observable<KIDKCityLocationType>
-        let missionCompleted: Observable<String> // eventId
+        let missionCompleted: Observable<MissionRewardCompletedEvent>
     }
 
     struct Output {
@@ -22,13 +22,18 @@ final class KIDKCityViewModel: BaseViewModel {
     let navigateToLocation: PublishSubject<KIDKCityLocationType> = PublishSubject()
 
     private let user: User
+    private let progressStore: CityProgressStore
 
     private let gameStateRelay = BehaviorRelay<GameState>(value: .initial)
     private var processedEventIds = Set<String>()
 
-    init(user: User) {
+    init(user: User, progressStore: CityProgressStore = UserDefaultsCityProgressStore()) {
         self.user = user
+        self.progressStore = progressStore
         super.init()
+
+        let progress = progressStore.load(userId: user.id) ?? .initial
+        gameStateRelay.accept(GameState(progress: progress))
         debugLog("KIDKCityViewModel initialized")
     }
 
@@ -56,8 +61,8 @@ final class KIDKCityViewModel: BaseViewModel {
             .disposed(by: disposeBag)
 
         input.missionCompleted
-            .subscribe(onNext: { [weak self] eventId in
-                self?.applyMissionCompletionReward(eventId: eventId)
+            .subscribe(onNext: { [weak self] event in
+                self?.applyMissionCompletionReward(event: event)
             })
             .disposed(by: disposeBag)
 
@@ -89,38 +94,40 @@ final class KIDKCityViewModel: BaseViewModel {
         )
     }
 
-    private func applyMissionCompletionReward(eventId: String) {
-        guard !processedEventIds.contains(eventId) else {
-            debugWarning("Skip duplicated mission completion event: \(eventId)")
+    private func applyMissionCompletionReward(event: MissionRewardCompletedEvent) {
+        guard !processedEventIds.contains(event.idempotencyKey) else {
+            debugWarning("Skip duplicated mission completion event: \(event.idempotencyKey)")
             return
         }
-        processedEventIds.insert(eventId)
+        processedEventIds.insert(event.idempotencyKey)
 
         // TODO: 서버 API 문서 기준으로 mission completion 확정 API 연동
-        // 서버 연동 전 MVP 단계에서는 로컬 상태를 선반영한다.
-        syncMissionCompletionIfNeeded(eventId: eventId)
+        syncMissionCompletionIfNeeded(event: event)
 
         var state = gameStateRelay.value
-        state.gaugePoint += GaugeSystem.rewardPerMission
+        state.gaugePoint += GaugeSystem.rewardPoints(for: event.rewardType)
         state.level = GaugeSystem.level(points: state.gaugePoint)
-
-        let unlocked = CityUnlockSystem.unlockedLocations(level: state.level)
-        state.unlockedLocations = unlocked
-
+        state.unlockedLocations = CityUnlockSystem.unlockedLocations(level: state.level)
         gameStateRelay.accept(state)
-        debugSuccess("Mission reward applied - eventId: \(eventId), level: \(state.level), point: \(state.gaugePoint)")
+
+        let progress = state.toCityProgress(lastRewardedMissionId: event.missionId, updatedAt: event.timestamp)
+        progressStore.save(progress, userId: user.id)
+
+        debugSuccess(
+            "Mission reward applied - missionId: \(event.missionId), type: \(event.rewardType.rawValue), level: \(state.level), exp: \(state.gaugePoint)"
+        )
     }
 
-    private func syncMissionCompletionIfNeeded(eventId: String) {
+    private func syncMissionCompletionIfNeeded(event: MissionRewardCompletedEvent) {
         // NOTE:
         // - endpoint/path: 서버 API 문서 기준
         // - payload/status/에러코드: 서버 API 문서 기준
-        // - idempotency key: eventId 사용
-        debugLog("Mission completion sync placeholder. eventId=\(eventId)")
+        // - idempotency key: event.idempotencyKey 사용
+        debugLog("Mission completion sync placeholder. payload=\(event)")
     }
 
     private func createLocations(from state: GameState) -> [KIDKCityLocation] {
-        return [
+        [
             KIDKCityLocation(
                 type: .school,
                 position: CGPoint(x: 0.5, y: 0.3),
@@ -143,14 +150,49 @@ private struct GameState {
     var unlockedLocations: Set<KIDKCityLocationType>
 
     static let initial = GameState(gaugePoint: 0, level: 1, unlockedLocations: [.home, .school])
+
+    init(gaugePoint: Int, level: Int, unlockedLocations: Set<KIDKCityLocationType>) {
+        self.gaugePoint = gaugePoint
+        self.level = level
+        self.unlockedLocations = unlockedLocations
+    }
+
+    init(progress: CityProgress) {
+        self.gaugePoint = progress.exp
+        self.level = progress.currentLevel
+        self.unlockedLocations = Set(progress.unlockedZones.compactMap(KIDKCityLocationType.init(rawValue:)))
+        if self.unlockedLocations.isEmpty {
+            self.unlockedLocations = [.home, .school]
+        }
+    }
+
+    func toCityProgress(lastRewardedMissionId: String?, updatedAt: Date) -> CityProgress {
+        CityProgress(
+            currentLevel: level,
+            exp: gaugePoint,
+            unlockedZones: unlockedLocations.map(\.rawValue).sorted(),
+            lastRewardedMissionId: lastRewardedMissionId,
+            updatedAt: updatedAt
+        )
+    }
 }
 
 private enum GaugeSystem {
     static let pointsPerLevel = 100
-    static let rewardPerMission = 30
+
+    static func rewardPoints(for rewardType: MissionRewardType) -> Int {
+        switch rewardType {
+        case .missionApproved:
+            return 10
+        case .streakBonus:
+            return 5
+        case .goalAmountAchieved:
+            return 20
+        }
+    }
 
     static func level(points: Int) -> Int {
-        return max(1, (points / pointsPerLevel) + 1)
+        max(1, (points / pointsPerLevel) + 1)
     }
 
     static func progress(points: Int) -> Float {
@@ -168,5 +210,34 @@ private enum CityUnlockSystem {
         }
 
         return locations
+    }
+}
+
+protocol CityProgressStore {
+    func load(userId: String) -> CityProgress?
+    func save(_ progress: CityProgress, userId: String)
+}
+
+final class UserDefaultsCityProgressStore: CityProgressStore {
+    private let defaults: UserDefaults
+    private let encoder = JSONEncoder()
+    private let decoder = JSONDecoder()
+
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+    }
+
+    func load(userId: String) -> CityProgress? {
+        guard let data = defaults.data(forKey: storageKey(userId: userId)) else { return nil }
+        return try? decoder.decode(CityProgress.self, from: data)
+    }
+
+    func save(_ progress: CityProgress, userId: String) {
+        guard let data = try? encoder.encode(progress) else { return }
+        defaults.set(data, forKey: storageKey(userId: userId))
+    }
+
+    private func storageKey(userId: String) -> String {
+        "kidk.city.progress.\(userId)"
     }
 }

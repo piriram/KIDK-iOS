@@ -42,9 +42,9 @@ final class WalletViewModel: BaseViewModel {
             lastFourDigits: "1234"
         )
         self.card = BehaviorRelay(value: mockCard)
-        self.userLevel = BehaviorRelay(value: 5)
-        self.userExperience = BehaviorRelay(value: 650)
-        self.dailySpendingLimit = BehaviorRelay(value: 10000)
+        self.userLevel = BehaviorRelay(value: 8)
+        self.userExperience = BehaviorRelay(value: 800)
+        self.dailySpendingLimit = BehaviorRelay(value: 12_000)
 
         super.init()
 
@@ -108,6 +108,14 @@ final class WalletViewModel: BaseViewModel {
     private func loadData() {
         isLoading.accept(true)
 
+        if PortfolioCaptureMock.enabled {
+            accounts.accept(createPortfolioMockAccounts())
+            transactions.accept(createPortfolioMockTransactions())
+            savingsGoals.accept(createPortfolioMockSavingsGoals())
+            isLoading.accept(false)
+            return
+        }
+
         // Fetch all data in parallel
         Observable.zip(
             fetchAccounts(),
@@ -167,6 +175,80 @@ final class WalletViewModel: BaseViewModel {
             }
     }
 
+    private func createPortfolioMockAccounts() -> [Account] {
+        [
+            Account(
+                id: "portfolio-spending",
+                type: .spending,
+                name: "내 지갑",
+                balance: PortfolioCaptureMock.spendingWalletAmount,
+                isPrimary: true
+            ),
+            Account(
+                id: "portfolio-savings",
+                type: .savings,
+                name: "내 용돈통장",
+                balance: PortfolioCaptureMock.savingsAccountAmount,
+                isPrimary: false
+            )
+        ]
+    }
+
+    private func createPortfolioMockSavingsGoals() -> [SavingsGoal] {
+        [
+            SavingsGoal(
+                id: "portfolio-goal-1",
+                userId: "portfolio-user",
+                name: PortfolioCaptureMock.primaryMissionTitle,
+                targetAmount: PortfolioCaptureMock.primaryMissionTargetAmount,
+                currentAmount: PortfolioCaptureMock.primaryMissionCurrentAmount,
+                imageName: "game",
+                imageData: nil,
+                startDate: Date().addingTimeInterval(-25 * 24 * 60 * 60),
+                targetDate: Date().addingTimeInterval(35 * 24 * 60 * 60),
+                status: .inProgress,
+                createdAt: Date().addingTimeInterval(-25 * 24 * 60 * 60),
+                completedAt: nil,
+                linkedMissionIds: ["mission1"]
+            )
+        ]
+    }
+
+    private func createPortfolioMockTransactions() -> [Transaction] {
+        [
+            Transaction(
+                id: "portfolio-1",
+                type: .missionReward,
+                category: nil,
+                amount: PortfolioCaptureMock.primaryMissionRewardAmount,
+                description: "\(PortfolioCaptureMock.primaryMissionTitle) 미션 완료",
+                memo: nil,
+                balanceAfter: PortfolioCaptureMock.spendingWalletAmount,
+                date: Date().addingTimeInterval(-3600)
+            ),
+            Transaction(
+                id: "portfolio-2",
+                type: .transfer,
+                category: nil,
+                amount: 20_000,
+                description: "내 용돈통장으로 이체",
+                memo: "목표 저축",
+                balanceAfter: 14_500,
+                date: Date().addingTimeInterval(-7200)
+            ),
+            Transaction(
+                id: "portfolio-3",
+                type: .withdrawal,
+                category: .shopping,
+                amount: 4_500,
+                description: "키드키드 편의점",
+                memo: "영수증 OCR 저장",
+                balanceAfter: 34_500,
+                date: Date().addingTimeInterval(-86400)
+            )
+        ]
+    }
+
     // Fallback mock transactions for when repository returns empty
     private func createMockTransactions() -> [Transaction] {
         return [
@@ -174,10 +256,10 @@ final class WalletViewModel: BaseViewModel {
                 id: "1",
                 type: .missionReward,
                 category: nil,
-                amount: 1000,
-                description: "책 30분 읽기 미션 완료",
+                amount: PortfolioCaptureMock.primaryMissionRewardAmount,
+                description: "\(PortfolioCaptureMock.primaryMissionTitle) 미션 완료",
                 memo: nil,
-                balanceAfter: 12450,
+                balanceAfter: PortfolioCaptureMock.spendingWalletAmount,
                 date: Date().addingTimeInterval(-3600)
             ),
             Transaction(
