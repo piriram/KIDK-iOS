@@ -5,8 +5,22 @@ import RxCocoa
 
 final class WalletViewController: BaseViewController {
 
+    private enum TransactionSortOption {
+        case recent
+        case amount
+
+        var title: String {
+            switch self {
+            case .recent: return "최근순"
+            case .amount: return "금액순"
+            }
+        }
+    }
+
     // MARK: - Properties
     private let viewModel: WalletViewModel
+    private var transactionSortOption: TransactionSortOption = .recent
+    private var latestTransactions: [Transaction] = []
 
     private let scrollView: UIScrollView = {
         let scrollView = UIScrollView()
@@ -92,11 +106,11 @@ final class WalletViewController: BaseViewController {
         }
 
         contentStackView.addArrangedSubview(summaryCockpitView)
-        contentStackView.addArrangedSubview(gameStatusView)
         contentStackView.addArrangedSubview(quickActionsSectionView)
+        contentStackView.addArrangedSubview(transactionsSectionView)
+        contentStackView.addArrangedSubview(gameStatusView)
         contentStackView.addArrangedSubview(accountsSectionView)
         contentStackView.addArrangedSubview(savingsSectionView)
-        contentStackView.addArrangedSubview(transactionsSectionView)
         contentStackView.addArrangedSubview(cardSectionView)
 
         summaryCockpitView.snp.makeConstraints { make in
@@ -112,7 +126,15 @@ final class WalletViewController: BaseViewController {
         savingsSectionView.configure(title: "저축 목표", subtitle: "진행 중 목표 트랙")
         savingsSectionView.setContentView(savingsCarouselView)
 
-        transactionsSectionView.configure(title: "최근 거래 타임라인", subtitle: "오늘부터 최근 순")
+        transactionsSectionView.configure(
+            title: "최근 거래 타임라인",
+            subtitle: nil,
+            trailingText: transactionSortOption.title,
+            trailingIconName: "arrow.up.arrow.down"
+        )
+        transactionsSectionView.setHeaderTrailingTap { [weak self] in
+            self?.toggleTransactionSortOption()
+        }
         transactionsSectionView.setContentView(transactionsTimelineView)
 
         cardSectionView.configure(title: "내 카드", subtitle: "카드 상태 확인")
@@ -195,9 +217,8 @@ final class WalletViewController: BaseViewController {
             self?.showSavingsGoalDetail(goal)
         }
 
-        transactionsTimelineView.configure(transactions: Array(transactions.prefix(8))) { [weak self] transaction in
-            self?.showTransactionDetail(transaction)
-        }
+        latestTransactions = transactions
+        applyTransactionSortAndRenderTimeline()
 
         if let card {
             let cardView = WalletCardInfoView()
@@ -213,6 +234,31 @@ final class WalletViewController: BaseViewController {
         }
 
         refreshControl.endRefreshing()
+    }
+
+    private func toggleTransactionSortOption() {
+        transactionSortOption = (transactionSortOption == .recent) ? .amount : .recent
+        transactionsSectionView.configure(
+            title: "최근 거래 타임라인",
+            subtitle: nil,
+            trailingText: transactionSortOption.title,
+            trailingIconName: "arrow.up.arrow.down"
+        )
+        applyTransactionSortAndRenderTimeline()
+    }
+
+    private func applyTransactionSortAndRenderTimeline() {
+        let sortedTransactions: [Transaction]
+        switch transactionSortOption {
+        case .recent:
+            sortedTransactions = latestTransactions.sorted { $0.date > $1.date }
+        case .amount:
+            sortedTransactions = latestTransactions.sorted { abs($0.amount) > abs($1.amount) }
+        }
+
+        transactionsTimelineView.configure(transactions: Array(sortedTransactions.prefix(8))) { [weak self] transaction in
+            self?.showTransactionDetail(transaction)
+        }
     }
 
     private func calculateTodaySpent(from transactions: [Transaction]) -> Int {
@@ -344,8 +390,12 @@ private final class WalletSectionView: UIView {
         }
     }
 
-    func configure(title: String, subtitle: String?) {
-        headerView.configure(title: title, subtitle: subtitle)
+    func configure(title: String, subtitle: String?, trailingText: String? = nil, trailingIconName: String? = nil) {
+        headerView.configure(title: title, subtitle: subtitle, trailingText: trailingText, trailingIconName: trailingIconName)
+    }
+
+    func setHeaderTrailingTap(_ action: (() -> Void)?) {
+        headerView.onTrailingTap = action
     }
 
     func setContentView(_ view: UIView) {
@@ -377,7 +427,7 @@ private final class WalletSummaryCockpitView: UIView {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s14, .medium)
         label.textColor = UIColor.white.withAlphaComponent(0.82)
-        label.text = "지갑 코크핏"
+        label.text = "내 지갑"
         return label
     }()
 
@@ -1402,6 +1452,7 @@ private final class WalletTimelineTransactionRowView: UIControl {
         let label = UILabel()
         label.font = UIFont.kidkFont(.s14, .bold)
         label.textColor = .kidkTextWhite
+        label.numberOfLines = 2
         return label
     }()
 

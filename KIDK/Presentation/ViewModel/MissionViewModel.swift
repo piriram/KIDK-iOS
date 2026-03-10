@@ -57,6 +57,10 @@ final class MissionViewModel: BaseViewModel {
     private func fetchMissions() {
         isLoading.accept(true)
 
+        if PortfolioCaptureMock.enabled {
+            createSampleMissionsOnce()
+        }
+
         missionRepository.fetchMissions(for: user.id)
             .subscribe(onSuccess: { [weak self] missions in
                 guard let self = self else { return }
@@ -113,14 +117,14 @@ final class MissionViewModel: BaseViewModel {
 
         // Create first sample mission - 닌텐도 스위치 모으기 (65% 진행)
         let mission1 = MissionCreationRequest(
-            title: "닌텐도 스위치 모으기",
+            title: PortfolioCaptureMock.primaryMissionTitle,
             missionType: .savings,
-            targetAmount: 300000,
-            currentAmount: 195000,
-            rewardAmount: 10000,
+            targetAmount: PortfolioCaptureMock.primaryMissionTargetAmount,
+            currentAmount: PortfolioCaptureMock.primaryMissionCurrentAmount,
+            rewardAmount: PortfolioCaptureMock.primaryMissionRewardAmount,
             targetDate: Calendar.current.date(byAdding: .day, value: 30, to: Date()),
             participantIds: [],
-            description: "친구들과 함께 놀이공원 가기 위해 저축하기"
+            description: "포트폴리오 핵심 미션: 목표 금액 모으기"
         )
 
         // Create second sample mission - 새 자전거 사기 (56.7% 진행)
