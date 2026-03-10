@@ -119,6 +119,44 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         return button
     }()
 
+    private let speechBubbleView: UIView = {
+        let view = UIView()
+        view.backgroundColor = UIColor(hex: "#2A2A35").withAlphaComponent(0.94)
+        view.layer.cornerRadius = 18
+        view.layer.borderWidth = 1
+        view.layer.borderColor = UIColor.white.withAlphaComponent(0.08).cgColor
+        view.layer.shadowColor = UIColor.black.withAlphaComponent(0.20).cgColor
+        view.layer.shadowOpacity = 1
+        view.layer.shadowRadius = 8
+        view.layer.shadowOffset = CGSize(width: 0, height: 3)
+        view.alpha = 0
+        return view
+    }()
+
+    private let speechBubbleLabel: UILabel = {
+        let label = UILabel()
+        label.applyTextStyle(text: "", size: .s14, weight: .medium, color: .white)
+        label.numberOfLines = 1
+        return label
+    }()
+
+    private let speechBubbleAvatarStackView: UIStackView = {
+        let stack = UIStackView()
+        stack.axis = .horizontal
+        stack.alignment = .center
+        stack.spacing = -8
+        return stack
+    }()
+
+    private lazy var speechBubbleAvatarViews: [UIView] = [
+        makeSpeechBubbleAvatar(imageName: "kidk_friend_avatar_1"),
+        makeSpeechBubbleAvatar(imageName: "kidk_friend_avatar_2"),
+        makeSpeechBubbleAvatar(imageName: "kidk_friend_avatar_3")
+    ]
+
+    private let persistentSpeechBubbleText = "와 함께 목표 진행중"
+    private var speechBubbleHideWorkItem: DispatchWorkItem?
+
     private weak var currentSheetViewController: UIViewController?
     private var cityScene: KidkCityScene?
     private var latestUnlockedLocations: Set<KIDKCityLocationType> = [.home, .school]
@@ -165,6 +203,10 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         fatalError("init(coder:) has not been implemented")
     }
 
+    deinit {
+        speechBubbleHideWorkItem?.cancel()
+    }
+
     var prefersNavigationBarHidden: Bool { true }
     var prefersTabBarHidden: Bool { true }
 
@@ -187,6 +229,11 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         super.viewDidAppear(animated)
         viewDidAppearSubject.onNext(())
 
+        showSpeechBubble(
+            text: persistentSpeechBubbleText,
+            autoHideAfter: nil
+        )
+
         #if DEBUG
         runDebugSnapshotActionIfNeeded()
         #endif
@@ -198,6 +245,11 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
         view.addSubview(gameView)
         view.addSubview(hudContainerView)
         view.addSubview(homeButton)
+        view.addSubview(speechBubbleView)
+
+        speechBubbleView.addSubview(speechBubbleAvatarStackView)
+        speechBubbleView.addSubview(speechBubbleLabel)
+        speechBubbleAvatarViews.forEach { speechBubbleAvatarStackView.addArrangedSubview($0) }
 
         hudContainerView.addSubview(ddayBadgeLabel)
         hudContainerView.addSubview(missionTitleLabel)
@@ -267,6 +319,28 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
             make.width.height.equalTo(48)
         }
 
+        speechBubbleView.snp.makeConstraints { make in
+            make.top.equalTo(view.safeAreaLayoutGuide).offset(12)
+            make.leading.greaterThanOrEqualTo(homeButton.snp.trailing).offset(10)
+            make.trailing.equalToSuperview().inset(16)
+            make.height.greaterThanOrEqualTo(42)
+        }
+
+        speechBubbleAvatarStackView.snp.makeConstraints { make in
+            make.leading.equalToSuperview().offset(12)
+            make.centerY.equalToSuperview()
+            make.width.equalTo(54)
+            make.height.equalTo(24)
+        }
+
+        speechBubbleLabel.snp.makeConstraints { make in
+            make.leading.equalTo(speechBubbleAvatarStackView.snp.trailing).offset(8)
+            make.trailing.equalToSuperview().inset(14)
+            make.top.greaterThanOrEqualToSuperview().offset(10)
+            make.bottom.lessThanOrEqualToSuperview().inset(10)
+            make.centerY.equalToSuperview()
+        }
+
         let homeTapGesture = UITapGestureRecognizer(target: self, action: #selector(homeButtonTapped))
         homeTapGestureRecognizer = homeTapGesture
         homeButton.addGestureRecognizer(homeTapGesture)
@@ -309,6 +383,13 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
                 guard let self = self else { return }
                 self.latestUnlockedLocations = Set(locations.filter { $0.isUnlocked }.map { $0.type })
                 self.cityScene?.setUnlockedLocations(self.latestUnlockedLocations)
+            })
+            .disposed(by: disposeBag)
+
+        missionCompletedSubject
+            .observe(on: MainScheduler.instance)
+            .subscribe(onNext: { [weak self] event in
+                self?.showMissionCompletedSpeechBubble(event)
             })
             .disposed(by: disposeBag)
     }
@@ -421,6 +502,72 @@ final class KIDKCityViewController: BaseViewController, NavigationChromeConfigur
                 color: .kidkTextWhite
             )
         }
+    }
+
+    private func showMissionCompletedSpeechBubble(_ event: MissionRewardCompletedEvent) {
+        let amountText = event.rewardAmount.formattedWithComma
+        showSpeechBubble(text: "+\(amountText)원 적립 완료", autoHideAfter: nil)
+
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            self.showSpeechBubble(text: self.persistentSpeechBubbleText, autoHideAfter: nil)
+        }
+        speechBubbleHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.2, execute: workItem)
+    }
+
+    private func makeSpeechBubbleAvatar(imageName: String) -> UIView {
+        let container = UIView()
+        container.layer.cornerRadius = 12
+        container.layer.borderWidth = 2
+        container.layer.borderColor = UIColor(hex: "#2A2A35").cgColor
+        container.clipsToBounds = true
+
+        let avatarImage = UIImageView(image: UIImage(named: imageName))
+        avatarImage.contentMode = .scaleAspectFill
+        container.addSubview(avatarImage)
+        avatarImage.snp.makeConstraints { make in
+            make.edges.equalToSuperview()
+        }
+
+        container.snp.makeConstraints { make in
+            make.width.height.equalTo(24)
+        }
+
+        return container
+    }
+
+    private func showSpeechBubble(text: String, autoHideAfter duration: TimeInterval?) {
+        speechBubbleHideWorkItem?.cancel()
+        speechBubbleHideWorkItem = nil
+        speechBubbleLabel.text = text
+
+        let reveal = {
+            self.speechBubbleView.alpha = 1
+            self.speechBubbleView.transform = .identity
+        }
+
+        if speechBubbleView.alpha == 0 {
+            speechBubbleView.transform = CGAffineTransform(translationX: 0, y: -6)
+            UIView.animate(withDuration: 0.22, delay: 0, options: [.curveEaseOut], animations: reveal)
+        } else {
+            reveal()
+        }
+
+        guard let duration else { return }
+
+        let workItem = DispatchWorkItem { [weak self] in
+            self?.hideSpeechBubble()
+        }
+        speechBubbleHideWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: workItem)
+    }
+
+    private func hideSpeechBubble() {
+        UIView.animate(withDuration: 0.18, delay: 0, options: [.curveEaseInOut], animations: {
+            self.speechBubbleView.alpha = 0
+            self.speechBubbleView.transform = CGAffineTransform(translationX: 0, y: -4)
+        })
     }
 
     @objc private func homeButtonTapped() {
@@ -821,6 +968,31 @@ private final class KidkCityScene: SKScene {
         return node
     }()
 
+    private let schoolSelectionOutlineNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school_outline")
+        node.zPosition = 1.8
+        node.alpha = 0
+        return node
+    }()
+
+    private let schoolMissionBannerOutlineNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school_mission_banner")
+        node.zPosition = 2.55
+        node.color = .black
+        node.colorBlendFactor = 1.0
+        node.alpha = 0
+        return node
+    }()
+
+    private let schoolMissionBannerFillNode: SKSpriteNode = {
+        let node = SKSpriteNode(imageNamed: "kidk_city_school_mission_banner")
+        node.zPosition = 2.6
+        node.alpha = 0
+        return node
+    }()
+
+    private var isSchoolSelected = false
+
     private let characterNode: SKSpriteNode = {
         let node = SKSpriteNode(imageNamed: "kidk_character_side_walk_1")
         node.zPosition = 3
@@ -850,12 +1022,16 @@ private final class KidkCityScene: SKScene {
     override func didMove(to view: SKView) {
         backgroundColor = .clear
         addChild(backgroundNode)
+        addChild(schoolSelectionOutlineNode)
         addChild(homeNode)
         addChild(schoolNode)
         addChild(martNode)
+        addChild(schoolMissionBannerOutlineNode)
+        addChild(schoolMissionBannerFillNode)
         addChild(characterNode)
         layoutScene()
         applyUnlockState()
+        updateSchoolSelectionVisual(animated: false)
         startIdleAnimation()
     }
 
@@ -863,6 +1039,7 @@ private final class KidkCityScene: SKScene {
         super.didChangeSize(oldSize)
         layoutScene()
         applyUnlockState()
+        updateSchoolSelectionVisual(animated: false)
     }
 
     private func layoutScene() {
@@ -892,6 +1069,38 @@ private final class KidkCityScene: SKScene {
             in: CGSize(width: size.width * 0.5 * schoolLayout.scale, height: size.height * 0.25 * schoolLayout.scale)
         )
 
+        schoolSelectionOutlineNode.position = schoolNode.position
+        schoolSelectionOutlineNode.size = CGSize(
+            width: schoolNode.size.width * 1.14,
+            height: schoolNode.size.height * 1.14
+        )
+
+        let missionBannerWidth = schoolNode.size.width
+        let textureAspect: CGFloat
+        if let texture = schoolMissionBannerFillNode.texture, texture.size().width > 0 {
+            textureAspect = texture.size().height / texture.size().width
+        } else {
+            textureAspect = 96.0 / 717.0
+        }
+        let missionBannerHeight = missionBannerWidth * textureAspect
+
+        schoolMissionBannerFillNode.size = CGSize(
+            width: missionBannerWidth,
+            height: missionBannerHeight
+        )
+
+        let missionBannerGap: CGFloat = 18
+        schoolMissionBannerFillNode.position = CGPoint(
+            x: schoolNode.position.x,
+            y: schoolNode.frame.minY - missionBannerGap - (missionBannerHeight / 2)
+        )
+
+        schoolMissionBannerOutlineNode.size = CGSize(
+            width: missionBannerWidth + 2,
+            height: missionBannerHeight + 2
+        )
+        schoolMissionBannerOutlineNode.position = schoolMissionBannerFillNode.position
+
         martNode.position = point(in: displayRect, layout: martLayout)
         martNode.size = aspectFitSize(
             for: martNode,
@@ -901,7 +1110,7 @@ private final class KidkCityScene: SKScene {
         let previousCharacterPosition = characterNode.position
         characterNode.size = aspectFitSize(
             for: characterNode,
-            in: CGSize(width: 72 * characterLayout.scale, height: 72 * characterLayout.scale)
+            in: CGSize(width: 100 * characterLayout.scale, height: 100 * characterLayout.scale)
         )
 
         if previousCharacterPosition == .zero {
@@ -979,6 +1188,43 @@ private final class KidkCityScene: SKScene {
         martNode.alpha = 1.0
     }
 
+    private func setSchoolSelected(_ selected: Bool, animated: Bool = true) {
+        guard isSchoolSelected != selected else { return }
+        isSchoolSelected = selected
+        updateSchoolSelectionVisual(animated: animated)
+    }
+
+    private func updateSchoolSelectionVisual(animated: Bool) {
+        let schoolOutlineAlpha: CGFloat = isSchoolSelected ? 1.0 : 0.0
+        let missionBannerAlpha: CGFloat = 1.0
+
+        if animated {
+            schoolSelectionOutlineNode.removeAction(forKey: "schoolOutlineFade")
+            schoolMissionBannerOutlineNode.removeAction(forKey: "schoolMissionOutlineFade")
+            schoolMissionBannerFillNode.removeAction(forKey: "schoolMissionFillFade")
+
+            schoolSelectionOutlineNode.run(.fadeAlpha(to: schoolOutlineAlpha, duration: 0.16), withKey: "schoolOutlineFade")
+            schoolMissionBannerOutlineNode.run(.fadeAlpha(to: missionBannerAlpha, duration: 0.16), withKey: "schoolMissionOutlineFade")
+            schoolMissionBannerFillNode.run(.fadeAlpha(to: missionBannerAlpha, duration: 0.16), withKey: "schoolMissionFillFade")
+        } else {
+            schoolSelectionOutlineNode.alpha = schoolOutlineAlpha
+            schoolMissionBannerOutlineNode.alpha = missionBannerAlpha
+            schoolMissionBannerFillNode.alpha = missionBannerAlpha
+        }
+
+        schoolSelectionOutlineNode.removeAction(forKey: "schoolOutlinePulse")
+        if isSchoolSelected {
+            schoolSelectionOutlineNode.setScale(1)
+            let pulse = SKAction.sequence([
+                .scale(to: 1.015, duration: 0.9),
+                .scale(to: 1.0, duration: 0.9)
+            ])
+            schoolSelectionOutlineNode.run(.repeatForever(pulse), withKey: "schoolOutlinePulse")
+        } else {
+            schoolSelectionOutlineNode.setScale(1)
+        }
+    }
+
     private func startIdleAnimation() {
         let frame1 = SKTexture(imageNamed: "kidk_character_side_walk_1")
         let frame2 = SKTexture(imageNamed: "kidk_character_side_walk_2")
@@ -1033,6 +1279,7 @@ private final class KidkCityScene: SKScene {
         let node = atPoint(location)
 
         if node.name == "home" || node.parent?.name == "home" {
+            setSchoolSelected(false)
             moveCharacter(to: interactionPoint(for: homeNode)) { [weak self] in
                 self?.onHomeTapped?()
             }
@@ -1040,6 +1287,7 @@ private final class KidkCityScene: SKScene {
         }
 
         if node.name == "school" || node.parent?.name == "school" {
+            setSchoolSelected(true)
             moveCharacter(to: interactionPoint(for: schoolNode)) { [weak self] in
                 self?.onSchoolTapped?()
             }
@@ -1047,6 +1295,7 @@ private final class KidkCityScene: SKScene {
         }
 
         if node.name == "mart" || node.parent?.name == "mart" {
+            setSchoolSelected(false)
             moveCharacter(to: interactionPoint(for: martNode)) { [weak self] in
                 guard let self else { return }
                 if self.unlockedLocations.contains(.mart) {
@@ -1058,6 +1307,7 @@ private final class KidkCityScene: SKScene {
             return
         }
 
+        setSchoolSelected(false)
         moveCharacter(to: location)
     }
 }
