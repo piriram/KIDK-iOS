@@ -20,6 +20,8 @@
 		<string>Poppins-Bold.ttf</string>
 		<string>Poppins-SemiBold.ttf</string>
 		<string>Poppins-Regular.ttf</string>
+		<string>BMKkubulim.otf</string>
+		<string>BMKkubulimTTF.ttf</string>
 	</array>
 	<key>NSAppTransportSecurity</key>
 	<dict>
